@@ -14,61 +14,74 @@
    <string>ASongPlayer</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QWidget" name="state_widget" native="true">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>450</y>
-      <width>1041</width>
-      <height>31</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QWidget" name="ctrl_widget" native="true">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>490</y>
-      <width>1041</width>
-      <height>91</height>
-     </rect>
-    </property>
-    <widget class="QPushButton" name="play_button">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>20</y>
-       <width>93</width>
-       <height>29</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>播放</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="stop_button">
-     <property name="geometry">
-      <rect>
-       <x>120</x>
-       <y>20</y>
-       <width>93</width>
-       <height>29</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>停止</string>
-     </property>
-    </widget>
-   </widget>
    <widget class="QWidget" name="play_widget" native="true">
     <property name="geometry">
      <rect>
-      <x>40</x>
-      <y>20</y>
+      <x>10</x>
+      <y>10</y>
       <width>1011</width>
       <height>431</height>
      </rect>
     </property>
+   </widget>
+   <widget class="QWidget" name="verticalLayoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>520</y>
+      <width>1021</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <item>
+      <widget class="QSlider" name="position_ctrl">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>560</y>
+      <width>381</width>
+      <height>61</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QPushButton" name="play_button">
+       <property name="text">
+        <string>播放</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="stop_button">
+       <property name="text">
+        <string>停止</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="mute_button">
+       <property name="text">
+        <string>静音</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSlider" name="volume_ctrl">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
