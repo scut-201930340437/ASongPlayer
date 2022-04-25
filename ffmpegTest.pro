@@ -22,10 +22,16 @@ contains(QT_ARCH,i386){
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    asongaudio.cpp \
+    asongplayer.cpp \
+    asongvideo.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
+    asongaudio.h \
+    asongplayer.h \
+    asongvideo.h \
     mainwindow.h
 
 FORMS += \

@@ -22,12 +22,10 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     //这里简单的输出一个版本号
-//    cout << "Hello FFmpeg!" << endl;
-//    unsigned version = avcodec_version();
-//    cout << "version is:" << version;
-
+    //    cout << "Hello FFmpeg!" << endl;
+    //    unsigned version = avcodec_version();
+    //    cout << "version is:" << version;
     MainWindow w;
-
     w.show();
     return a.exec();
 }

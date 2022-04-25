@@ -2,21 +2,23 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QAudioOutput>
-#include <QVideoWidget>
+//#include <QAudioOutput>
+//#include <QVideoWidget>
+//#include <QMediaPlayer>
+#include "asongplayer.h"
 QT_BEGIN_NAMESPACE
-namespace Ui { class MainWindow; }
+namespace Ui
+{
+    class MainWindow;
+}
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
-public:
-    MainWindow(QWidget *parent = nullptr);
+public: MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    void getDuration();
-
 
 private slots:
     void on_action_openFile_triggered();
@@ -36,22 +38,21 @@ private slots:
 
     void on_position_ctrl_sliderPressed();
 
+    void on_fullScreen_button_clicked();
 
+    void keyPressEvent(QKeyEvent *event);
 
 private:
     Ui::MainWindow *ui;
-    QString filename="";
-    QMediaPlayer *player=NULL;
-    QAudioOutput *audioOutput=NULL;
-    QVideoWidget *videoWidget=NULL;
-    QTimer *position_timer=NULL;
-    bool isPlaying=false;
-    bool existFile=false;
-    bool isMute=false;
+    QString filename = "";
+    ASongPlayer *asongPlayer = nullptr;
+    ASongAudio *asongAudio = nullptr;
+    ASongVideo *asongVideo = nullptr;
 
-    bool positionCtrlPressed=false;
+    QTimer *position_timer = NULL;
 
-    int preVolume=20;
-    qint64 duration=0;
+    bool positionCtrlPressed = false;
+
+    QString duration_str = "00:00:00";
 };
 #endif // MAINWINDOW_H
