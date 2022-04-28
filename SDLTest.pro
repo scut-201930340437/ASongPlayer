@@ -1,6 +1,6 @@
 QT       += core gui
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += core widgets multimedia multimediawidgets
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets multimedia multimediawidgets
 
 CONFIG += c++11
 
@@ -47,12 +47,12 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 win32{
     contains(QT_ARCH,i386){
         message("32-bit")
-        INCLUDEPATH += $$PWD/lib/win32/ffmpeg/include \
+        INCLUDEPATH += $$PWD/lib/win32/third-party/include \
                        $$PWD/src
         LIBS += -L$$PWD/lib/win32/ffmpeg/lib -lavcodec -lavdevice -lavfilter -lavformat -lavutil -lswresample -lswscale -lSDL2 -lSDL2main
     }else{
         message("64-bit")
-        INCLUDEPATH += $$PWD/lib/win64/ffmpeg/include \
+        INCLUDEPATH += $$PWD/lib/win64/third-party/include \
                        $$PWD/src
         LIBS += -L$$PWD/lib/win64/ffmpeg/lib -lavcodec -lavdevice -lavfilter -lavformat -lavutil -lswresample -lswscale -lSDL2 -lSDL2main
     }
