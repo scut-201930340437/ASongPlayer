@@ -47,12 +47,20 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 win32{
     contains(QT_ARCH,i386){
         message("32-bit")
+<<<<<<< HEAD
         INCLUDEPATH += $$PWD/lib/win32/third-party/include \
+=======
+        INCLUDEPATH += $$PWD/lib/win32/ffmpeg/include \
+>>>>>>> e879ac8141876213f3f20b50de5304a72f0e8291
                        $$PWD/src
         LIBS += -L$$PWD/lib/win32/ffmpeg/lib -lavcodec -lavdevice -lavfilter -lavformat -lavutil -lswresample -lswscale
     }else{
         message("64-bit")
+<<<<<<< HEAD
         INCLUDEPATH += $$PWD/lib/win64/third-party/include \
+=======
+        INCLUDEPATH += $$PWD/lib/win64/ffmpeg/include \
+>>>>>>> e879ac8141876213f3f20b50de5304a72f0e8291
                        $$PWD/src
         LIBS += -L$$PWD/lib/win64/ffmpeg/lib -lavcodec -lavdevice -lavfilter -lavformat -lavutil -lswresample -lswscale
     }
