@@ -58,8 +58,8 @@ private:
 
     SwsContext* img_convert_ctx = nullptr;
 
-
-
+    // 帧率
+    double avg_frame_rate = 0.0;
 };
 
 

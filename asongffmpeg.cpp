@@ -43,6 +43,8 @@ ASongFFmpeg::~ASongFFmpeg()
 
 int ASongFFmpeg::sfp_signal_thread(void *opaque)
 {
+    double *avg_frame_rate = (double*)opaque;
+    //    qDebug() << *avg_frame_rate;
     curMediaStatus = 1;
     while (curMediaStatus == 1 || curMediaStatus == 2)
     {
@@ -56,7 +58,8 @@ int ASongFFmpeg::sfp_signal_thread(void *opaque)
             event.type = SFM_PAUSE_EVENT;
         }
         SDL_PushEvent(&event);
-        SDL_Delay(1);
+        // 播放帧率控制，可不可以通过其他方式控制，该方式很难处理不同帧率的视频
+        SDL_Delay(ceil(600 / (*avg_frame_rate)));
     }
     curMediaStatus = 0;
     //Break
@@ -129,7 +132,9 @@ int ASongFFmpeg::load(QString filename)
     sdlRect.w = screen_w;
     sdlRect.h = screen_h;
     packet = (AVPacket*)av_malloc(sizeof(AVPacket));
-    video_tid = SDL_CreateThread(sfp_signal_thread, NULL, NULL);
+    avg_frame_rate = av_q2d(pFormatCtx->streams[videoindex]->avg_frame_rate);
+    //    qDebug() << avg_frame_rate;
+    video_tid = SDL_CreateThread(sfp_signal_thread, NULL, &avg_frame_rate);
     // event loop
     for (;;)
     {
