@@ -2,11 +2,7 @@
 #include "ui_mainwindow.h"
 
 
-#include <QFileDialog>
 
-#include <QTimer>
-#include <QDebug>
-#include <QKeyEvent>
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -271,7 +267,6 @@ void MainWindow::on_fullScreen_button_clicked()
     }
     else
     {
-        this->ui->fullScreen_button->setText("退出全屏");
         asongVideo->setFullScreen(true);
     }
 }

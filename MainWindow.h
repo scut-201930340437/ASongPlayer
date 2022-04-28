@@ -1,11 +1,12 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
-//#include <QAudioOutput>
-//#include <QVideoWidget>
-//#include <QMediaPlayer>
+
 #include "asongplayer.h"
+#include <QMainWindow>
+#include <QFileDialog>
+#include <QTimer>
+#include <QDebug>
 QT_BEGIN_NAMESPACE
 namespace Ui
 {
