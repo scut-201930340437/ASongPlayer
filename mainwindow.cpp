@@ -4,7 +4,6 @@
 
 #include <QFileDialog>
 
-
 #include <QTimer>
 #include <QDebug>
 #include <QKeyEvent>
@@ -67,7 +66,7 @@ MainWindow::MainWindow(QWidget *parent)
     // 绑定mediaplayer信号事件，如获取总时长
     //    connect(player, SIGNAL(metaDataAvailableChanged(bool)), this, SLOT(OnMetaDataAvailableChanged(bool)));
     connect(asongPlayer, SIGNAL(durationChanged(qint64)), this, SLOT(onDurationChanged(qint64)));
-    //    connect(player, SIGNAL(errorOccurred(QMediaPlayer::Error error, const QString & errorString)), this, SLOT(onerrorOccurred(QMediaPlayer::Error error, const QString & errorString)));
+    //    connect(asongPlayer, SIGNAL(errorOccurred(QMediaPlayer::Error error, const QString & errorString)), this, SLOT(onerrorOccurred(QMediaPlayer::Error error, const QString & errorString)));
     //    connect(player, SIGNAL(stateChanged(QMediaPlayer::State)), this, SLOT(onOriginalStateChanged(QMediaPlayer::State)));
 }
 
@@ -81,6 +80,11 @@ MainWindow::~MainWindow()
     asongPlayer = nullptr;
     delete ui;
 }
+
+//void MainWindow::onerrorOccurred(QMediaPlayer::Error error, const QString & errorString)
+//{
+//    qDebug() << errorString;
+//}
 
 // 获取总时长的响应事件
 void MainWindow::onDurationChanged(qint64 _duration)

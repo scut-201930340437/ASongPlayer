@@ -1,4 +1,4 @@
-#include "mainwindow.h"
+#include "MainWindow.h"
 
 
 
@@ -16,6 +16,7 @@ extern "C"
 #include "libavdevice/avdevice.h"
 #include "libavutil/avutil.h"
 #include "libswresample/swresample.h"
+
 }
 
 int main(int argc, char *argv[])

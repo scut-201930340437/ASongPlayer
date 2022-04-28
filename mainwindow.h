@@ -42,6 +42,8 @@ private slots:
 
     void keyPressEvent(QKeyEvent *event);
 
+    //    void onerrorOccurred(QMediaPlayer::Error error, const QString & errorString);
+
 private:
     Ui::MainWindow *ui;
     QString filename = "";
