@@ -1,4 +1,4 @@
-#include "asongplayer.h"
+#include "ASongPlayer.h"
 
 int ASongPlayer::MaxPosition = 0;
 int ASongPlayer::MinPosition = 0;

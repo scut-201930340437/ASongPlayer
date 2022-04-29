@@ -1,5 +1,5 @@
-#include "mainwindow.h"
-#include "ui_mainwindow.h"
+#include "MainWindow.h"
+#include "ui_MainWindow.h"
 
 
 
@@ -28,30 +28,15 @@ MainWindow::MainWindow(QWidget *parent)
     ui->position_ctrl->setValue(ASongPlayer::MinPosition);
     ui->position_ctrl->setTracking(false);
     // 进度条定时器
-    position_timer = new QTimer(this);
-    connect(position_timer, &QTimer::timeout, [ = ]()
+    positionTimer = new QTimer(this);
+    connect(positionTimer, &QTimer::timeout, [ = ]()
     {
         // 每隔1秒设置更新一次进度条位置
         this->ui->position_ctrl->setValue(int(asongPlayer->position() / ASongPlayer::positionTranRate));
         // 更新已播放时长显示
         qint64 position = asongPlayer->position() / ASongPlayer::positionTranRate;
-        QString ph = QString::number(position / 3600);
-        if(ph.length() == 1)
-        {
-            ph = "0" + ph;
-        }
-        position %= 3600;
-        QString pm = QString::number(position / 60);
-        if(pm.length() == 1)
-        {
-            pm = "0" + pm;
-        }
-        QString ps = QString::number(position % 60);
-        if(ps.length() == 1)
-        {
-            ps = "0" + ps;
-        }
-        QString posi_dura_str = ph + ":" + pm + ":" + ps + "/" + duration_str;
+        QString posi_str=getTimeString(position);
+        QString posi_dura_str = posi_str + "/" + durationStr;
         this->ui->position_duration->setText(posi_dura_str);
     });
     // 快捷键
@@ -81,6 +66,26 @@ MainWindow::~MainWindow()
 //{
 //    qDebug() << errorString;
 //}
+QString MainWindow::getTimeString(qint64 position){
+    QString ph = QString::number(position / 3600);
+    if(ph.length() == 1)
+    {
+        ph = "0" + ph;
+    }
+    position %= 3600;
+    QString pm = QString::number(position / 60);
+    if(pm.length() == 1)
+    {
+        pm = "0" + pm;
+    }
+    QString ps = QString::number(position % 60);
+    if(ps.length() == 1)
+    {
+        ps = "0" + ps;
+    }
+    QString posiStr = ph + ":" + pm + ":" + ps ;
+    return posiStr;
+}
 
 // 获取总时长的响应事件
 void MainWindow::onDurationChanged(qint64 _duration)
@@ -91,30 +96,12 @@ void MainWindow::onDurationChanged(qint64 _duration)
     ui->position_ctrl->setMaximum(_duration / ASongPlayer::positionTranRate);
     // 更新时长显示
     qint64 tmp_duration = _duration / ASongPlayer::positionTranRate;
-    QString h = QString::number(tmp_duration / 3600);
-    if(h.length() == 1)
-    {
-        h = "0" + h;
-    }
-    tmp_duration %= 3600;
-    QString m = QString::number(tmp_duration / 60);
-    if(m.length() == 1)
-    {
-        m = "0" + m;
-    }
-    QString s = QString::number(tmp_duration % 60);
-    if(s.length() == 1)
-    {
-        s = "0" + s;
-    }
-    duration_str = h + ":" + m + ":" + s;
-    QString posi_dura_str = "00:00:00/" + duration_str;
+    durationStr = getTimeString(tmp_duration);
+    QString posi_dura_str = "00:00:00/" + durationStr;
     this->ui->position_duration->setText(posi_dura_str);
 }
 
-// 打开文件
-void MainWindow::on_action_openFile_triggered()
-{
+void MainWindow::openFile(){
     // 定义文件对话框类
     filename = QFileDialog::getOpenFileName(this,
                                             tr("选择音视频文件"),
@@ -127,7 +114,7 @@ void MainWindow::on_action_openFile_triggered()
         asongVideo->show();
         ui->position_ctrl->setValue(0);
         asongPlayer->play();
-        position_timer->start(1000);
+        positionTimer->start(1000);
         this->ui->play_button->setText("暂停");
     }
     else
@@ -136,31 +123,20 @@ void MainWindow::on_action_openFile_triggered()
     }
 }
 
+// 打开文件信号槽
+void MainWindow::on_action_openFile_triggered()
+{
+    //打开文件
+    openFile();
+}
+
 // 播放按钮
 void MainWindow::on_play_button_clicked()
 {
     if(asongPlayer->mediaStatus() == QMediaPlayer::NoMedia)
     {
-        // 定义文件对话框类
-        filename = QFileDialog::getOpenFileName(this,
-                                                tr("选择音视频文件"),
-                                                tr("."),
-                                                tr(
-                                                        "视频文件(*.mp4 *.flv *.avi);;音频文件(*.mp3);;所有文件(*.*)"));
-        if(!filename.isEmpty())
-        {
-            asongPlayer->setSource(QUrl::fromLocalFile(filename));
-            asongVideo->show();
-            ui->position_ctrl->setValue(0);
-            //            player->setPlaybackRate(8.0);
-            asongPlayer->play();
-            position_timer->start(1000);
-            this->ui->play_button->setText("暂停");
-        }
-        else
-        {
-            qDebug("打开文件失败！");
-        }
+        //打开文件
+        openFile();
     }
     else
     {
@@ -226,26 +202,11 @@ void MainWindow::on_position_ctrl_valueChanged(int value)
         asongPlayer->setPosition(value);
         // 更新已播放时长显示
         qint64 position = asongPlayer->position() / ASongPlayer::positionTranRate;
-        QString ph = QString::number(position / 3600);
-        if(ph.length() == 1)
-        {
-            ph = "0" + ph;
-        }
-        position %= 3600;
-        QString pm = QString::number(position / 60);
-        if(pm.length() == 1)
-        {
-            pm = "0" + pm;
-        }
-        QString ps = QString::number(position % 60);
-        if(ps.length() == 1)
-        {
-            ps = "0" + ps;
-        }
-        QString posi_dura_str = ph + ":" + pm + ":" + ps + "/" + duration_str;
+        QString posi_str=getTimeString(position);
+        QString posi_dura_str = posi_str + "/" + durationStr;
         this->ui->position_duration->setText(posi_dura_str);
         // 重启定时器
-        position_timer->start(1000);
+        positionTimer->start(1000);
     }
 }
 
@@ -254,7 +215,7 @@ void MainWindow::on_position_ctrl_sliderPressed()
 {
     positionCtrlPressed = true;
     // 按下进度条时，进度条定时器停止
-    position_timer->stop();
+    positionTimer->stop();
 }
 
 // 全屏按钮

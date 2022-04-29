@@ -1,8 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-
-#include "asongplayer.h"
+#include "ASongPlayer.h"
 #include <QMainWindow>
 #include <QFileDialog>
 #include <QTimer>
@@ -52,10 +51,12 @@ private:
     ASongAudio *asongAudio = nullptr;
     ASongVideo *asongVideo = nullptr;
 
-    QTimer *position_timer = NULL;
+    QTimer *positionTimer = NULL;
 
     bool positionCtrlPressed = false;
-
-    QString duration_str = "00:00:00";
+    //选择视频文件的总时长字符串
+    QString durationStr = "00:00:00";
+    void openFile();
+    QString getTimeString(qint64 position);
 };
 #endif // MAINWINDOW_H
