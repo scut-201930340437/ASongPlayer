@@ -49,11 +49,11 @@ win32{
         message("32-bit")
         INCLUDEPATH += $$PWD/lib/win32/third-party/include \
                        $$PWD/src
-        LIBS += -L$$PWD/lib/win32/ffmpeg/lib -lavcodec -lavdevice -lavfilter -lavformat -lavutil -lswresample -lswscale -lSDL2 -lSDL2main
+        LIBS += -L$$PWD/lib/win32/third-party/lib -lavcodec -lavdevice -lavfilter -lavformat -lavutil -lswresample -lswscale -lSDL2 -lSDL2main
     }else{
         message("64-bit")
         INCLUDEPATH += $$PWD/lib/win64/third-party/include \
                        $$PWD/src
-        LIBS += -L$$PWD/lib/win64/ffmpeg/lib -lavcodec -lavdevice -lavfilter -lavformat -lavutil -lswresample -lswscale -lSDL2 -lSDL2main
+        LIBS += -L$$PWD/lib/win64/third-party/lib -lavcodec -lavdevice -lavfilter -lavformat -lavutil -lswresample -lswscale -lSDL2 -lSDL2main
     }
 }

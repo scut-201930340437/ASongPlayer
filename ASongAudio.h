@@ -20,7 +20,7 @@ extern "C"
 
 
 #include "libavutil/time.h"
-#include <libavutil/mathematics.h>
+#include "libavutil/mathematics.h"
 
 #include "libswscale/swscale.h"
 #include "libswresample/swresample.h"
@@ -35,6 +35,11 @@ public:
 
     // 单例模式，全局访问点
     static ASongAudio* getInstance();
+    // thread
+    void run() override;
+
+
+
     void init();
     void setVolume(int volume);
     void unmute();

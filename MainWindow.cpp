@@ -1,5 +1,5 @@
-#include "mainwindow.h"
-#include "ui_mainwindow.h"
+#include "MainWindow.h"
+#include "ui_MainWindow.h"
 
 #include<QFileDialog>
 MainWindow::MainWindow(QWidget *parent)
@@ -31,8 +31,10 @@ void MainWindow::on_play_btn_clicked()
         if(!filename.isEmpty())
         {
             asongFFmpeg->load(filename);
-        }else{
-            qDebug()<<"file empty";
+        }
+        else
+        {
+            qDebug() << "file empty";
         }
     }
     else
