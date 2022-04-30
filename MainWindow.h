@@ -8,6 +8,8 @@
 #include <QTimer>
 #include <QDebug>
 #include <QFileInfo>
+#include <QMimeData>
+#include <QEvent>
 QT_BEGIN_NAMESPACE
 namespace Ui
 {
@@ -49,6 +51,8 @@ private slots:
     //在列表视频文件消失后，是否应该弹出提示框提醒？
     void onPlayTableCellDoubleClicked(int row, int column);
 
+    void dropEvent(QDropEvent *e);
+
 private:
     Ui::MainWindow *ui;
     QString filename = "";
@@ -65,5 +69,7 @@ private:
     void openFile();
     QString getTimeString(qint64 position);
     void setListFromFilename();
+    void dragEnterEvent(QDragEnterEvent *e);
+
 };
 #endif // MAINWINDOW_H

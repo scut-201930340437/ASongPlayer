@@ -52,6 +52,9 @@ MainWindow::MainWindow(QWidget *parent)
     //    connect(asongPlayer, SIGNAL(errorOccurred(QMediaPlayer::Error error, const QString & errorString)), this, SLOT(onerrorOccurred(QMediaPlayer::Error error, const QString & errorString)));
     //    connect(player, SIGNAL(stateChanged(QMediaPlayer::State)), this, SLOT(onOriginalStateChanged(QMediaPlayer::State)));
     connect(playTable,SIGNAL(cellDoubleClicked(int,int)),this,SLOT(onPlayTableCellDoubleClicked(int, int)));
+
+    setAcceptDrops(true);//启用鼠标拖拽放下操做
+    connect(asongVideo,SIGNAL(dragDropSignal(QDropEvent *)),this,SLOT(dropEvent(QDropEvent *)));
 }
 
 MainWindow::~MainWindow()
@@ -111,6 +114,7 @@ void MainWindow::openFile(){
                                             tr("."),
                                             tr(
                                                     "视频文件(*.mp4 *.flv *.avi);;音频文件(*.mp3);;所有文件(*.*)"));
+    //打开失败会怎样？url存在，但打不开
     if(!filename.isEmpty())
     {
         //设置播放
@@ -316,11 +320,43 @@ void MainWindow::setListFromFilename(){
         QFileInfoList neededList;
         foreach (QFileInfo file,_list)                  			//遍历只加载音视频文件到文件列表
         {
-            if(playTable->isNeededFile(file))          //判断进行再次确认是.txt文件
+            if(playTable->isNeededFile(file))          //判断进行再次确认是可播放文件
             {
                 neededList.append(file);
             }
         }
         playTable->setTable(neededList);
     }
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent *e)
+{
+      e->acceptProposedAction(); //能够在这个窗口部件上拖放对象
+}
+
+void MainWindow::dropEvent(QDropEvent *e)
+{
+    QList<QUrl> urls = e->mimeData()->urls();
+    if(urls.isEmpty())
+       return ;
+    QFileInfo _fileInfo(urls.first().toString());
+    //判断是否属于支持的音视频文件
+    if(playTable->isNeededFile(_fileInfo))
+    {
+        filename=urls.first().toLocalFile();
+        setListFromFilename();
+
+        //设置播放
+        asongPlayer->setSource(QUrl::fromLocalFile(filename));
+        asongVideo->show();
+        ui->position_ctrl->setValue(0);
+        asongPlayer->play();
+        positionTimer->start(1000);
+        this->ui->play_button->setText("暂停");
+    }
+    else
+    {
+        qDebug()<<"拖拽文件类型不匹配";
+    }
+
 }
