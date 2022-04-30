@@ -2,10 +2,12 @@
 #define MAINWINDOW_H
 
 #include "ASongPlayer.h"
+#include "PlayTable.h"
 #include <QMainWindow>
 #include <QFileDialog>
 #include <QTimer>
 #include <QDebug>
+#include <QFileInfo>
 QT_BEGIN_NAMESPACE
 namespace Ui
 {
@@ -44,12 +46,16 @@ private slots:
 
     //    void onerrorOccurred(QMediaPlayer::Error error, const QString & errorString);
 
+    //在列表视频文件消失后，是否应该弹出提示框提醒？
+    void onPlayTableCellDoubleClicked(int row, int column);
+
 private:
     Ui::MainWindow *ui;
     QString filename = "";
     ASongPlayer *asongPlayer = nullptr;
     ASongAudio *asongAudio = nullptr;
     ASongVideo *asongVideo = nullptr;
+    PlayTable *playTable = nullptr;
 
     QTimer *positionTimer = NULL;
 
@@ -58,5 +64,6 @@ private:
     QString durationStr = "00:00:00";
     void openFile();
     QString getTimeString(qint64 position);
+    void setListFromFilename();
 };
 #endif // MAINWINDOW_H

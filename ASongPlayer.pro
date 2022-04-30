@@ -28,13 +28,15 @@ SOURCES += \
     ASongPlayer.cpp \
     ASongVideo.cpp \
     MainWindow.cpp \
-    Main.cpp
+    Main.cpp \
+    PlayTable.cpp
 
 HEADERS += \
     ASongAudio.h \
     ASongPlayer.h \
     ASongVideo.h \
-    MainWindow.h
+    MainWindow.h \
+    PlayTable.h
 
 FORMS += \
     MainWindow.ui

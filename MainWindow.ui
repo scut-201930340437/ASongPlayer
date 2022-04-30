@@ -109,6 +109,16 @@
      </rect>
     </property>
    </widget>
+   <widget class="QTableWidget" name="play_table">
+    <property name="geometry">
+     <rect>
+      <x>660</x>
+      <y>10</y>
+      <width>391</width>
+      <height>481</height>
+     </rect>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">

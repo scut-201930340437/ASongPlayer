@@ -11,10 +11,12 @@ MainWindow::MainWindow(QWidget *parent)
     asongPlayer = new ASongPlayer;
     asongAudio = new ASongAudio;
     asongVideo = new ASongVideo;
+    playTable =new PlayTable;
     asongPlayer->init(asongAudio, asongVideo);
     asongPlayer->setParent(this);
     asongVideo->setParent(this->ui->play_widget);
     asongVideo->setAutoFillBackground(true);
+    playTable->setParent(this->ui->play_table);
     //    videoWidget->setAspectRatioMode(Qt::KeepAspectRatio);
     //    this->setCentralWidget(ui->play_widget);
     // 设置音量控制块初始参数
@@ -49,6 +51,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(asongPlayer, SIGNAL(durationChanged(qint64)), this, SLOT(onDurationChanged(qint64)));
     //    connect(asongPlayer, SIGNAL(errorOccurred(QMediaPlayer::Error error, const QString & errorString)), this, SLOT(onerrorOccurred(QMediaPlayer::Error error, const QString & errorString)));
     //    connect(player, SIGNAL(stateChanged(QMediaPlayer::State)), this, SLOT(onOriginalStateChanged(QMediaPlayer::State)));
+    connect(playTable,SIGNAL(cellDoubleClicked(int,int)),this,SLOT(onPlayTableCellDoubleClicked(int, int)));
 }
 
 MainWindow::~MainWindow()
@@ -110,12 +113,16 @@ void MainWindow::openFile(){
                                                     "视频文件(*.mp4 *.flv *.avi);;音频文件(*.mp3);;所有文件(*.*)"));
     if(!filename.isEmpty())
     {
+        //设置播放
         asongPlayer->setSource(QUrl::fromLocalFile(filename));
         asongVideo->show();
         ui->position_ctrl->setValue(0);
         asongPlayer->play();
         positionTimer->start(1000);
         this->ui->play_button->setText("暂停");
+
+        //通过filename设置播放列表
+        setListFromFilename();
     }
     else
     {
@@ -268,3 +275,52 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 //{
 //    qDebug() << errorString;
 //}
+
+void MainWindow::onPlayTableCellDoubleClicked(int row, int column)
+{
+    QTableWidgetItem * item=playTable->item(row,1);
+    if(!item)
+    {
+        qDebug()<<"视频列表双击空对象";
+        return;
+    }
+
+    QDir dir(item->text());
+    if(!dir.exists(item->text()))
+    {
+        qDebug()<<"视频已不存在";
+        setListFromFilename();
+        return;
+    }
+    filename=item->text();
+
+    //设置播放
+    asongPlayer->setSource(QUrl::fromLocalFile(filename));
+    asongVideo->show();
+    ui->position_ctrl->setValue(0);
+    asongPlayer->play();
+    positionTimer->start(1000);
+    this->ui->play_button->setText("暂停");
+
+}
+
+void MainWindow::setListFromFilename(){
+    //设置播放列表
+    QString path=filename.section('/',0,-2);
+    QDir Dir(path);
+    if(!Dir.exists())
+        { qDebug("路径出错");}
+    else
+    {
+        QFileInfoList _list = Dir.entryInfoList(QDir::Files);
+        QFileInfoList neededList;
+        foreach (QFileInfo file,_list)                  			//遍历只加载音视频文件到文件列表
+        {
+            if(playTable->isNeededFile(file))          //判断进行再次确认是.txt文件
+            {
+                neededList.append(file);
+            }
+        }
+        playTable->setTable(neededList);
+    }
+}
