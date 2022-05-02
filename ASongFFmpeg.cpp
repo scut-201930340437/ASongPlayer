@@ -1,17 +1,23 @@
 #include "ASongFFmpeg.h"
+#include "ASongAudio.h"
+#include "ASongVideo.h"
 
-#include<QDebug>
+#include "SDLPaint.h"
 
-int ASongFFmpeg::curMediaStatus = 0;
-int ASongFFmpeg::maxPacketListLength = 10;
+#include "DataSink.h"
+
+#include <QDebug>
+
 QAtomicPointer<ASongFFmpeg> ASongFFmpeg::_instance = nullptr;
 QMutex ASongFFmpeg::_mutex;
 
-// 默认构造
-ASongFFmpeg::ASongFFmpeg()
+ASongFFmpeg::~ASongFFmpeg()
 {
-    //    av_register_all();
-    //    avcodec_register_all();
+    avformat_close_input(&pFormatCtx);
+    if(nullptr != DataSink::getInstance())
+    {
+        delete DataSink::getInstance();
+    }
 }
 // 全局访问点
 ASongFFmpeg* ASongFFmpeg::getInstance()
@@ -24,75 +30,11 @@ ASongFFmpeg* ASongFFmpeg::getInstance()
     return _instance;
 }
 
-//ASongFFmpeg::ASongFFmpeg(QWidget*screen_widget)
-//{
-//    //    av_register_all();
-////    avformat_network_init();
-
-//    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER))
-//    {
-//        qDebug() << "Could not initialize SDL" << SDL_GetError();
-//    }
-//    screen = SDL_CreateWindowFrom((void *)screen_widget->winId());
-//    if (!screen)
-//    {
-//        qDebug() << "SDL: could not create window - exiting:" << SDL_GetError();
-//    }
-//    sdlRenderer = SDL_CreateRenderer(screen, -1, 0);
-//}
-
-//ASongFFmpeg::~ASongFFmpeg()
-//{
-//    // 销毁渲染器
-//    if (sdlRenderer)
-//    {
-//        SDL_DestroyRenderer(sdlRenderer);
-//    }
-//    sdlRenderer = nullptr;
-//    // 销毁窗口
-//    if (screen)
-//    {
-//        SDL_DestroyWindow(screen);
-//    }
-//    screen = nullptr;
-//    // 退出SDL
-//    SDL_Quit();
-//}
-
-//int ASongFFmpeg::thread_exit = 0;
-
-//int ASongFFmpeg::sfp_signal_thread(void *opaque)
-//{
-//    double *avg_frame_rate = (double*)opaque;
-//    //    qDebug() << *avg_frame_rate;
-//    curMediaStatus = 1;
-//    while (curMediaStatus == 1 || curMediaStatus == 2)
-//    {
-//        SDL_Event event;
-//        if(curMediaStatus == 1)
-//        {
-//            event.type = SFM_REFRESH_EVENT;
-//        }
-//        else
-//        {
-//            event.type = SFM_PAUSE_EVENT;
-//        }
-//        SDL_PushEvent(&event);
-//        // 播放帧率控制，可不可以通过其他方式控制，该方式很难处理不同帧率的视频
-//        SDL_Delay(ceil(600 / (*avg_frame_rate)));
-//    }
-//    curMediaStatus = 0;
-//    //Break
-//    SDL_Event event;
-//    event.type = SFM_BREAK_EVENT;
-//    SDL_PushEvent(&event);
-//    return 0;
-//}
-
+// 加载文件信息
 int ASongFFmpeg::load(QString path)
 {
     // 加锁，保证_instance同一时间只能被一个线程使用
-    QMutexLocker locker(&_mutex);
+    //        QMutexLocker locker(&_mutex);
     pFormatCtx = avformat_alloc_context();
     // 获取文件路径
     mediaMetaData.path = path;
@@ -103,12 +45,13 @@ int ASongFFmpeg::load(QString path)
     list = mediaMetaData.filename.split(".");
     mediaMetaData.format = list[list.size() - 1];
     // 获取总时长
-    mediaMetaData.duration = pFormatCtx->duration;
+    mediaMetaData.durationSec = pFormatCtx->duration / AV_TIME_BASE;
+    mediaMetaData.durationMSec = mediaMetaData.durationSec * 1000;
     //    curMediaStatus = 1;
     std::string str = path.toStdString();
     // 打开文件
     int ret = avformat_open_input(&pFormatCtx, str.c_str(), nullptr, nullptr);
-    if(ret != 0)
+    if(ret < 0)
     {
         qDebug() << "Couldn't open input stream.";
         return -1;
@@ -120,27 +63,82 @@ int ASongFFmpeg::load(QString path)
         qDebug() << "Couldn't find stream information.";
         return -1;
     }
+    // 打印封装格式数据
+    av_dump_format(pFormatCtx, 0, str.c_str(), 0);
     // 分出视频流和音频流
-    AVCodecContext* pCodecCtx = nullptr;
-    AVCodec* pCodec = nullptr;
-    for (int i = 0; i < pFormatCtx->nb_streams; ++i)
+    //    AVCodecParameters *pCodecPara = nullptr;
+    AVCodecContext *pACodecCtx = nullptr, *pVCodecCtx = nullptr;
+    AVCodec *pCodec = nullptr;
+    for (size_t i = 0; i < pFormatCtx->nb_streams; ++i)
     {
-        // 先获取解码器上下文
-        pCodecCtx = pFormatCtx->streams[i]->codec;
-        // 如果是视频流
-        if (pCodecCtx->codec_type == AVMEDIA_TYPE_VIDEO)
+        // 如果是音频流
+        AVCodecParameters *pCodecPara = pFormatCtx->streams[i]->codecpar;
+        if(pCodecPara->codec_type == AVMEDIA_TYPE_AUDIO)
         {
-            videoIdx = i;
+            if(mediaMetaData.mediaType == 0)
+            {
+                mediaMetaData.mediaType = 1;
+            }
+            // 设置streamIdx
+            audioIdx = (int)i;
+            //            ASongAudio::getInstance()->setAudioIdx(audioIdx);
+            //            // 设置时基
+            //            ASongAudio::getInstance()->setTimeBase(pFormatCtx->streams[i]->time_base);
             // 获取解码器
-            pCodec = avcodec_find_decoder(pCodecCtx->codec_id);
+            pCodec = avcodec_find_decoder(pCodecPara->codec_id);
+            if(!pCodec)
+            {
+                qDebug() << "Couldn't find audio code.";
+                return -1;
+            }
+            // 获取解码器上下文
+            pACodecCtx = avcodec_alloc_context3(pCodec);
+            // 将pCodecPara中的参数传给pCodecCtx
+            ret = avcodec_parameters_to_context(pACodecCtx, pCodecPara);
+            if(ret < 0)
+            {
+                printf("Cannot alloc codec context.\n");
+                return -1;
+            }
+            // 打开解码器
+            ret = avcodec_open2(pACodecCtx, pCodec, nullptr);
+            if(ret < 0)
+            {
+                qDebug() << "Couldn't open audio code.";
+                return -1;
+            }
+            // 获取音频流元数据
+            mediaMetaData.audio_meta_data.sample_fmt = pACodecCtx->sample_fmt;
+            mediaMetaData.audio_meta_data.sample_rate = pACodecCtx->sample_rate;
+            mediaMetaData.audio_meta_data.channels = pACodecCtx->channels;
+            mediaMetaData.audio_meta_data.channel_layout = pACodecCtx->channel_layout;
+        }
+        else
+        {
+            // 如果是视频流
+            mediaMetaData.mediaType = 2;
+            // 设置streamIdx
+            videoIdx = (int) i;
+            // 获取解码器
+            pCodec = avcodec_find_decoder(pCodecPara->codec_id);
             if(!pCodec)
             {
                 qDebug() << "Couldn't find video code.";
                 return -1;
             }
+            // 获取解码器上下文
+            pVCodecCtx = avcodec_alloc_context3(pCodec);
+            // 将pCodecPara中的参数传给pCodecCtx
+            ret = avcodec_parameters_to_context(pVCodecCtx, pCodecPara);
+            if(ret < 0)
+            {
+                qDebug() << "Cannot alloc codec context";
+                return -1;
+            }
+            //            pCodecCtx->pkt_timebase=pFormatCtx->
             // 打开解码器
-            ret = avcodec_open2(pCodecCtx, pCodec, nullptr);
-            if(ret != 0)
+            ret = avcodec_open2(pVCodecCtx, pCodec, nullptr);
+            if(ret < 0)
             {
                 qDebug() << "Couldn't open vidoe code.";
                 return -1;
@@ -148,168 +146,98 @@ int ASongFFmpeg::load(QString path)
             // 获取视频流元数据
             // 获取帧率
             mediaMetaData.video_meta_data.frame_rate = ceil(av_q2d(pFormatCtx->streams[i]->avg_frame_rate));
-            mediaMetaData.video_meta_data.width = pCodecCtx->width;
-            mediaMetaData.video_meta_data.height = pCodecCtx->height;
+            mediaMetaData.video_meta_data.width = pCodecPara->width;
+            mediaMetaData.video_meta_data.height = pCodecPara->height;
+            mediaMetaData.video_meta_data.pix_fmt = pVCodecCtx->pix_fmt;
+        }
+    }
+    ASongAudio::getInstance()->setMetaData(pFormatCtx, pACodecCtx, audioIdx);
+    if(mediaMetaData.mediaType == 2)
+    {
+        ASongVideo::getInstance()->setMetaData(pVCodecCtx, videoIdx,
+                                               mediaMetaData.video_meta_data.frame_rate,
+                                               pFormatCtx->streams[videoIdx]->time_base);
+        SDLPaint::getInstance()->setMetaData(mediaMetaData.video_meta_data.width,
+                                             mediaMetaData.video_meta_data.height,
+                                             mediaMetaData.video_meta_data.frame_rate,
+                                             mediaMetaData.video_meta_data.pix_fmt);
+    }
+    pCodec = nullptr;
+    return 0;
+}
+
+// 启动各线程
+int ASongFFmpeg::play(int mediaType)
+{
+    start();
+    ASongAudio::getInstance()->start();
+    if(mediaType == 2)
+    {
+        ASongVideo::getInstance()->start();
+    }
+    //    qDebug() << "start";
+    return 0;
+}
+
+//thread
+void ASongFFmpeg::start(Priority pro)
+{
+    allowRead = true;
+    // 切换为播放态
+    curMediaStatus = 1;
+    //
+    //    qDebug() << "vIdx" << videoIdx << ' ' << audioIdx;
+    QThread::start(pro);
+}
+
+void ASongFFmpeg::run()
+{
+    bool hasMedia = true;
+    while(allowRead)
+    {
+        // 如果当前未被解码的packet过多，阻塞该读取线程
+        if(DataSink::getInstance()->packetListSize(0) > DataSink::maxPacketListLength
+                && DataSink::getInstance()->packetListSize(1) > DataSink::maxPacketListLength)
+        {
+            msleep(20);
         }
         else
         {
-            // 如果是音频流
-            if(pCodecCtx->codec_type == AVMEDIA_TYPE_AUDIO)
+            AVPacket *packet = readFrame();
+            if(!packet)
             {
-                audioIdx = i;
-                // 获取解码器
-                pCodec = avcodec_find_decoder(pCodecCtx->codec_id);
-                if(!pCodec)
+                qDebug() << "Couldn't open file.";
+                hasMedia = false;
+                allowRead = false;
+                break;
+            }
+            // 如果是音频
+            if(packet->stream_index == audioIdx)
+            {
+                DataSink::getInstance()->appendPacketList(0, packet);
+                //                audioList.append(*packet);
+            }
+            else
+            {
+                if(packet->stream_index == videoIdx)
                 {
-                    qDebug() << "Couldn't find video code.";
-                    return -1;
+                    //                    QMutexLocker locker(&videoListMutex);
+                    DataSink::getInstance()->appendPacketList(1, packet);
+                    //                    videoList.append(*packet);
                 }
-                // 打开解码器
-                ret = avcodec_open2(pCodecCtx, pCodec, nullptr);
-                if(ret != 0)
-                {
-                    qDebug() << "Couldn't open vidoe code.";
-                    return -1;
-                }
-                // 获取音频流元数据
-                switch (pCodecCtx->sample_fmt)
-                {
-                    case AV_SAMPLE_FMT_S16:
-                        mediaMetaData.audio_meta_data.sample_fmt = 16;
-                        break;
-                    case AV_SAMPLE_FMT_S32:
-                        mediaMetaData.audio_meta_data.sample_fmt = 32;
-                        break;
-                    default:
-                        mediaMetaData.audio_meta_data.sample_fmt = pCodecCtx->sample_fmt;
-                        break;
-                }
-                mediaMetaData.audio_meta_data.sample_rate = pCodecCtx->sample_rate;
-                mediaMetaData.audio_meta_data.channels = pCodecCtx->channels;
             }
         }
     }
-    // 音频重采样
-    //    pCodecCtx = pFormatCtx->streams[audioIdx]->codec;
-    pAudioSwrCtx = swr_alloc();
-    // 设置重采样参数
-    swr_alloc_set_opts(pAudioSwrCtx,
-                       pCodecCtx->channel_layout, AV_SAMPLE_FMT_S16, 44100,
-                       pCodecCtx->channel_layout, pCodecCtx->sample_fmt, pCodecCtx->sample_rate,
-                       0, nullptr);
-    // 初始化
-    swr_init(pAudioSwrCtx);
-    // 释放资源
-    if(pCodecCtx)
+    // 文件结束
+    if(hasMedia)
     {
-        avcodec_close(pCodecCtx);
-        pCodecCtx = nullptr;
-        pCodec = nullptr;
+        curMediaStatus = 3;
     }
-    return 0;
-    //    pFrame = av_frame_alloc();
-    //    pFrameYUV = av_frame_alloc();
-    //    out_buffer = (uint8_t*)av_malloc(avpicture_get_size(AV_PIX_FMT_YUV420P, pCodecCtx->width, pCodecCtx->height));
-    //    avpicture_fill((AVPicture*)pFrameYUV, out_buffer, AV_PIX_FMT_YUV420P, pCodecCtx->width, pCodecCtx->height);
-    //    img_convert_ctx = sws_getContext(pCodecCtx->width, pCodecCtx->height, pCodecCtx->pix_fmt,
-    //                                     pCodecCtx->width, pCodecCtx->height, AV_PIX_FMT_YUV420P, SWS_BICUBIC, NULL, NULL, NULL);
-    //    //SDL 2.0 Support for multiple windows
-    //    screen_w = pCodecCtx->width;
-    //    screen_h = pCodecCtx->height;
-    //    //cout << screen_w << ' ' << screen_h << endl;
-    //    //    screen = SDL_CreateWindow("Simplest ffmpeg player's Window", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-    //    //                              screen_w, screen_h, SDL_WINDOW_OPENGL);
-    //    //IYUV: Y + U + V  (3 planes)
-    //    //YV12: Y + V + U  (3 planes)
-    //    sdlTexture = SDL_CreateTexture(sdlRenderer, SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STREAMING, pCodecCtx->width, pCodecCtx->height);
-    //    sdlRect.x = 0;
-    //    sdlRect.y = 0;
-    //    sdlRect.w = screen_w;
-    //    sdlRect.h = screen_h;
-    //    packet = (AVPacket*)av_malloc(sizeof(AVPacket));
-    //    avg_frame_rate = av_q2d(pFormatCtx->streams[videoindex]->avg_frame_rate);
-    //    //    qDebug() << avg_frame_rate;
-    //    video_tid = SDL_CreateThread(sfp_signal_thread, NULL, &avg_frame_rate);
-    //    // event loop
-    //    while (true)
-    //    {
-    //        //Wait
-    //        SDL_WaitEvent(&event);
-    //        if (event.type == SFM_REFRESH_EVENT)
-    //        {
-    //            //------------------------------
-    //            if (av_read_frame(pFormatCtx, packet) >= 0)
-    //            {
-    //                if (packet->stream_index == videoindex)
-    //                {
-    //                    ret = avcodec_decode_video2(pCodecCtx, pFrame, &got_picture, packet); // 解码
-    //                    if (ret < 0)
-    //                    {
-    //                        qDebug() << "Decode Error.";
-    //                        return -1;
-    //                    }
-    //                    if (got_picture)
-    //                    {
-    //                        sws_scale(img_convert_ctx, (const uint8_t* const*)pFrame->data, pFrame->linesize, 0, pCodecCtx->height, pFrameYUV->data, pFrameYUV->linesize);
-    //                        //SDL---------------------------
-    //                        SDL_UpdateTexture(sdlTexture, NULL, pFrameYUV->data[0], pFrameYUV->linesize[0]);
-    //                        SDL_RenderClear(sdlRenderer);
-    //                        //SDL_RenderCopy(sdlRenderer, sdlTexture, &sdlRect, &sdlRect);
-    //                        SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, NULL);
-    //                        SDL_RenderPresent(sdlRenderer);
-    //                        //SDL End-----------------------
-    //                    }
-    //                }
-    //                av_free_packet(packet);
-    //            }
-    //            else
-    //            {
-    //                //Exit Thread
-    //                curMediaStatus = 0;
-    //            }
-    //        }
-    //        else if (event.type == SDL_QUIT)
-    //        {
-    //            curMediaStatus = 0;
-    //        }
-    //        else if (event.type == SFM_BREAK_EVENT)
-    //        {
-    //            break;
-    //        }
-    //    }
-    //    // 销毁纹理
-    //    if (sdlTexture)
-    //    {
-    //        SDL_DestroyTexture(sdlTexture);
-    //    }
-    //    sdlTexture = nullptr;
-    //    // 释放FFmpeg资源
-    //    if(img_convert_ctx)
-    //    {
-    //        sws_freeContext(img_convert_ctx);
-    //    }
-    //    img_convert_ctx = nullptr;
-    //    if(pFrameYUV)
-    //    {
-    //        av_frame_free(&pFrameYUV);
-    //    }
-    //    pFrameYUV = nullptr;
-    //    if(pFrame)
-    //    {
-    //        av_frame_free(&pFrame);
-    //    }
-    //    pFrame = nullptr;
-    ////    if(pCodecCtx)
-    ////    {
-    ////        avcodec_close(pCodecCtx);
-    ////    }
-    ////    pCodecCtx = nullptr;
-    ////    if(pFormatCtx)
-    ////    {
-    ////        avformat_close_input(&pFormatCtx);
-    ////    }
-    ////    pFormatCtx = nullptr;
-    //    return 0;
+    // 没有文件
+    else
+    {
+        curMediaStatus = 0;
+    }
 }
 
 AVPacket* ASongFFmpeg::readFrame()
@@ -321,55 +249,123 @@ AVPacket* ASongFFmpeg::readFrame()
     }
     AVPacket* packet = av_packet_alloc();
     int ret = av_read_frame(pFormatCtx, packet);
-    if(ret != 0)
+    if(ret < 0)
     {
-        packet->size = -1;
+        av_packet_free(&packet);
+        packet = nullptr;
     }
+    //    qDebug() << "read pakcet";
     return packet;
 }
 
-AVFrame* ASongFFmpeg::decode(AVPacket* packet)
+void ASongFFmpeg::setMediaStatus(int status)
 {
-    QMutexLocker locker(&_mutex);
-    if(!pFormatCtx)
-    {
-        return nullptr;
-    }
-    AVFrame* frame = av_frame_alloc();
-    int ret = avcodec_send_frame()
+    QMutexLocker locker(&_mediaStatusMutex);
+    curMediaStatus = status;
 }
 
-
-int ASongFFmpeg::play()
+int ASongFFmpeg::getMediaType()
 {
-    curMediaStatus = 1;
-    return 0;
-}
-int ASongFFmpeg::pause()
-{
-    curMediaStatus = 2;
-    return 0;
-}
-int ASongFFmpeg::stop()
-{
-    curMediaStatus = 3;
-    return 0;
-}
-
-int ASongFFmpeg::getScreenW()
-{
-    return screen_w;
-}
-
-int ASongFFmpeg::getScreenH()
-{
-    return screen_h;
+    return mediaMetaData.mediaType;
 }
 
 int ASongFFmpeg::getMediaStatus()
 {
+    QMutexLocker locker(&_mediaStatusMutex);
     return curMediaStatus;
 }
+
+int ASongFFmpeg::pause()
+{
+    QMutexLocker locker(&_mediaStatusMutex);
+    curMediaStatus = 2;
+    allowRead = false;
+    ASongAudio::getInstance()->pause();
+    ASongVideo::getInstance()->pause();
+    return 0;
+}
+
+
+
+int ASongFFmpeg::stop()
+{
+    QMutexLocker locker(&_mediaStatusMutex);
+    curMediaStatus = 3;
+    return 0;
+}
+
+
+// decode后续可能需要重新编写------------------
+//AVFrame* ASongFFmpeg::decode(AVPacket* packet)
+//{
+//    QMutexLocker locker(&_mutex);
+//    if(!pFormatCtx)
+//    {
+//        return nullptr;
+//    }
+//    AVFrame* frame = av_frame_alloc();
+//    AVCodecContext *pCodecCtx = nullptr;
+//    if(packet->stream_index == audioIdx)
+//    {
+//        pCodecCtx = pACodecCtx;
+//    }
+//    else
+//    {
+//        if(packet->stream_index == videoIdx)
+//        {
+//            pCodecCtx = pVCodecCtx;
+//        }
+//    }
+//    int ret = avcodec_send_packet(pCodecCtx, packet);
+//    if(ret != 0)
+//    {
+//        return nullptr;
+//    }
+//    //
+//    ret = avcodec_receive_frame(pCodecCtx, frame);
+//    if(ret != 0)
+//    {
+//        return nullptr;
+//    }
+//    return frame;
+//}
+
+
+//AVFormatContext* ASongFFmpeg::getFormatCtx()
+//{
+//    return pFormatCtx;
+//}
+
+//int ASongFFmpeg::getSampleRate()
+//{
+//    return mediaMetaData.audio_meta_data.sample_rate;
+//}
+
+//int ASongFFmpeg::getChannels()
+//{
+//    return mediaMetaData.audio_meta_data.channels;
+//}
+
+//int ASongFFmpeg::getSrcWidth()
+//{
+//    return mediaMetaData.video_meta_data.width;
+//}
+
+//int ASongFFmpeg::getSrcHeight()
+//{
+//    return mediaMetaData.video_meta_data.height;
+//}
+
+//enum AVPixelFormat ASongFFmpeg::getPixFmt()
+//{
+//    return mediaMetaData.video_meta_data.pix_fmt;
+//}
+
+
+//int ASongFFmpeg::getFrameRate()
+//{
+//    return mediaMetaData.video_meta_data.frame_rate;
+//}
 
 //void ASongFFmpeg::setMediaStatus(int status)
 //{

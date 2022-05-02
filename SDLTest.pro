@@ -27,14 +27,18 @@ SOURCES += \
     ASongAudio.cpp \
     ASongFFmpeg.cpp \
     ASongVideo.cpp \
+    DataSink.cpp \
     Main.cpp \
-    MainWindow.cpp
+    MainWindow.cpp \
+    SDLPaint.cpp
 
 HEADERS += \
     ASongAudio.h \
     ASongFFmpeg.h \
     ASongVideo.h \
-    MainWindow.h
+    DataSink.h \
+    MainWindow.h \
+    SDLPaint.h
 
 FORMS += \
     MainWindow.ui

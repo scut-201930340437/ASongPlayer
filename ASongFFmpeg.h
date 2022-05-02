@@ -1,11 +1,11 @@
 #ifndef ASONGFFMPEG_H
 #define ASONGFFMPEG_H
 
-#define SFM_REFRESH_EVENT  (SDL_USEREVENT + 1)
-#define SFM_PAUSE_EVENT   (SDL_USEREVENT + 2)
-#define SFM_BREAK_EVENT  (SDL_USEREVENT + 3)
+
 
 #include <QString>
+#include <QDebug>
+
 #include <QThread>
 #include <QMutex>
 #include <QMutexLocker>
@@ -14,34 +14,40 @@ extern "C"
 #include "libavcodec/avcodec.h"
 #include "libavformat/avformat.h"
 
-#include "libswscale/swscale.h"
-#include "libswresample/swresample.h"
-#include "SDL2/SDL.h"
+
+    //#include "libswresample/swresample.h"
+
 };
 
 struct AudioMetaData
 {
-    int sample_fmt;
-    int sample_rate;
-    int channels;
+    enum AVSampleFormat sample_fmt;
+    int sample_rate = 0;
+    int channels = 0;
+    uint64_t channel_layout = 0;
     // 音视频同步以音频时间为基准
-    float curPlayPos = 0.0;
+    double curPlayPos = 0.0;
 };
 
 struct VideoMetaData
 {
-    int width;
-    int height;
-    int frame_rate;
+    int width = 0;
+    int height = 0;
+    int frame_rate = 0;
+
+    enum AVPixelFormat pix_fmt;
+
 };
 
 struct MediaMetaDate
 {
-    QString path;
-    QString filename;
-    QString format;
+    int mediaType = 0;
+    QString path = "";
+    QString filename = "";
+    QString format = "";
 
-    int64_t duration;
+    int64_t durationMSec = 0;
+    int durationSec = 0;
 
     AudioMetaData audio_meta_data;
     VideoMetaData video_meta_data;
@@ -50,72 +56,61 @@ struct MediaMetaDate
 class ASongFFmpeg: public QThread
 {
 public:
+    ~ASongFFmpeg();
     static ASongFFmpeg* getInstance();
+    //    static int sfp_signal_thread(void* opaque);
 
-    static int sfp_signal_thread(void* opaque);
-
+    // thread
+    void start(Priority = InheritPriority);
 
     int load(QString path);
     AVPacket* readFrame();
-    AVFrame* decode(AVPacket* packet);
+    //    AVFrame* decode(AVPacket *packet);
+    //    void decode__(AVPacket *packet, QList<AVFrame*>&frame_list);
+    //    double getPts(AVFrame *frame, int streamIdx);
 
 
-    int play();
+    // 获取成员变量
+    //    AVFormatContext* getFormatCtx();
+    //    AVCodecContext* getACodecCtx();
+    //    AVCodecContext* getVCodecCtx();
+    //    SwrContext* getSwrCtx();
+    int getMediaType();
+    int getMediaStatus();
+    //    int getSampleRate();
+    //    int getChannels();
+    //    int getSrcWidth();
+    //    int getSrcHeight();
+    //    int getFrameRate();
+    //    enum AVPixelFormat getPixFmt();
+
+    int play(int media_type);
     int pause();
     int stop();
 
-    int getMediaStatus();
-
-    int getScreenW();
-    int getScreenH();
-
-    //    void setMediaStatus(int status);
-
-    // packetList是共享资源，需要加锁
-    QMutex audioListMutex;
-    QMutex videoListMutex;
-
-    // 播放状态: 0-没有文件  1-正在播放  2-暂停   3-停止
-    static int curMediaStatus;
-
-    //
-    static int maxPacketListLength;
-
+    void setMediaStatus(int status);
 private:
-    ASongFFmpeg();
+    ASongFFmpeg() = default;
 
+    // thread
+    void run() override;
+    // 单一实例
     static QAtomicPointer<ASongFFmpeg>_instance;
     static QMutex _mutex;
-
+    // 播放状态锁
+    QMutex _mediaStatusMutex;
+    // 播放状态: 0-没有文件  1-正在播放  2-暂停   3-停止
+    int curMediaStatus = 0;
     // metaData
     MediaMetaDate mediaMetaData;
-    // packetList
-    QList<AVPacket>audioList;
-    QList<AVPacket>videoList;
 
+    // 允许读取数据
+    bool allowRead = false;
     //ffmpeg
-    AVFormatContext* pFormatCtx = nullptr;
+    AVFormatContext *pFormatCtx = nullptr;
     int	videoIdx = -1, audioIdx = -1;
-    AVCodecContext* pACodecCtx = nullptr, *pVCodecCtx = nullptr;
-    AVCodec* pACodec = nullptr, *pVCodec = nullptr;
-    AVFrame* pFrame = nullptr, * pFrameYUV = nullptr;
-    uint8_t* out_buffer = nullptr;
-    //    AVPacket* packet = nullptr;
-    int ret = 0, got_picture = 0;
 
-    //------------SDL----------------
-    //    int screenWidth = 0, screenHeight = 0;
-    SDL_Window* screen = nullptr;
-    SDL_Renderer* sdlRenderer = nullptr;
-    SDL_Texture* sdlTexture = nullptr;
-    SDL_Rect sdlRect;
-    SDL_Thread* videoTid = nullptr;
-    SDL_Event event;
-
-    SwrContext* pAudioSwrCtx = nullptr;
-    SwsContext* pVideoConCtx = nullptr;
-
-
+    //    uint8_t *out_buffer = nullptr;
 };
 
 
