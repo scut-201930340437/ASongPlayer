@@ -62,15 +62,16 @@ public:
 
     // thread
     void start(Priority = InheritPriority);
-
+    // 加载文件信息，获取媒体元数据
     int load(QString path);
+    // 读取一个packet
     AVPacket* readFrame();
     //    AVFrame* decode(AVPacket *packet);
     //    void decode__(AVPacket *packet, QList<AVFrame*>&frame_list);
     //    double getPts(AVFrame *frame, int streamIdx);
 
 
-    // 获取成员变量
+    /* 获取成员变量*/
     //    AVFormatContext* getFormatCtx();
     //    AVCodecContext* getACodecCtx();
     //    AVCodecContext* getVCodecCtx();
@@ -83,11 +84,11 @@ public:
     //    int getSrcHeight();
     //    int getFrameRate();
     //    enum AVPixelFormat getPixFmt();
-
+    /*播放控制*/
     int play(int media_type);
     int pause();
     int stop();
-
+    // 设置播放器状态
     void setMediaStatus(int status);
 private:
     ASongFFmpeg() = default;

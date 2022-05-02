@@ -31,8 +31,11 @@ public:
     //    void resetWH(const int _out_width, const int _out_height);
     // 获取pts
     double getPts(AVFrame *frame);
+    // 同步
     double synVideo(AVFrame *frame);
 
+    /*播放控制*/
+    // 暂停
     void pause();
 
     //    QList<AVFrame*>frame_list;
@@ -41,6 +44,7 @@ private:
 
     void run() override;
 
+    // 校准pts
     double caliBratePts(AVFrame *frame, double pts);
 
 

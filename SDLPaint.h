@@ -26,14 +26,15 @@ class SDLPaint: public QObject
 public:
     static SDLPaint* getInstance();
     ~SDLPaint();
+    // 初始化sdl
     int init(QWidget *screenWidget);
 
     void setMetaData(const int width, const int height, const int _frameRate, const enum AVPixelFormat _pix_fmt);
-
+    // 根据输出窗口重设sdl的参数
     void resetWHPara();
-
+    // 将一帧图像转储为YUVFrame
     void getFrameYUV();
-
+    // 绘制
     void paint(AVFrame *frameYUV);
     //public slots:
     //    void getFrameYUV();
@@ -61,6 +62,7 @@ private:
     //    SDL_Thread *tid;
     // ffmpeg
     SwsContext *pSwsCtx = nullptr;
+    // 样本格式
     enum AVPixelFormat pix_fmt;
 
     // 源视频流宽高

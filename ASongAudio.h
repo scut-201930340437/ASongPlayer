@@ -54,20 +54,21 @@ public:
     static ASongAudio* getInstance();
     // thread
     void start(Priority = InheritPriority);
-    //
+    // 初始化音频设备参数
     void initAndStartDevice(QObject *par);
+    // 初始化重采样参数
     void initSwr();
-    //
+    // 初始化元数据，从ffmpeg的load中读取
     void setMetaData(AVFormatContext *_pFormatCtx, AVCodecContext *_pCodecCtx, int _audioIdx);
-    // 访问成员变量
-    // 获取时钟
+    /* 访问成员变量*/
+    // 获取时钟，用于同步，音频为基准
     double getAudioClock();
     // 获取pts
     void setAudioClock(AVPacket *packet);
     // 获取audioOutput的剩余空间(/Byte)
     //    int getAvaiMem();
-    // 播放控制
 
+    /* 播放控制*/
     void stopPlay();
     void pause();
     void setVolume(int volume);
@@ -81,7 +82,7 @@ private:
 
     ASongAudio() = default;
 
-    // thread 解码
+    // thread 音频解码
     void run() override;
 
     // 重采样
@@ -98,7 +99,7 @@ private:
     double audioClock = 0.0;
     // 时基
     AVRational tb;
-    // 允许解码
+    // 允许解码标志
     bool allowRunAudio = false;
 
     // stream_index
