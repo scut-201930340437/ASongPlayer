@@ -2,6 +2,7 @@
 
 #include <QApplication>
 #include <QDebug>
+#include <QFile>
 
 
 extern "C"
@@ -19,6 +20,12 @@ extern "C"
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+    //打上样式
+    QFile file(":/qss/default.qss");
+    file.open(QFile::ReadOnly);
+    QTextStream filetext(&file);
+    QString styleSheet = filetext.readAll();
+    qApp->setStyleSheet(styleSheet);
     //这里简单的输出一个版本号
     //    if(SDL_Init(SDL_INIT_VIDEO))
     //    {

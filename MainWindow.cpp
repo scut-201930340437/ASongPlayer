@@ -32,7 +32,8 @@ MainWindow::~MainWindow()
 }
 
 
-void MainWindow::on_play_btn_clicked()
+void MainWindow::on_play_button_clicked()
+
 {
     //    if(asongFFmpeg->getMediaStatus() == 0)
     //    {
@@ -62,7 +63,7 @@ void MainWindow::on_play_btn_clicked()
                 {
                     // SDL初始化
                     painter = SDLPaint::getInstance();
-                    int ret = painter->init(this->ui->screenWidget);
+                    int ret = painter->init(this->ui->play_widget);
                     if(ret != 0)
                     {
                         qDebug() << "init sdl failed";
@@ -98,4 +99,6 @@ void MainWindow::on_play_btn_clicked()
     //        }
     //    }
 }
+
+
 

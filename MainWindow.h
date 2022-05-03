@@ -25,7 +25,7 @@ public:
     ~MainWindow();
 
 private slots:
-    void on_play_btn_clicked();
+    void on_play_button_clicked();
 
 private:
     SDLPaint *painter = nullptr;
