@@ -30,6 +30,7 @@ SOURCES += \
     DataSink.cpp \
     Main.cpp \
     MainWindow.cpp \
+    MySlider.cpp \
     SDLPaint.cpp
 
 HEADERS += \
@@ -38,6 +39,7 @@ HEADERS += \
     ASongVideo.h \
     DataSink.h \
     MainWindow.h \
+    MySlider.h \
     SDLPaint.h
 
 FORMS += \
@@ -61,3 +63,6 @@ win32{
         LIBS += -L$$PWD/lib/win64/third-party/lib -lavcodec -lavdevice -lavfilter -lavformat -lavutil -lswresample -lswscale -lSDL2 -lSDL2main
     }
 }
+
+RESOURCES += \
+    src.qrc
