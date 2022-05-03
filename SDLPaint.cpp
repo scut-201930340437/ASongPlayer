@@ -5,6 +5,8 @@ QAtomicPointer<SDLPaint> SDLPaint::_instance = nullptr;
 
 SDLPaint::~SDLPaint()
 {
+    sws_freeContext(pSwsCtx);
+    pSwsCtx = nullptr;
     SDL_DestroyRenderer(sdlRenderer);
     SDL_DestroyTexture(sdlTexture);
     delete sdlTimer;
@@ -50,11 +52,20 @@ int SDLPaint::init(QWidget *_screenWidget)
         qDebug() << "create texture failed";
         return -1;
     }
+    // 初始化swsCtx
+    pSwsCtx = sws_getCachedContext(pSwsCtx, srcWidth, srcHeight, pix_fmt,
+                                   dstWidth, dstHeight, AV_PIX_FMT_YUV420P, SWS_BICUBIC, NULL, NULL, NULL);
+    if(nullptr == pSwsCtx)
+    {
+        qDebug() << "swsGetCtx failed";
+        return -1;
+    }
     //    qDebug() << "sdlinifinish";
     // 开启定时器
     sdlTimer = new QTimer(this);
     connect(sdlTimer, &QTimer::timeout, this, &SDLPaint::getFrameYUV);
     sdlTimer->start(ceil(1000.0 / frameRate));
+    //    qDebug() << "----";
     return 0;
 }
 
@@ -115,20 +126,6 @@ void SDLPaint::resetWHPara()
 //    return 0;
 //}
 
-//void SDLPaint::getFrameYUV()
-//{
-//    AVFrame *frameYUV = ASongVideo::getInstance()->toRGB(dstWidth, dstHeight);
-//    if(nullptr == frameYUV)
-//    {
-//        return;
-//    }
-//    //    qDebug() << "getYUV";
-//    paint(frameYUV);
-//    int delay = *((int*)frameYUV->opaque);
-//    //    qDebug() << delay;
-//    av_frame_free(&frameYUV);
-//    sdlTimer->start(delay);
-//}
 // 转换为YUV图像并进行同步
 void SDLPaint::getFrameYUV()
 {
@@ -143,23 +140,16 @@ void SDLPaint::getFrameYUV()
     uint8_t *out_buffer = (uint8_t*)av_malloc(av_image_get_buffer_size(AV_PIX_FMT_YUV420P,
                           dstWidth, dstHeight, 1));
     av_image_fill_arrays(frameYUV->data, frameYUV->linesize, out_buffer, AV_PIX_FMT_YUV420P, dstWidth, dstHeight, 1);
-    // 初始化swsCtx
-    pSwsCtx = sws_getCachedContext(pSwsCtx, srcWidth, srcHeight, pix_fmt,
-                                   dstWidth, dstHeight, AV_PIX_FMT_YUV420P, SWS_BICUBIC, NULL, NULL, NULL);
-    if(!pSwsCtx)
-    {
-        qDebug() << "swsGetCtx failed";
-        return;
-    }
     sws_scale(pSwsCtx, (const uint8_t* const*)frame->data,
               frame->linesize, 0, srcHeight,
               frameYUV->data, frameYUV->linesize);
-    sws_freeContext(pSwsCtx);
-    pSwsCtx = nullptr;
     // 同步
-    double actualDelay = ASongVideo::getInstance()->synVideo(frame);
+    double actualDelay = ASongVideo::getInstance()->synVideo(*((double*)frame->opaque));
     // 同步后释放该帧
-    //    av_frame_free(&frame);
+    //    delete (double*)frame->opaque;
+    //    av_frame_unref(frame);
+    av_frame_free(&frame);
+    //    qDebug() << frame->data[0];
     // 将同步后的延时存入frameYUV
     frameYUV->opaque = (int*)new int(actualDelay * 1000.0 + 0.5);
     // 绘制
@@ -169,6 +159,9 @@ void SDLPaint::getFrameYUV()
     //    qDebug() << delay;
     sdlTimer->start(*((int*)frameYUV->opaque));
     // 释放
+    //    delete (int*)frameYUV->opaque;
+    av_free(out_buffer);
+    //    av_frame_unref(frameYUV);
     av_frame_free(&frameYUV);
 }
 

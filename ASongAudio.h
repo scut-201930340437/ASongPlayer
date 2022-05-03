@@ -10,7 +10,8 @@
 #include <QMediaDevices>
 #include <QAudioOutput>
 #include <QAudioSink>
-#include <QAtomicPointer>
+
+#include "DataSink.h"
 
 extern "C"
 {
@@ -69,8 +70,9 @@ public:
     //    int getAvaiMem();
 
     /* 播放控制*/
-    void stopPlay();
+    void closeDevice();
     void pause();
+    void stop();
     void setVolume(int volume);
     void unmute();
     void mute();
@@ -92,8 +94,11 @@ private:
 
 
     // 使用QAtomicPointer，对指针保证与平台无关的原子操作
-    static QAtomicPointer<ASongAudio> _instance;
+    //    static QAtomicPointer<ASongAudio> _instance;
+    static ASongAudio *_instance;
     static QMutex _mutex;
+
+    //    QAtomicPointer<DataSink> dataInstance = nullptr;
 
     // 时钟，音频为准
     double audioClock = 0.0;

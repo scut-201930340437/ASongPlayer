@@ -1,6 +1,8 @@
 #ifndef DATASINK_H
 #define DATASINK_H
 
+#include <QDebug>
+
 #include <QMutex>
 #include <QSemaphore>
 #include <QList>
@@ -16,7 +18,7 @@ public:
     ~DataSink();
     static DataSink* getInstance();
 
-    static const qsizetype maxPacketListLength = 5;
+    static const qsizetype maxPacketListLength = 20;
     //    static const int maxFrameListLength=100;
 
     AVPacket* takeNextPacket(int type);
@@ -31,6 +33,7 @@ public:
     //    bool packListIsEmpty(int type);
     // 信号量
     QSemaphore *audioSem = nullptr, *videoSem = nullptr;
+    //    *audioEmpSem = nullptr, *videoEmpSem = nullptr;
     //    *videoFraSem = nullptr;
 
 private:

@@ -42,6 +42,7 @@ struct VideoMetaData
 struct MediaMetaDate
 {
     int mediaType = 0;
+    //    bool findAudio = false;
     QString path = "";
     QString filename = "";
     QString format = "";

@@ -27,16 +27,17 @@ public:
     // thread
     void start(Priority = InheritPriority);
 
-    void setMetaData(AVCodecContext *_pCodecCtx, const int _videoIdx, const int _frameRate, const AVRational timeBase);
+    void setMetaData(AVCodecContext *_pCodecCtx, const int _videoIdx,  const AVRational timeBase);
     //    void resetWH(const int _out_width, const int _out_height);
     // 获取pts
     double getPts(AVFrame *frame);
     // 同步
-    double synVideo(AVFrame *frame);
+    double synVideo(const double pts);
 
     /*播放控制*/
     // 暂停
     void pause();
+    void stop();
 
     //    QList<AVFrame*>frame_list;
 private:
@@ -72,7 +73,7 @@ private:
     // 视频解码器上下文
     AVCodecContext *pCodecCtx = nullptr;
     //
-    int frameRate = 0;
+    //    int frameRate = 0;
     // 源视频流的宽高
     int srcWidth = 0, srcHeight = 0;
 
@@ -80,7 +81,7 @@ private:
     //    int out_width = 0, out_height = 0;
 
     // 帧list最大长度
-    const int maxFrameListLen = 5;
+    const int maxFrameListLen = 20;
 
     // 同步阈值
     const double synLowerBound = 0.01;

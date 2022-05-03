@@ -25,6 +25,7 @@ ASongFFmpeg* ASongFFmpeg::getInstance()
     QMutexLocker locker(&_mutex);
     if(_instance.testAndSetOrdered(nullptr, nullptr))
     {
+        //        qDebug() << "----";
         _instance.testAndSetOrdered(nullptr, new ASongFFmpeg);
     }
     return _instance;
@@ -68,101 +69,127 @@ int ASongFFmpeg::load(QString path)
     // 分出视频流和音频流
     //    AVCodecParameters *pCodecPara = nullptr;
     AVCodecContext *pACodecCtx = nullptr, *pVCodecCtx = nullptr;
-    AVCodec *pCodec = nullptr;
-    for (size_t i = 0; i < pFormatCtx->nb_streams; ++i)
+    AVCodec *pACodec = nullptr, *pVCodec = nullptr;
+    audioIdx = av_find_best_stream(pFormatCtx, AVMEDIA_TYPE_AUDIO, -1, -1, &pACodec, 0);
+    // 找到音频流
+    if(audioIdx != AVERROR_STREAM_NOT_FOUND)
     {
-        // 如果是音频流
-        AVCodecParameters *pCodecPara = pFormatCtx->streams[i]->codecpar;
-        if(pCodecPara->codec_type == AVMEDIA_TYPE_AUDIO)
+        //        if(mediaMetaData.findAudio)
+        //        {
+        //            continue;
+        //        }
+        //        else
+        //        {
+        //            mediaMetaData.findAudio = true;
+        //        }
+        //        if(mediaMetaData.mediaType == 0)
+        //        {
+        mediaMetaData.mediaType = 1;
+        //        }
+        // 设置streamIdx
+        //        audioIdx = (int)i;
+        //            ASongAudio::getInstance()->setAudioIdx(audioIdx);
+        //            // 设置时基
+        //            ASongAudio::getInstance()->setTimeBase(pFormatCtx->streams[i]->time_base);
+        // 获取解码器
+        AVCodecParameters *pCodecPara = pFormatCtx->streams[audioIdx]->codecpar;
+        //        pCodec = avcodec_find_decoder(pCodecPara->codec_id);
+        if(!pACodec)
         {
-            if(mediaMetaData.mediaType == 0)
-            {
-                mediaMetaData.mediaType = 1;
-            }
-            // 设置streamIdx
-            audioIdx = (int)i;
-            //            ASongAudio::getInstance()->setAudioIdx(audioIdx);
-            //            // 设置时基
-            //            ASongAudio::getInstance()->setTimeBase(pFormatCtx->streams[i]->time_base);
-            // 获取解码器
-            pCodec = avcodec_find_decoder(pCodecPara->codec_id);
-            if(!pCodec)
-            {
-                qDebug() << "Couldn't find audio code.";
-                return -1;
-            }
-            // 获取解码器上下文
-            pACodecCtx = avcodec_alloc_context3(pCodec);
-            // 将pCodecPara中的参数传给pCodecCtx
-            ret = avcodec_parameters_to_context(pACodecCtx, pCodecPara);
-            if(ret < 0)
-            {
-                printf("Cannot alloc codec context.\n");
-                return -1;
-            }
-            // 打开解码器
-            ret = avcodec_open2(pACodecCtx, pCodec, nullptr);
-            if(ret < 0)
-            {
-                qDebug() << "Couldn't open audio code.";
-                return -1;
-            }
-            // 获取音频流元数据
-            mediaMetaData.audio_meta_data.sample_fmt = pACodecCtx->sample_fmt;
-            mediaMetaData.audio_meta_data.sample_rate = pACodecCtx->sample_rate;
-            mediaMetaData.audio_meta_data.channels = pACodecCtx->channels;
-            mediaMetaData.audio_meta_data.channel_layout = pACodecCtx->channel_layout;
+            qDebug() << "Couldn't find audio code.";
+            return -1;
         }
-        else
+        // 获取解码器上下文
+        pACodecCtx = avcodec_alloc_context3(pACodec);
+        // 将pCodecPara中的参数传给pCodecCtx
+        ret = avcodec_parameters_to_context(pACodecCtx, pCodecPara);
+        if(ret < 0)
         {
-            // 如果是视频流
-            mediaMetaData.mediaType = 2;
-            // 设置streamIdx
-            videoIdx = (int) i;
-            // 获取解码器
-            pCodec = avcodec_find_decoder(pCodecPara->codec_id);
-            if(!pCodec)
-            {
-                qDebug() << "Couldn't find video code.";
-                return -1;
-            }
-            // 获取解码器上下文
-            pVCodecCtx = avcodec_alloc_context3(pCodec);
-            // 将pCodecPara中的参数传给pCodecCtx
-            ret = avcodec_parameters_to_context(pVCodecCtx, pCodecPara);
-            if(ret < 0)
-            {
-                qDebug() << "Cannot alloc codec context";
-                return -1;
-            }
-            //            pCodecCtx->pkt_timebase=pFormatCtx->
-            // 打开解码器
-            ret = avcodec_open2(pVCodecCtx, pCodec, nullptr);
-            if(ret < 0)
-            {
-                qDebug() << "Couldn't open vidoe code.";
-                return -1;
-            }
-            // 获取视频流元数据
-            // 获取帧率
-            mediaMetaData.video_meta_data.frame_rate = ceil(av_q2d(pFormatCtx->streams[i]->avg_frame_rate));
-            mediaMetaData.video_meta_data.width = pCodecPara->width;
-            mediaMetaData.video_meta_data.height = pCodecPara->height;
-            mediaMetaData.video_meta_data.pix_fmt = pVCodecCtx->pix_fmt;
+            printf("Cannot alloc codec context.\n");
+            return -1;
         }
+        // 打开解码器
+        ret = avcodec_open2(pACodecCtx, pACodec, nullptr);
+        if(ret < 0)
+        {
+            qDebug() << "Couldn't open audio code.";
+            return -1;
+        }
+        // 获取音频流元数据
+        mediaMetaData.audio_meta_data.sample_fmt = pACodecCtx->sample_fmt;
+        mediaMetaData.audio_meta_data.sample_rate = pACodecCtx->sample_rate;
+        mediaMetaData.audio_meta_data.channels = pACodecCtx->channels;
+        mediaMetaData.audio_meta_data.channel_layout = pACodecCtx->channel_layout;
     }
+    // 找视频流
+    videoIdx = av_find_best_stream(pFormatCtx, AVMEDIA_TYPE_VIDEO, -1, -1, &pVCodec, 0);
+    if(videoIdx != AVERROR_STREAM_NOT_FOUND)
+    {
+        //        qDebug() << "video";
+        // 如果是视频流
+        mediaMetaData.mediaType = 2;
+        // 获取解码器
+        AVCodecParameters *pCodecPara = pFormatCtx->streams[videoIdx]->codecpar;
+        // 设置streamIdx
+        //        videoIdx = (int) i;
+        // 获取解码器
+        //        pCodec = avcodec_find_decoder(pCodecPara->codec_id);
+        if(!pVCodec)
+        {
+            qDebug() << "Couldn't find video code.";
+            return -1;
+        }
+        // 获取解码器上下文
+        pVCodecCtx = avcodec_alloc_context3(pVCodec);
+        // 将pCodecPara中的参数传给pCodecCtx
+        ret = avcodec_parameters_to_context(pVCodecCtx, pCodecPara);
+        if(ret < 0)
+        {
+            qDebug() << "Cannot alloc codec context";
+            return -1;
+        }
+        //            pCodecCtx->pkt_timebase=pFormatCtx->
+        // 打开解码器
+        ret = avcodec_open2(pVCodecCtx, pVCodec, nullptr);
+        if(ret < 0)
+        {
+            qDebug() << "Couldn't open vidoe code.";
+            return -1;
+        }
+        // 获取视频流元数据
+        // 获取帧率
+        mediaMetaData.video_meta_data.frame_rate = ceil(av_q2d(pFormatCtx->streams[videoIdx]->avg_frame_rate));
+        mediaMetaData.video_meta_data.width = pCodecPara->width;
+        mediaMetaData.video_meta_data.height = pCodecPara->height;
+        mediaMetaData.video_meta_data.pix_fmt = pVCodecCtx->pix_fmt;
+    }
+    //    for (size_t i = 0; i < pFormatCtx->nb_streams; ++i)
+    //    {
+    //        // 如果是音频流
+    //        AVCodecParameters *pCodecPara = pFormatCtx->streams[i]->codecpar;
+    //        if(pCodecPara->codec_type == AVMEDIA_TYPE_AUDIO)
+    //        {
+    //            qDebug() << "audio";
+    //        }
+    //        else
+    //        {
+    //            if(pCodecPara->codec_type == AVMEDIA_TYPE_VIDEO)
+    //            {
+    //            }
+    //        }
+    //    }
     ASongAudio::getInstance()->setMetaData(pFormatCtx, pACodecCtx, audioIdx);
     if(mediaMetaData.mediaType == 2)
     {
         ASongVideo::getInstance()->setMetaData(pVCodecCtx, videoIdx,
-                                               mediaMetaData.video_meta_data.frame_rate,
                                                pFormatCtx->streams[videoIdx]->time_base);
         SDLPaint::getInstance()->setMetaData(mediaMetaData.video_meta_data.width,
                                              mediaMetaData.video_meta_data.height,
                                              mediaMetaData.video_meta_data.frame_rate,
                                              mediaMetaData.video_meta_data.pix_fmt);
     }
-    pCodec = nullptr;
+    pACodec = pVCodec = nullptr;
+    //    qDebug() << "load finish";
     return 0;
 }
 
@@ -195,9 +222,8 @@ void ASongFFmpeg::run()
     bool hasMedia = true;
     while(allowRead)
     {
-        // 如果当前未被解码的packet过多，阻塞该读取线程
-        if(DataSink::getInstance()->packetListSize(0) > DataSink::maxPacketListLength
-                && DataSink::getInstance()->packetListSize(1) > DataSink::maxPacketListLength)
+        if(DataSink::getInstance()->packetListSize(0) >= DataSink::maxPacketListLength
+                && DataSink::getInstance()->packetListSize(1) >= DataSink::maxPacketListLength)
         {
             msleep(20);
         }
@@ -214,6 +240,7 @@ void ASongFFmpeg::run()
             // 如果是音频
             if(packet->stream_index == audioIdx)
             {
+                // 如果当前未被解码的packet过多，阻塞该读取线程
                 DataSink::getInstance()->appendPacketList(0, packet);
                 //                audioList.append(*packet);
             }
@@ -222,6 +249,7 @@ void ASongFFmpeg::run()
                 if(packet->stream_index == videoIdx)
                 {
                     //                    QMutexLocker locker(&videoListMutex);
+                    // 如果当前未被解码的packet过多，阻塞该读取线程
                     DataSink::getInstance()->appendPacketList(1, packet);
                     //                    videoList.append(*packet);
                 }
@@ -286,49 +314,16 @@ int ASongFFmpeg::pause()
 }
 
 
-
 int ASongFFmpeg::stop()
 {
     QMutexLocker locker(&_mediaStatusMutex);
     curMediaStatus = 3;
+    allowRead = false;
     return 0;
 }
 
 
-// decode后续可能需要重新编写------------------
-//AVFrame* ASongFFmpeg::decode(AVPacket* packet)
-//{
-//    QMutexLocker locker(&_mutex);
-//    if(!pFormatCtx)
-//    {
-//        return nullptr;
-//    }
-//    AVFrame* frame = av_frame_alloc();
-//    AVCodecContext *pCodecCtx = nullptr;
-//    if(packet->stream_index == audioIdx)
-//    {
-//        pCodecCtx = pACodecCtx;
-//    }
-//    else
-//    {
-//        if(packet->stream_index == videoIdx)
-//        {
-//            pCodecCtx = pVCodecCtx;
-//        }
-//    }
-//    int ret = avcodec_send_packet(pCodecCtx, packet);
-//    if(ret != 0)
-//    {
-//        return nullptr;
-//    }
-//    //
-//    ret = avcodec_receive_frame(pCodecCtx, frame);
-//    if(ret != 0)
-//    {
-//        return nullptr;
-//    }
-//    return frame;
-//}
+
 
 
 //AVFormatContext* ASongFFmpeg::getFormatCtx()

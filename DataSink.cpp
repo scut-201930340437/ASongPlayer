@@ -7,6 +7,8 @@ DataSink::DataSink()
 {
     audioSem = new QSemaphore(0);
     videoSem = new QSemaphore(0);
+    //    audioEmpSem = new QSemaphore(maxPacketListLength);
+    //    videoEmpSem = new QSemaphore(maxPacketListLength);
 }
 
 DataSink::~DataSink()
@@ -20,6 +22,7 @@ DataSink* DataSink::getInstance()
     QMutexLocker locker(&_mutex);
     if(_instance.testAndSetOrdered(nullptr, nullptr))
     {
+        //        qDebug() << "----";
         _instance.testAndSetOrdered(nullptr, new DataSink);
     }
     return _instance;
@@ -31,12 +34,14 @@ AVPacket* DataSink::takeNextPacket(int type)
     {
         //        QMutexLocker locker(&aPacketListMutex);
         audioSem->acquire();
+        //        audioEmpSem->release();
         return aPacketList.takeFirst();
     }
     else
     {
         //        QMutexLocker locker(&vPacketListMutex);
         videoSem->acquire();
+        //        videoEmpSem->release();
         return vPacketList.takeFirst();
     }
 }
@@ -58,12 +63,14 @@ void DataSink::appendPacketList(int type, AVPacket *packet)
     if(type == 0)
     {
         //        QMutexLocker locker(&aPacketListMutex);
+        //        audioEmpSem->acquire();
         audioSem->release();
         aPacketList.append(packet);
     }
     else
     {
         //        QMutexLocker locker(&vPacketListMutex);
+        //        videoEmpSem->acquire();
         videoSem->release();
         vPacketList.append(packet);
     }

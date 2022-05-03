@@ -1,9 +1,8 @@
 #include "ASongFFmpeg.h"
 #include "ASongAudio.h"
 
-#include "DataSink.h"
-
-QAtomicPointer<ASongAudio> ASongAudio::_instance = nullptr;
+//QAtomicPointer<ASongAudio> ASongAudio::_instance = nullptr;
+ASongAudio *ASongAudio::_instance = nullptr;
 QMutex ASongAudio::_mutex;
 
 ASongAudio::~ASongAudio()
@@ -18,9 +17,14 @@ ASongAudio* ASongAudio::getInstance()
 {
     // QMutexLocker 在构造对象时加锁，在析构时解锁
     QMutexLocker locker(&_mutex);
-    if(_instance.testAndSetOrdered(nullptr, nullptr))
+    //    if(_instance.testAndSetOrdered(nullptr, nullptr))
+    //    {
+    //        //        qDebug() << "----";
+    //        _instance.testAndSetOrdered(nullptr, new ASongAudio);
+    //    }
+    if(nullptr == _instance)
     {
-        _instance.testAndSetOrdered(nullptr, new ASongAudio);
+        _instance = new ASongAudio;
     }
     return _instance;
 }
@@ -30,7 +34,7 @@ ASongAudio* ASongAudio::getInstance()
 void ASongAudio::initAndStartDevice(QObject *par)
 {
     // 先关闭当前音频播放
-    stopPlay();
+    closeDevice();
     mediaDevice = new QMediaDevices(par);
     QAudioDevice audioDevice = mediaDevice->defaultAudioOutput();
     QAudioFormat format = audioDevice.preferredFormat();
@@ -89,6 +93,7 @@ void ASongAudio::run()
                 ret = avcodec_receive_frame(pCodecCtx, frame);
                 if(ret == 0)
                 {
+                    //                    qDebug() << "---";
                     frame_list.append(frame);
                 }
                 else
@@ -98,6 +103,8 @@ void ASongAudio::run()
                         // 复位解码器
                         avcodec_flush_buffers(pCodecCtx);
                     }
+                    av_frame_unref(frame);
+                    av_frame_free(&frame);
                     break;
                 }
                 //            qDebug() << "decode";
@@ -114,6 +121,8 @@ void ASongAudio::run()
                     ret = avcodec_receive_frame(pCodecCtx, frame);
                     if(ret == AVERROR_EOF)
                     {
+                        av_frame_unref(frame);
+                        av_frame_free(&frame);
                         // 复位解码器
                         avcodec_flush_buffers(pCodecCtx);
                         break;
@@ -140,6 +149,8 @@ void ASongAudio::run()
                                 // 复位解码器
                                 avcodec_flush_buffers(pCodecCtx);
                             }
+                            av_frame_unref(frame);
+                            av_frame_free(&frame);
                             break;
                         }
                     }
@@ -147,8 +158,11 @@ void ASongAudio::run()
             }
         }
         // 释放
+        av_packet_unref(packet);
         av_packet_free(&packet);
+        //        qDebug() << packet->data[0];
         // 将framelist中的数据送到音频设备
+        //        qDebug() << frame_list.size();
         if(nullptr != audioIO)
         {
             writeToDevice(frame_list);
@@ -193,6 +207,7 @@ void ASongAudio::writeToDevice(QList<AVFrame*>&frame_list)
             frame = frame_list.takeFirst();
             int out_size = swrToPCM(outBuffer, frame, pFormatCtx);
             //            qDebug() << out_size;
+            av_frame_unref(frame);
             av_frame_free(&frame);
             //            qDebug() << audioOutput->bytesFree();
             if(audioOutput->bytesFree() < out_size)
@@ -226,6 +241,7 @@ void ASongAudio::writeToDevice(QList<AVFrame*>&frame_list)
                 msleep(1);
             }
             audioIO->write((char*)frame->data, out_size);
+            av_frame_unref(frame);
             av_frame_free(&frame);
         }
     }
@@ -261,17 +277,7 @@ double ASongAudio::getAudioClock()
     return neededAudioClock - (double)bufferDataSize / bytesPerSec;
 }
 
-//int ASongAudio::getAvaiMem()
-//{
-//    if(nullptr == audioOutput)
-//    {
-//        return 0;
-//    }
-//    return audioOutput->bytesFree();
-//}
-
-
-void ASongAudio::stopPlay()
+void ASongAudio::closeDevice()
 {
     if(nullptr != audioOutput)
     {
@@ -288,6 +294,12 @@ void ASongAudio::stopPlay()
 void ASongAudio::pause()
 {
     allowRunAudio = false;
+}
+
+void ASongAudio::stop()
+{
+    allowRunAudio = false;
+    closeDevice();
 }
 
 void ASongAudio::setVolume(int volume)
