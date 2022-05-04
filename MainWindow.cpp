@@ -32,19 +32,20 @@ MainWindow::~MainWindow()
 }
 
 
-void MainWindow::on_play_btn_clicked()
+void MainWindow::on_play_button_clicked()
 {
     //    if(asongFFmpeg->getMediaStatus() == 0)
     //    {
     // 定义文件对话框类
-    QString path = QFileDialog::getOpenFileName(this,
-                   tr("选择音视频文件"),
-                   tr("."),
-                   tr(
-                       "视频文件(*.mp4 *.flv *.avi);;音频文件(*.mp3);;所有文件(*.*)"));
     switch (ASongFFmpeg::getInstance()->getMediaStatus())
     {
         case 0:
+        {
+            QString path = QFileDialog::getOpenFileName(this,
+                           tr("选择音视频文件"),
+                           tr("."),
+                           tr(
+                               "视频文件(*.mp4 *.flv *.avi);;音频文件(*.mp3);;所有文件(*.*)"));
             if(!path.isEmpty())
             {
                 // 加载媒体文件信息
@@ -62,7 +63,7 @@ void MainWindow::on_play_btn_clicked()
                 {
                     // SDL初始化
                     painter = SDLPaint::getInstance();
-                    int ret = painter->init(this->ui->screenWidget);
+                    int ret = painter->init(this->ui->play_widget);
                     if(ret != 0)
                     {
                         qDebug() << "init sdl failed";
@@ -75,12 +76,19 @@ void MainWindow::on_play_btn_clicked()
                 qDebug() << "file empty";
             }
             break;
+        }
         case 1:
             ASongFFmpeg::getInstance()->pause();
+            //            qDebug() << "pause";
             break;
         case 2:
-            ASongFFmpeg::getInstance()->play(ASongFFmpeg::getInstance()->getMediaType());
+        {
+            //            qDebug() << "continue";
+            int mediaType = ASongFFmpeg::getInstance()->getMediaType();
+            ASongFFmpeg::getInstance()->play(mediaType);
+            painter->reStart();
             break;
+        }
     }
     //    }
     //    else

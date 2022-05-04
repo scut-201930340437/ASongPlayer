@@ -1,12 +1,13 @@
 #include "ASongFFmpeg.h"
 #include "ASongAudio.h"
 
-//QAtomicPointer<ASongAudio> ASongAudio::_instance = nullptr;
-ASongAudio *ASongAudio::_instance = nullptr;
+QAtomicPointer<ASongAudio> ASongAudio::_instance = nullptr;
+//ASongAudio *ASongAudio::_instance = nullptr;
 QMutex ASongAudio::_mutex;
 
 ASongAudio::~ASongAudio()
 {
+    allowRunAudio = false;
     avcodec_close(pCodecCtx);
     swr_free(&pSwrCtx);
     audioOutput->stop();
@@ -17,15 +18,15 @@ ASongAudio* ASongAudio::getInstance()
 {
     // QMutexLocker 在构造对象时加锁，在析构时解锁
     QMutexLocker locker(&_mutex);
-    //    if(_instance.testAndSetOrdered(nullptr, nullptr))
-    //    {
-    //        //        qDebug() << "----";
-    //        _instance.testAndSetOrdered(nullptr, new ASongAudio);
-    //    }
-    if(nullptr == _instance)
+    if(_instance.testAndSetOrdered(nullptr, nullptr))
     {
-        _instance = new ASongAudio;
+        //        qDebug() << "----";
+        _instance.testAndSetOrdered(nullptr, new ASongAudio);
     }
+    //    if(nullptr == _instance)
+    //    {
+    //        _instance = new ASongAudio;
+    //    }
     return _instance;
 }
 
@@ -103,7 +104,7 @@ void ASongAudio::run()
                         // 复位解码器
                         avcodec_flush_buffers(pCodecCtx);
                     }
-                    av_frame_unref(frame);
+                    //                    av_frame_unref(frame);
                     av_frame_free(&frame);
                     break;
                 }
@@ -121,7 +122,7 @@ void ASongAudio::run()
                     ret = avcodec_receive_frame(pCodecCtx, frame);
                     if(ret == AVERROR_EOF)
                     {
-                        av_frame_unref(frame);
+                        //                        av_frame_unref(frame);
                         av_frame_free(&frame);
                         // 复位解码器
                         avcodec_flush_buffers(pCodecCtx);
@@ -149,7 +150,7 @@ void ASongAudio::run()
                                 // 复位解码器
                                 avcodec_flush_buffers(pCodecCtx);
                             }
-                            av_frame_unref(frame);
+                            //                            av_frame_unref(frame);
                             av_frame_free(&frame);
                             break;
                         }
@@ -158,7 +159,7 @@ void ASongAudio::run()
             }
         }
         // 释放
-        av_packet_unref(packet);
+        //        av_packet_unref(packet);
         av_packet_free(&packet);
         //        qDebug() << packet->data[0];
         // 将framelist中的数据送到音频设备
@@ -175,6 +176,7 @@ void ASongAudio::run()
         //            msleep(1);
         //        }
     }
+    //    qDebug() << "thread quit";
 }
 
 // 重采样
@@ -207,7 +209,7 @@ void ASongAudio::writeToDevice(QList<AVFrame*>&frame_list)
             frame = frame_list.takeFirst();
             int out_size = swrToPCM(outBuffer, frame, pFormatCtx);
             //            qDebug() << out_size;
-            av_frame_unref(frame);
+            //            av_frame_unref(frame);
             av_frame_free(&frame);
             //            qDebug() << audioOutput->bytesFree();
             if(audioOutput->bytesFree() < out_size)
@@ -241,7 +243,7 @@ void ASongAudio::writeToDevice(QList<AVFrame*>&frame_list)
                 msleep(1);
             }
             audioIO->write((char*)frame->data, out_size);
-            av_frame_unref(frame);
+            //            av_frame_unref(frame);
             av_frame_free(&frame);
         }
     }

@@ -64,7 +64,7 @@ int SDLPaint::init(QWidget *_screenWidget)
     // 开启定时器
     sdlTimer = new QTimer(this);
     connect(sdlTimer, &QTimer::timeout, this, &SDLPaint::getFrameYUV);
-    sdlTimer->start(ceil(1000.0 / frameRate));
+    sdlTimer->start(int(1000.0 / frameRate + 0.5));
     //    qDebug() << "----";
     return 0;
 }
@@ -151,13 +151,13 @@ void SDLPaint::getFrameYUV()
     av_frame_free(&frame);
     //    qDebug() << frame->data[0];
     // 将同步后的延时存入frameYUV
-    frameYUV->opaque = (int*)new int(actualDelay * 1000.0 + 0.5);
     // 绘制
     paint(frameYUV);
     // 重设延时
     //    qDebug() << "----";
     //    qDebug() << delay;
-    sdlTimer->start(*((int*)frameYUV->opaque));
+    preDelay = actualDelay * 1000.0 + 0.5;
+    sdlTimer->start(preDelay);
     // 释放
     //    delete (int*)frameYUV->opaque;
     av_free(out_buffer);
@@ -167,10 +167,10 @@ void SDLPaint::getFrameYUV()
 
 void SDLPaint::paint(AVFrame *frameYUV)
 {
-    SDL_UpdateTexture(sdlTexture, NULL, frameYUV->data[0], frameYUV->linesize[0]);
+    SDL_UpdateTexture(sdlTexture, nullptr, frameYUV->data[0], frameYUV->linesize[0]);
     SDL_RenderClear(sdlRenderer);
     //SDL_RenderCopy(sdlRenderer, sdlTexture, &sdlRect, &sdlRect);
-    SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, NULL);
+    SDL_RenderCopy(sdlRenderer, sdlTexture, nullptr, nullptr);
     SDL_RenderPresent(sdlRenderer);
 }
 
@@ -178,4 +178,9 @@ void SDLPaint::paint(AVFrame *frameYUV)
 void SDLPaint::pause()
 {
     sdlTimer->stop();
+}
+
+void SDLPaint::reStart()
+{
+    sdlTimer->start(preDelay);
 }

@@ -13,6 +13,7 @@ QMutex ASongFFmpeg::_mutex;
 
 ASongFFmpeg::~ASongFFmpeg()
 {
+    allowRead = false;
     avformat_close_input(&pFormatCtx);
     if(nullptr != DataSink::getInstance())
     {
@@ -200,6 +201,7 @@ int ASongFFmpeg::play(int mediaType)
     ASongAudio::getInstance()->start();
     if(mediaType == 2)
     {
+        //        qDebug() << "start";
         ASongVideo::getInstance()->start();
     }
     //    qDebug() << "start";
@@ -219,7 +221,7 @@ void ASongFFmpeg::start(Priority pro)
 
 void ASongFFmpeg::run()
 {
-    bool hasMedia = true;
+    //    bool hasMedia = true;
     while(allowRead)
     {
         if(DataSink::getInstance()->packetListSize(0) >= DataSink::maxPacketListLength
@@ -233,7 +235,7 @@ void ASongFFmpeg::run()
             if(!packet)
             {
                 qDebug() << "Couldn't open file.";
-                hasMedia = false;
+                //                hasMedia = false;
                 allowRead = false;
                 break;
             }
@@ -257,15 +259,7 @@ void ASongFFmpeg::run()
         }
     }
     // 文件结束
-    if(hasMedia)
-    {
-        curMediaStatus = 3;
-    }
-    // 没有文件
-    else
-    {
-        curMediaStatus = 0;
-    }
+    //    qDebug() << "thread quit";
 }
 
 AVPacket* ASongFFmpeg::readFrame()
@@ -300,6 +294,7 @@ int ASongFFmpeg::getMediaType()
 int ASongFFmpeg::getMediaStatus()
 {
     QMutexLocker locker(&_mediaStatusMutex);
+    //    qDebug() << curMediaStatus;
     return curMediaStatus;
 }
 
@@ -310,6 +305,7 @@ int ASongFFmpeg::pause()
     allowRead = false;
     ASongAudio::getInstance()->pause();
     ASongVideo::getInstance()->pause();
+    SDLPaint::getInstance()->pause();
     return 0;
 }
 
@@ -321,9 +317,6 @@ int ASongFFmpeg::stop()
     allowRead = false;
     return 0;
 }
-
-
-
 
 
 //AVFormatContext* ASongFFmpeg::getFormatCtx()

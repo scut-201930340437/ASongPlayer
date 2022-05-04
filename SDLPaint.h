@@ -41,6 +41,7 @@ public:
     //    static int sfp_signal_thread(void* opaque);
 
     void pause();
+    void reStart();
 
     //    int getFrameRate();
 private:
@@ -75,6 +76,8 @@ private:
     int dstWidth, dstHeight;
     // 帧率
     int frameRate = 1;
+    //
+    int preDelay = 0;
 };
 
 #endif // SDLPAINT_H

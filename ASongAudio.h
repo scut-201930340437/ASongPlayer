@@ -94,8 +94,8 @@ private:
 
 
     // 使用QAtomicPointer，对指针保证与平台无关的原子操作
-    //    static QAtomicPointer<ASongAudio> _instance;
-    static ASongAudio *_instance;
+    static QAtomicPointer<ASongAudio> _instance;
+    //    static ASongAudio *_instance;
     static QMutex _mutex;
 
     //    QAtomicPointer<DataSink> dataInstance = nullptr;

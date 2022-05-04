@@ -9,6 +9,7 @@ QMutex ASongVideo::_mutex;
 
 ASongVideo::~ASongVideo()
 {
+    allowRunVideo = false;
     avcodec_close(pCodecCtx);
 }
 
@@ -112,17 +113,20 @@ void ASongVideo::run()
                 }
                 else
                 {
+                    av_frame_free(&frame);
                     if(ret == AVERROR_EOF)
                     {
                         // 复位解码器
                         avcodec_flush_buffers(pCodecCtx);
                     }
-                    av_frame_unref(frame);
-                    av_frame_free(&frame);
-                    //                    break;
+                    else
+                    {
+                        if(ret == AVERROR(EINVAL))
+                        {
+                            break;
+                        }
+                    }
                 }
-                //            qDebug() << "decode";
-                //                }
             }
             else
             {
@@ -135,7 +139,7 @@ void ASongVideo::run()
                         ret = avcodec_receive_frame(pCodecCtx, frame);
                         if(ret == AVERROR_EOF)
                         {
-                            av_frame_unref(frame);
+                            //                            av_frame_unref(frame);
                             av_frame_free(&frame);
                             // 复位解码器
                             avcodec_flush_buffers(pCodecCtx);
@@ -164,16 +168,20 @@ void ASongVideo::run()
                                 // 复位解码器
                                 avcodec_flush_buffers(pCodecCtx);
                             }
-                            av_frame_unref(frame);
                             av_frame_free(&frame);
-                            //                            break;
                         }
-                        //                        }
+                    }
+                }
+                else
+                {
+                    if(ret == AVERROR(EINVAL))
+                    {
+                        break;
                     }
                 }
             }
             // 释放
-            av_packet_unref(packet);
+            //            av_packet_unref(packet);
             av_packet_free(&packet);
             //            //            }
             //            //            else
@@ -186,6 +194,7 @@ void ASongVideo::run()
             msleep(20);
         }
     }
+    //    qDebug() << "thread quit";
 }
 
 double ASongVideo::getPts(AVFrame *frame)
@@ -261,6 +270,7 @@ double ASongVideo::synVideo(const double pts)
     }
     frameTime += delay;
     // 真正延时时间
+    //    qDebug() << tmp;
     double actualDelay = fmax(frameTime - av_gettime() / 1000000.0, synLowerBound);
     //        qDebug() << actualDelay;
     //        actualDelay = fmax(actualDelay, 0.010);
@@ -282,20 +292,20 @@ void ASongVideo::stop()
 {
     allowRunVideo = false;
     // videoClock
-    videoClock = 0.0;
-    // frameTime
-    frameTime = 0.0;
-    // 上一帧pts
-    lastFramePts = 0.0;
-    // 上一帧delay
-    lastFrameDelay = 0.0;
-    // stream_index
-    videoIdx = -1;
-    // 视频解码器上下文
-    avcodec_close(pCodecCtx);
-    pCodecCtx = nullptr;
-    //
-    //    frameRate = 0;
-    // 源视频流的宽高
-    srcWidth = 0, srcHeight = 0;
+    //    videoClock = 0.0;
+    //    // frameTime
+    //    frameTime = 0.0;
+    //    // 上一帧pts
+    //    lastFramePts = 0.0;
+    //    // 上一帧delay
+    //    lastFrameDelay = 0.0;
+    //    // stream_index
+    //    videoIdx = -1;
+    //    // 视频解码器上下文
+    //    avcodec_close(pCodecCtx);
+    //    pCodecCtx = nullptr;
+    //    //
+    //    //    frameRate = 0;
+    //    // 源视频流的宽高
+    //    srcWidth = 0, srcHeight = 0;
 }
