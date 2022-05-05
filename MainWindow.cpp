@@ -8,6 +8,13 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     //    asongFFmpeg = new ASongFFmpeg(ui->screen_widget);
+
+    //播放模式初始为1 顺序
+    playMode = 1;
+    //初始为可切换播放模式
+    playModeChangable = true;
+    //音量
+    this->volumeValueChangable = true;
 }
 
 MainWindow::~MainWindow()
@@ -105,5 +112,54 @@ void MainWindow::on_play_button_clicked()
     //            }
     //        }
     //    }
+}
+
+
+void MainWindow::on_playmode_button_clicked()
+{
+    //不可切换则不做改变
+    if(!playModeChangable) return;
+    playMode = (playMode + 1) % 4;
+    switch (playMode) {
+    case 0:
+        ui->playmode_button->setText("单次播放");
+        break;
+    case 1:
+        ui->playmode_button->setText("顺序播放");
+        break;
+    case 2:
+        ui->playmode_button->setText("随机播放");
+        break;
+    case 3:
+        ui->playmode_button->setText("单曲循环");
+        break;
+    }
+    //执行切换命令
+    //toBeDone
+}
+
+
+void MainWindow::on_mute_button_clicked()
+{
+    if(!this->volumeValueChangable) return;
+    if(ui->volume_ctrl->value()==0){
+        ui->volume_ctrl->setOldValue();
+        ui->mute_button->setText("静音");
+    }
+    else{
+        ui->volume_ctrl->setZeroValue();
+        ui->mute_button->setText("解除静音");
+    }
+}
+
+
+void MainWindow::on_volume_ctrl_valueChanged(int value)
+{
+    if(value!=0){
+        ui->mute_button->setText("静音");
+    }
+    if(value==0){
+        ui->mute_button->setText("解除静音");
+    }
 }
 

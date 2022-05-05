@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>859</width>
-    <height>663</height>
+    <width>913</width>
+    <height>631</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -144,10 +144,10 @@
           <string notr="true"/>
          </property>
          <property name="pageStep">
-          <number>10</number>
+          <number>0</number>
          </property>
          <property name="value">
-          <number>14</number>
+          <number>0</number>
          </property>
          <property name="tracking">
           <bool>true</bool>
@@ -198,7 +198,7 @@
        <item>
         <widget class="QPushButton" name="playmode_button">
          <property name="text">
-          <string>循环</string>
+          <string>循环播放</string>
          </property>
         </widget>
        </item>
@@ -300,8 +300,14 @@
          <property name="styleSheet">
           <string notr="true"/>
          </property>
-         <property name="sliderPosition">
+         <property name="pageStep">
           <number>0</number>
+         </property>
+         <property name="value">
+          <number>30</number>
+         </property>
+         <property name="sliderPosition">
+          <number>30</number>
          </property>
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -347,7 +353,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>859</width>
+     <width>913</width>
      <height>26</height>
     </rect>
    </property>
@@ -377,6 +383,9 @@
    <class>MySlider</class>
    <extends>QSlider</extends>
    <header location="global">myslider.h</header>
+   <slots>
+    <slot>setZeroValue()</slot>
+   </slots>
   </customwidget>
  </customwidgets>
  <resources/>
