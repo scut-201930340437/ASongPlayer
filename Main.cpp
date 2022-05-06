@@ -37,6 +37,7 @@ int main(int argc, char *argv[])
     //        qDebug() << "success！！！";
     //    }
     MainWindow w;
+    w.setWindowFlags(Qt::FramelessWindowHint);  // 去掉标题栏
     w.show();
     return a.exec();
 }

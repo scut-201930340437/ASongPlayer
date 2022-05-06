@@ -163,3 +163,21 @@ void MainWindow::on_volume_ctrl_valueChanged(int value)
     }
 }
 
+
+void MainWindow::on_close_button_clicked()
+{
+    this->close();
+}
+
+
+void MainWindow::on_minimize_button_clicked()
+{
+    this->showMinimized();
+}
+
+
+void MainWindow::on_maximize_button_clicked()
+{
+    this->isMaximized() ? this->showNormal() : this->showMaximized();
+}
+

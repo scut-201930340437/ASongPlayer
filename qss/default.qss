@@ -1,3 +1,9 @@
+title_widget{
+    background-color:#a0b1af;
+}
+MyTitleBar{
+    background-color:#6005fc;
+}
 QMenuBar{
     color:rgb(0,0,0);
 }

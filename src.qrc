@@ -10,5 +10,11 @@
         <file>qss/MaterialDark.qss</file>
         <file>qss/NeonButtons.qss</file>
         <file>qss/Ubuntu.qss</file>
+        <file>img/close.png</file>
+        <file>img/close2.png</file>
+        <file>img/maximize.png</file>
+        <file>img/maximize2.png</file>
+        <file>img/minimize.png</file>
+        <file>img/minimize2.png</file>
     </qresource>
 </RCC>

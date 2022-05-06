@@ -41,6 +41,12 @@ private slots:
     //当音量值不为零应该将静音按钮的文字设置为“静音”
     void on_volume_ctrl_valueChanged(int value);
 
+    void on_close_button_clicked();
+
+    void on_minimize_button_clicked();
+
+    void on_maximize_button_clicked();
+
 private:
     SDLPaint *painter = nullptr;
     //    QTimer *sdlTimer = nullptr;
