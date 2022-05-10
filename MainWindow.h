@@ -23,8 +23,6 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
-public: MainWindow(QWidget *parent = nullptr);
-
 public:
 
     //播放模式 0 只播当前 1 顺序 2 随机 3 单个循环
@@ -34,11 +32,12 @@ public:
     //可切换音量
     bool volumeValueChangable;
 
+
+    MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
 private slots:
     void on_play_button_clicked();
-
 
     void on_stop_button_clicked();
 
@@ -66,6 +65,7 @@ private slots:
     void onPlayTableCellDoubleClicked(int row, int column);
 
     void dropEvent(QDropEvent *e);
+
 
 private:
 
