@@ -82,6 +82,7 @@ public:
     //    SwrContext* getSwrCtx();
     int getMediaType();
     int getMediaStatus();
+    int getDuration();
     int getCurPlaySec();
     QString getFilepath();
     bool audioHasCover();

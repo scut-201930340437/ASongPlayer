@@ -9,6 +9,7 @@
 #include <QUrl>
 #include <QMimeData>
 #include <QEvent>
+#include <QTimer>
 
 
 
@@ -28,10 +29,6 @@ public:
 
     //播放模式 0 只播当前 1 顺序 2 随机 3 单个循环
     int playMode;
-    //由播放列表告知是否可切换，怕卡了
-    bool playModeChangable;
-    //可切换音量
-    bool volumeValueChangable;
 
 
     MainWindow(QWidget *parent = nullptr);
@@ -70,6 +67,11 @@ private slots:
 
     void dropEvent(QDropEvent *e);
 
+    void on_position_ctrl_valueChanged(int value);
+
+    //定时事件
+    void handleTimeout();
+
 private:
 
     //    QTimer *sdlTimer = nullptr;
@@ -83,6 +85,8 @@ private:
     //读取/存储历史播放
     void saveFilePath();
     void readFilePath();
+    //定时器
+    QTimer* myTimer;
 
 
 };

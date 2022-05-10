@@ -205,14 +205,11 @@ void ASongAudio::stop()
 
 void ASongAudio::setVolume(int volume)
 {
-    ASongAudioOutput::getInstance()->setVolume(volume);
+    curVolume = volume/volTranRate;
+    ASongAudioOutput::getInstance()->setVolume(curVolume);
 }
-void ASongAudio::unmute()
+
+qreal ASongAudio::getVolume()
 {
-    ASongAudioOutput::getInstance()->setVolume(preVolume);
-}
-void ASongAudio::mute()
-{
-    preVolume = ASongAudioOutput::getInstance()->getVolume();
-    ASongAudioOutput::getInstance()->setVolume(0);
+    return curVolume;
 }

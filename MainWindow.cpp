@@ -4,6 +4,7 @@
 #include "ASongFFmpeg.h"
 #include "ASongAudio.h"
 #include "ASongVideo.h"
+#include <QDebug>
 
 #include<QFileDialog>
 MainWindow::MainWindow(QWidget *parent)
@@ -15,10 +16,11 @@ MainWindow::MainWindow(QWidget *parent)
 
     //播放模式初始为1 顺序
     playMode = 1;
-    //初始为可切换播放模式
-    playModeChangable = true;
-    //音量
-    this->volumeValueChangable = true;
+//    //定时器
+//    myTimer = new QTimer();
+//    myTimer->setInterval(1000); //1秒
+//    connect(myTimer, SIGNAL(timeout()), this, SLOT(handleTimeout()));
+//    myTimer->start();
 
     connect(this->ui->play_table,SIGNAL(cellDoubleClicked(int,int)),this,SLOT(onPlayTableCellDoubleClicked(int, int)));
     //启用鼠标拖拽放下操做
@@ -96,8 +98,6 @@ void MainWindow::on_stop_button_clicked()
 
 void MainWindow::on_playmode_button_clicked()
 {
-    //不可切换则不做改变
-    if(!playModeChangable) return;
     playMode = (playMode + 1) % 4;
     switch (playMode) {
     case 0:
@@ -120,7 +120,6 @@ void MainWindow::on_playmode_button_clicked()
 
 void MainWindow::on_mute_button_clicked()
 {
-    if(!this->volumeValueChangable) return;
     if(ui->volume_ctrl->value()==0){
         ui->volume_ctrl->setOldValue();
         ui->mute_button->setText("静音");
@@ -129,6 +128,7 @@ void MainWindow::on_mute_button_clicked()
         ui->volume_ctrl->setZeroValue();
         ui->mute_button->setText("解除静音");
     }
+    ASongAudio::getInstance()->setVolume(ui->volume_ctrl->value());
 }
 
 
@@ -140,6 +140,7 @@ void MainWindow::on_volume_ctrl_valueChanged(int value)
     if(value==0){
         ui->mute_button->setText("解除静音");
     }
+    ASongAudio::getInstance()->setVolume(ui->volume_ctrl->value());
 }
 
 
@@ -321,3 +322,16 @@ void MainWindow::readFilePath()
     setListFromFilePath();
 }
 
+
+void MainWindow::on_position_ctrl_valueChanged(int value)
+{
+    double percentage = 1.0*value/10000.0;  //精确到小数点后四位
+    int posSec = ASongFFmpeg::getInstance()->getDuration()*percentage;
+    ASongFFmpeg::getInstance()->seek(posSec);
+}
+
+void MainWindow::handleTimeout()
+{
+    int posSlider = ASongFFmpeg::getInstance()->getCurPlaySec() / ASongFFmpeg::getInstance()->getDuration() * 10000;
+    ui->position_ctrl->setValue(100);
+}

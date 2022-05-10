@@ -72,9 +72,7 @@ public:
     void pause();
     void stop();
     void setVolume(int volume);
-    void unmute();
-    void mute();
-
+    qreal getVolume();
     //
 
 private:
@@ -116,9 +114,9 @@ private:
     //    QMediaDevices *mediaDevice = nullptr;
     //    QIODevice *audioIO = nullptr;
     //    QAudioSink *audioOutput = nullptr;
-
-    // 音量和转换系数
-    qreal preVolume = 0.5;
+    qreal curVolume=0.3;
+    //转换系数
+    const qreal volTranRate = 100.0;
 };
 
 #endif // ASONGAUDIO_H

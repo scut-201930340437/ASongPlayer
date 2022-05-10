@@ -39,7 +39,7 @@ void ASongAudioOutput::initAndStartDevice(QObject *par)
     format.setChannelCount(channels);
     audioOutput = new QAudioSink(audioDevice, format);
     audioOutput->setBufferSize(maxFrameSize * 2);
-    audioOutput->setVolume(0.5);
+    audioOutput->setVolume(ASongAudio::getInstance()->getVolume());
     audioIO = audioOutput->start();
 }
 
@@ -170,9 +170,9 @@ qreal ASongAudioOutput::getVolume()
     return audioOutput->volume();
 }
 
-void ASongAudioOutput::setVolume(int volume)
+void ASongAudioOutput::setVolume(const qreal curVolume)
 {
-    audioOutput->setVolume(volume / volTranRate);
+    audioOutput->setVolume(curVolume);
 }
 
 void ASongAudioOutput::pause()

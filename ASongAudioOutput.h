@@ -36,7 +36,7 @@ public:
     // 播放控制
     void pause();
     void stop();
-    void setVolume(int volume);
+    void setVolume(const qreal curVolume);
 
     //
     static const int maxFrameSize = 19200;
@@ -65,8 +65,7 @@ private:
     QMediaDevices *mediaDevice = nullptr;
     QIODevice *audioIO = nullptr;
     QAudioSink *audioOutput = nullptr;
-    // 音量和转换系数
-    const qreal volTranRate = 100.0;
+
 };
 
 #endif // ASONGAUDIOOUTPUT_H

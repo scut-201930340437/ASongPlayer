@@ -61,9 +61,7 @@ int ASongFFmpeg::load(QString path)
     // 获取文件格式
     list = mediaMetaData.filename.split(".");
     mediaMetaData.format = list[list.size() - 1];
-    // 获取总时长
-    mediaMetaData.durationSec = pFormatCtx->duration / AV_TIME_BASE;
-    mediaMetaData.durationMSec = mediaMetaData.durationSec * 1000;
+
     //    curMediaStatus = 1;
     std::string str = path.toStdString();
     // 打开文件
@@ -82,6 +80,9 @@ int ASongFFmpeg::load(QString path)
     }
     // 打印封装格式数据
     av_dump_format(pFormatCtx, 0, str.c_str(), 0);
+    // 获取总时长
+    mediaMetaData.durationSec = pFormatCtx->duration / AV_TIME_BASE;
+    mediaMetaData.durationMSec = mediaMetaData.durationSec * 1000;
     // 分出视频流和音频流
     //    AVCodecParameters *pCodecPara = nullptr;
     AVCodecContext *pACodecCtx = nullptr, *pVCodecCtx = nullptr;
@@ -271,6 +272,11 @@ int ASongFFmpeg::getMediaStatus()
     //    QMutexLocker locker(&_mediaStatusMutex);
     //    qDebug() << curMediaStatus;
     return curMediaStatus;
+}
+
+int ASongFFmpeg::getDuration()
+{
+    return mediaMetaData.durationSec;
 }
 
 int ASongFFmpeg::getCurPlaySec()
