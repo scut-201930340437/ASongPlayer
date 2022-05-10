@@ -1,6 +1,5 @@
 <RCC>
     <qresource prefix="/">
-        <file>qss/AMOLED.qss</file>
         <file>qss/Aqua.qss</file>
         <file>qss/ConsoleStyle.qss</file>
         <file>qss/default.qss</file>
@@ -16,5 +15,7 @@
         <file>img/maximize2.png</file>
         <file>img/minimize.png</file>
         <file>img/minimize2.png</file>
+        <file>qss/black.qss</file>
+        <file>img/play.png</file>
     </qresource>
 </RCC>
