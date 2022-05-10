@@ -12,6 +12,7 @@ SDLPaint::~SDLPaint()
     //    SDL_DestroyTexture(sdlTexture);
     //    SDL_DestroyWindow(screen);
     //    SDL_Quit();
+    //
     if(nullptr != sdlTimer)
     {
         sdlTimer->stop();
@@ -138,7 +139,6 @@ void SDLPaint::getFrameYUV()
         double actualDelay = ASongVideo::getInstance()->synVideo(*((double*)frame->opaque));
         // 同步后释放该帧
         av_frame_free(&frame);
-        //    qDebug() << frame->data[0];
         // 绘制
         paint(frameYUV);
         // 重设延时
@@ -186,7 +186,7 @@ void SDLPaint::stop()
     SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, 255);
     SDL_RenderClear(sdlRenderer);
     SDL_RenderPresent(sdlRenderer);
-    //
+    // 关闭sdl
     SDL_DestroyRenderer(sdlRenderer);
     sdlRenderer = nullptr;
     SDL_DestroyTexture(sdlTexture);

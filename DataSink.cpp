@@ -8,8 +8,8 @@ DataSink::DataSink()
     audioSem = new QSemaphore(0);
     videoSem = new QSemaphore(0);
     audioFraSem = new QSemaphore(0);
-    //    audioEmpSem = new QSemaphore(maxPacketListLength);
-    //    videoEmpSem = new QSemaphore(maxPacketListLength);
+    //    audioFraEmpSem = new QSemaphore(maxFrameListLength);
+    //    videoFraEmpSem = new QSemaphore(maxFrameListLength);
 }
 
 DataSink::~DataSink()
@@ -17,6 +17,8 @@ DataSink::~DataSink()
     delete audioSem;
     delete videoSem;
     delete audioFraSem;
+    //    delete audioFraEmpSem;
+    //    delete videoFraEmpSem;
 }
 
 DataSink* DataSink::getInstance()
@@ -52,12 +54,15 @@ AVFrame* DataSink::takeNextFrame(int type)
     if(type == 0)
     {
         audioFraSem->acquire();
+        //        audioFraEmpSem->release();
         return aFrameList.takeFirst();
     }
     else
     {
         if(!vFrameList.isEmpty())
         {
+            //            AVFrame *frame = vFrameList.takeFirst();
+            //            videoFraEmpSem->release();
             return vFrameList.takeFirst();
         }
         else
@@ -89,11 +94,13 @@ void DataSink::appendFrameList(int type, AVFrame *frame)
 {
     if(type == 0)
     {
+        //        audioFraEmpSem->acquire();
         aFrameList.append(frame);
         audioFraSem->release();
     }
     else
     {
+        //        videoFraEmpSem->acquire();
         vFrameList.append(frame);
     }
 }
@@ -101,7 +108,7 @@ void DataSink::appendFrameList(int type, AVFrame *frame)
 void DataSink::clearList()
 {
     AVFrame *frame = nullptr;
-    // 将信号量重置为0
+    // 将资源信号量重置为0
     audioSem->acquire(audioSem->available());
     videoSem->acquire(videoSem->available());
     audioFraSem->acquire(audioFraSem->available());
@@ -138,6 +145,9 @@ void DataSink::clearList()
     }
     vPacketList.clear();
     packet = nullptr;
+    // 将空位信号量置为队列最大长度
+    //    audioFraEmpSem->release(maxFrameListLength - audioFraEmpSem->available());
+    //    videoFraEmpSem->release(maxFrameListLength - videoFraEmpSem->available());
 }
 
 qsizetype DataSink::packetListSize(int type)

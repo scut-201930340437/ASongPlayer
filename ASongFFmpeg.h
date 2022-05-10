@@ -93,7 +93,7 @@ public:
     //    int getFrameRate();
     //    enum AVPixelFormat getPixFmt();
     /*播放控制*/
-    int play(QString path, QWidget *_screenWidget);
+    int play(QObject *par, QString path, QWidget *_screenWidget);
     int pause();
     int _continue(bool isReplay);
     int stop();

@@ -5,6 +5,7 @@
 
 #include <QMutex>
 #include <QSemaphore>
+#include <QWaitCondition>
 #include <QList>
 extern "C"
 {
@@ -18,9 +19,9 @@ public:
     ~DataSink();
     static DataSink* getInstance();
 
-    static const qsizetype maxPacketListLength = 20;
+    static const qsizetype maxPacketListLength = 10;
     // 帧list最大长度
-    static const qsizetype maxFrameListLength = 20;
+    static const qsizetype maxFrameListLength = 10;
     //    static const int maxFrameListLength=100;
 
     AVPacket* takeNextPacket(int type);
@@ -36,9 +37,8 @@ public:
     void clearList();
 
     //    bool packListIsEmpty(int type);
-    // 信号量
-    QSemaphore *audioSem = nullptr, *videoSem = nullptr, *audioFraSem = nullptr;
-    //    *audioEmpSem = nullptr, *videoEmpSem = nullptr;
+
+    //    *audioFraEmpSem = nullptr, *videoFraEmpSem = nullptr;
     //    *videoFraSem = nullptr;
 
 private:
@@ -55,6 +55,10 @@ private:
     // frametList
     QList<AVFrame*>aFrameList;
     QList<AVFrame*>vFrameList;
+
+    // 信号量
+    QSemaphore *audioSem = nullptr, *videoSem = nullptr, *audioFraSem = nullptr;
+    QWaitCondition *audioFraCon = nullptr, *videoFraCon = nullptr;
 
     // packetList是共享资源，需要加锁
     //    QMutex aPacketListMutex;

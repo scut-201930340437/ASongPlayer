@@ -61,7 +61,6 @@ int ASongFFmpeg::load(QString path)
     // 获取文件格式
     list = mediaMetaData.filename.split(".");
     mediaMetaData.format = list[list.size() - 1];
-
     //    curMediaStatus = 1;
     std::string str = path.toStdString();
     // 打开文件
@@ -281,7 +280,7 @@ int ASongFFmpeg::getDuration()
 
 int ASongFFmpeg::getCurPlaySec()
 {
-    return (int)ASongAudio::getInstance()->getAudioClock();
+    return int(ASongAudio::getInstance()->getAudioClock());
 }
 
 QString ASongFFmpeg::getFilepath()
@@ -295,7 +294,7 @@ bool ASongFFmpeg::audioHasCover()
 }
 
 // 开始播放
-int ASongFFmpeg::play(QString path, QWidget *_screenWidget)
+int ASongFFmpeg::play(QObject *par, QString path, QWidget *_screenWidget)
 {
     // 切换为播放态
     //    QMutexLocker locker(&_mediaStatusMutex);
@@ -303,7 +302,7 @@ int ASongFFmpeg::play(QString path, QWidget *_screenWidget)
     // 加载媒体文件信息
     load(path);
     // 初始化音频各参数及设备
-    ASongAudio::getInstance()->initAndStartDevice(this);
+    ASongAudio::getInstance()->initAndStartDevice(par);
     // 读取packet线程启动
     start();
     // 音频解码线程和播放线程启动
@@ -397,7 +396,6 @@ int ASongFFmpeg::stop()
     //    {
     //        return -1;
     //    }
-    //    qDebug()<<""
     return 0;
 }
 

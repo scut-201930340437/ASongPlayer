@@ -3,7 +3,6 @@
 #include "DataSink.h"
 
 QAtomicPointer<ASongAudioOutput> ASongAudioOutput::_instance = nullptr;
-//ASongAudio *ASongAudio::_instance = nullptr;
 QMutex ASongAudioOutput::_mutex;
 
 // 获取单一的实例
@@ -13,7 +12,6 @@ ASongAudioOutput* ASongAudioOutput::getInstance()
     QMutexLocker locker(&_mutex);
     if(_instance.testAndSetOrdered(nullptr, nullptr))
     {
-        //        qDebug() << "----";
         _instance.testAndSetOrdered(nullptr, new ASongAudioOutput);
     }
     return _instance;
@@ -33,14 +31,6 @@ void ASongAudioOutput::initAndStartDevice(QObject *par)
     // 先关闭当前音频播放
     closeDevice();
     mediaDevice = new QMediaDevices(par);
-    QAudioDevice audioDevice = mediaDevice->defaultAudioOutput();
-    QAudioFormat format = audioDevice.preferredFormat();
-    format.setSampleRate(sample_rate);
-    format.setChannelCount(channels);
-    audioOutput = new QAudioSink(audioDevice, format);
-    audioOutput->setBufferSize(maxFrameSize * 2);
-    audioOutput->setVolume(ASongAudio::getInstance()->getVolume());
-    audioIO = audioOutput->start();
 }
 
 // 初始化重采样参数
@@ -66,6 +56,14 @@ void ASongAudioOutput::start(Priority pro)
 
 void ASongAudioOutput::run()
 {
+    QAudioDevice audioDevice = mediaDevice->defaultAudioOutput();
+    QAudioFormat format = audioDevice.preferredFormat();
+    format.setSampleRate(sample_rate);
+    format.setChannelCount(channels);
+    audioOutput = new QAudioSink(audioDevice, format);
+    audioOutput->setBufferSize(maxFrameSize * 2);
+    audioOutput->setVolume(ASongAudio::getInstance()->getVolume());
+    audioIO = audioOutput->start();
     while(allowPlay)
     {
         // 如果是planar（每个声道数据单独存放），一定要重采样，因为PCM是packed（每个声道数据交错存放）
@@ -87,7 +85,7 @@ void ASongAudioOutput::run()
             }
             while(audioOutput->bytesFree() < out_size)
             {
-                msleep(1);
+                msleep(5);
             }
             // 更新时钟
             ASongAudio::getInstance()->setAudioClock(frame, duration);
@@ -115,7 +113,7 @@ void ASongAudioOutput::run()
             }
             while(audioOutput->bytesFree() < out_size)
             {
-                msleep(1);
+                msleep(5);
             }
             // 更新时钟
             ASongAudio::getInstance()->setAudioClock(frame, duration);
@@ -126,6 +124,7 @@ void ASongAudioOutput::run()
             //            }
         }
     }
+    closeDevice();
 }
 
 // 重采样
@@ -192,6 +191,6 @@ void ASongAudioOutput::stop()
         swr_free(&pSwrCtx);
         pSwrCtx = nullptr;
     }
-    closeDevice();
+    //    closeDevice();
     //    return true;
 }

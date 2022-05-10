@@ -16,29 +16,14 @@ extern "C"
 #include "libavcodec/avcodec.h"
 
 #include "libavformat/avformat.h"
-#include "libavformat/version.h"
+    //#include "libavformat/version.h"
 
 #include "libavdevice/avdevice.h"
 
 
 #include "libavutil/time.h"
 #include "libavutil/mathematics.h"
-
-    //#include "libswscale/swscale.h"
-    //#include "libswresample/swresample.h"
 };
-
-//class ASongAudioDevice: public QIODevice
-//{
-//public:
-
-//    qint64 readData(char *data, qint64 maxlen) override;
-//    qint64 writeData(const char *data, qint64 len) override;
-//    void start();
-//    void stop();
-//private:
-
-//};
 
 class ASongAudio: public QThread
 {
@@ -114,7 +99,7 @@ private:
     //    QMediaDevices *mediaDevice = nullptr;
     //    QIODevice *audioIO = nullptr;
     //    QAudioSink *audioOutput = nullptr;
-    qreal curVolume=0.3;
+    qreal curVolume = 0.3;
     //转换系数
     const qreal volTranRate = 100.0;
 };
