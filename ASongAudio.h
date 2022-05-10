@@ -25,7 +25,7 @@ extern "C"
 #include "libavutil/mathematics.h"
 
     //#include "libswscale/swscale.h"
-#include "libswresample/swresample.h"
+    //#include "libswresample/swresample.h"
 };
 
 //class ASongAudioDevice: public QIODevice

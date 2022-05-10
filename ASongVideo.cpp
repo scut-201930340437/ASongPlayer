@@ -210,7 +210,7 @@ double ASongVideo::synVideo(const double pts)
     // 真正延时时间
     //    qDebug() << tmp;
     double actualDelay = fmax(frameTime - av_gettime() / 1000000.0, synLowerBound);
-    qDebug() << actualDelay;
+    //    qDebug() << actualDelay;
     //        actualDelay = fmax(actualDelay, 0.010);
     return actualDelay;
 }
@@ -238,8 +238,8 @@ void ASongVideo::stop()
     if(nullptr != pCodecCtx)
     {
         avcodec_close(pCodecCtx);
+        pCodecCtx = nullptr;
     }
-    pCodecCtx = nullptr;
     videoClock = 0.0;
     // frameTime
     frameTime = 0.0;

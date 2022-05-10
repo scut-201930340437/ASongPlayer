@@ -330,6 +330,7 @@ int ASongFFmpeg::_continue(bool isReplay)
     // 音频解码线程和播放线程启动
     ASongAudio::getInstance()->start();
     // 带封面的音频在不是重新播放的情况下不启动视频解码线程和SDL
+    qDebug() << mediaMetaData.audio_meta_data.hasCover;
     if(mediaMetaData.mediaType == 2 && (!mediaMetaData.audio_meta_data.hasCover || mediaMetaData.audio_meta_data.hasCover && isReplay))
     {
         // 视频解码线程启动
@@ -368,6 +369,7 @@ int ASongFFmpeg::stop()
     ASongAudio::getInstance()->stop();
     if(mediaMetaData.mediaType == 2)
     {
+        //        qDebug() << "ffmpeg stop";
         ASongVideo::getInstance()->stop();
         SDLPaint::getInstance()->stop();
     }
@@ -378,16 +380,17 @@ int ASongFFmpeg::stop()
     }
     // 清空队列
     DataSink::getInstance()->clearList();
-    if(nullptr == pFormatCtx)
+    if(nullptr != pFormatCtx)
     {
-        return -1;
+        avformat_close_input(&pFormatCtx);
+        pFormatCtx = nullptr;
     }
     // 通过seek_frame移至开头
-    int ret = av_seek_frame(pFormatCtx, -1, 0, AVSEEK_FLAG_ANY);
-    if(ret < 0)
-    {
-        return -1;
-    }
+    //    int ret = av_seek_frame(pFormatCtx, -1, 0, AVSEEK_FLAG_ANY);
+    //    if(ret < 0)
+    //    {
+    //        return -1;
+    //    }
     //    qDebug()<<""
     return 0;
 }

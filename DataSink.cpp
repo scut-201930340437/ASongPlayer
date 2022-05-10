@@ -16,6 +16,7 @@ DataSink::~DataSink()
 {
     delete audioSem;
     delete videoSem;
+    delete audioFraSem;
 }
 
 DataSink* DataSink::getInstance()
@@ -100,12 +101,19 @@ void DataSink::appendFrameList(int type, AVFrame *frame)
 void DataSink::clearList()
 {
     AVFrame *frame = nullptr;
+    // 将信号量重置为0
+    audioSem->acquire(audioSem->available());
+    videoSem->acquire(videoSem->available());
+    audioFraSem->acquire(audioFraSem->available());
+    // 清理队列
     while(!aFrameList.isEmpty())
     {
+        //        audioFraSem->acquire();
         frame = aFrameList.takeFirst();
         av_frame_free(&frame);
     }
     aFrameList.clear();
+    //
     while(!vFrameList.isEmpty())
     {
         frame = vFrameList.takeFirst();
@@ -117,12 +125,14 @@ void DataSink::clearList()
     AVPacket *packet = nullptr;
     while(!aPacketList.isEmpty())
     {
+        //        audioSem->acquire();
         packet = aPacketList.takeFirst();
         av_packet_free(&packet);
     }
     aPacketList.clear();
     while(!vPacketList.isEmpty())
     {
+        //        videoSem->acquire();
         packet = vPacketList.takeFirst();
         av_packet_free(&packet);
     }

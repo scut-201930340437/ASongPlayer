@@ -7,11 +7,11 @@ QAtomicPointer<SDLPaint> SDLPaint::_instance = nullptr;
 
 SDLPaint::~SDLPaint()
 {
-    sws_freeContext(pSwsCtx);
-    SDL_DestroyRenderer(sdlRenderer);
-    SDL_DestroyTexture(sdlTexture);
-    SDL_DestroyWindow(screen);
-    SDL_Quit();
+    //    sws_freeContext(pSwsCtx);
+    //    SDL_DestroyRenderer(sdlRenderer);
+    //    SDL_DestroyTexture(sdlTexture);
+    //    SDL_DestroyWindow(screen);
+    //    SDL_Quit();
     if(nullptr != sdlTimer)
     {
         sdlTimer->stop();
@@ -180,26 +180,31 @@ void SDLPaint::pause()
 
 void SDLPaint::stop()
 {
+    // 停止定时器
     pause();
     // 渲染黑色图像
     SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, 255);
     SDL_RenderClear(sdlRenderer);
     SDL_RenderPresent(sdlRenderer);
     //
-    //    SDL_DestroyRenderer(sdlRenderer);
-    //    sdlRenderer = nullptr;
-    //    SDL_DestroyTexture(sdlTexture);
-    //    sdlTexture = nullptr;
-    //    SDL_DestroyWindow(screen);
-    //    screen = nullptr;
-    //    SDL_Quit();
-    //    // 关闭图像缩放处理上下文
-    //    if(nullptr != pSwsCtx)
-    //    {
-    //        sws_freeContext(pSwsCtx);
-    //        pSwsCtx = nullptr;
-    //    }
-    //    delete sdlTimer;
+    SDL_DestroyRenderer(sdlRenderer);
+    sdlRenderer = nullptr;
+    SDL_DestroyTexture(sdlTexture);
+    sdlTexture = nullptr;
+    SDL_DestroyWindow(screen);
+    screen = nullptr;
+    SDL_Quit();
+    // 关闭图像缩放处理上下文
+    if(nullptr != pSwsCtx)
+    {
+        sws_freeContext(pSwsCtx);
+        pSwsCtx = nullptr;
+    }
+    if(nullptr != sdlTimer)
+    {
+        delete sdlTimer;
+        sdlTimer = nullptr;
+    }
 }
 
 void SDLPaint::reStart()

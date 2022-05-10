@@ -179,7 +179,9 @@ double ASongAudio::getAudioClock()
 
 void ASongAudio::pause()
 {
+    // 先结束音频播放线程
     ASongAudioOutput::getInstance()->pause();
+    // 再结束音频解码线程
     if(isRunning())
     {
         allowRunAudio = false;
@@ -197,8 +199,8 @@ void ASongAudio::stop()
     if(nullptr != pCodecCtx)
     {
         avcodec_close(pCodecCtx);
+        pCodecCtx = nullptr;
     }
-    pCodecCtx = nullptr;
 }
 
 void ASongAudio::setVolume(int volume)
