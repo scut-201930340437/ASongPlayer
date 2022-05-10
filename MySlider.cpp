@@ -31,3 +31,13 @@ void MySlider::mousePressEvent(QMouseEvent *ev)
     //滑动条移动事件等事件也用到了mousePressEvent,加这句话是为了不对其产生影响，是的Slider能正常相应其他鼠标事件
     QSlider::mousePressEvent(ev);
 }
+
+void MySlider::setZeroValue(){
+    this->oldValue = this->value();
+    this->setValue(0);
+}
+
+void MySlider::setOldValue(){
+    this->setValue(this->oldValue);
+    this->oldValue = 0;
+}

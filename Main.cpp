@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     //打上样式
-    QFile file(":/qss/default.qss");
+    QFile file(":/qss/AMOLED.qss");
     file.open(QFile::ReadOnly);
     QTextStream filetext(&file);
     QString styleSheet = filetext.readAll();
@@ -37,6 +37,7 @@ int main(int argc, char *argv[])
     //        qDebug() << "success！！！";
     //    }
     MainWindow w;
+    w.setWindowFlags(Qt::FramelessWindowHint);  // 去掉标题栏
     w.show();
     return a.exec();
 }

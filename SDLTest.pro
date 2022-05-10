@@ -32,6 +32,7 @@ SOURCES += \
     Main.cpp \
     MainWindow.cpp \
     MySlider.cpp \
+    MyTitleBar.cpp \
     SDLPaint.cpp
 
 HEADERS += \
@@ -42,6 +43,7 @@ HEADERS += \
     DataSink.h \
     MainWindow.h \
     MySlider.h \
+    MyTitleBar.h \
     SDLPaint.h
 
 FORMS += \
