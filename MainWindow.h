@@ -7,6 +7,7 @@
 
 #include <QMainWindow>
 #include <QTimer>
+#include <QMenu>
 
 
 QT_BEGIN_NAMESPACE
@@ -46,6 +47,12 @@ private slots:
     void on_minimize_button_clicked();
 
     void on_maximize_button_clicked();
+
+    void on_title_widget_customContextMenuRequested(const QPoint &pos);
+
+    void on_MainWindow_customContextMenuRequested(const QPoint &pos);
+
+    void on_more_button_clicked();
 
 private:
     SDLPaint *painter = nullptr;

@@ -16,6 +16,9 @@
     <height>600</height>
    </size>
   </property>
+  <property name="contextMenuPolicy">
+   <enum>Qt::CustomContextMenu</enum>
+  </property>
   <property name="windowTitle">
    <string>ASongPlayer</string>
   </property>
@@ -26,6 +29,9 @@
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <widget class="MyTitleBar" name="title_widget" native="true">
+      <property name="contextMenuPolicy">
+       <enum>Qt::CustomContextMenu</enum>
+      </property>
       <layout class="QHBoxLayout" name="horizontalLayout_5">
        <property name="spacing">
         <number>0</number>
@@ -42,6 +48,13 @@
        <property name="bottomMargin">
         <number>0</number>
        </property>
+       <item>
+        <widget class="QPushButton" name="more_button">
+         <property name="text">
+          <string>更多</string>
+         </property>
+        </widget>
+       </item>
        <item>
         <spacer name="t1">
          <property name="orientation">

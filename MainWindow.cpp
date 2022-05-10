@@ -181,3 +181,40 @@ void MainWindow::on_maximize_button_clicked()
     this->isMaximized() ? this->showNormal() : this->showMaximized();
 }
 
+
+void MainWindow::on_title_widget_customContextMenuRequested(const QPoint &pos)
+{
+    QMenu *cmenu = new QMenu(ui->title_widget);
+
+        QAction *action1 = new QAction(tr("关闭"), this);
+        QAction *action2 = this->isMaximized() ? new QAction(tr("还原"), this) : new QAction(tr("最大化"), this);
+        QAction *action3 = new QAction(tr("最小化"), this);
+//        action1->setData(1);
+        cmenu->addAction(action1);
+        cmenu->addAction(action2);
+        cmenu->addAction(action3);
+        connect(action1, SIGNAL(triggered(bool)), this, SLOT(close()));
+        connect(action2, SIGNAL(triggered(bool)), this, SLOT(on_maximize_button_clicked()));
+        connect(action3, SIGNAL(triggered(bool)), this, SLOT(on_minimize_button_clicked()));
+        cmenu->exec(QCursor::pos());
+}
+
+
+void MainWindow::on_MainWindow_customContextMenuRequested(const QPoint &pos)
+{
+    QMenu *cmenu = new QMenu(ui->title_widget);
+
+        QAction *action1 = new QAction(tr("打开文件"), this);
+        cmenu->addAction(action1);
+        connect(action1, SIGNAL(triggered(bool)), this, SLOT(on_play_button_clicked()));
+        cmenu->exec(QCursor::pos());
+}
+
+
+void MainWindow::on_more_button_clicked()
+{
+//    QPoint q = QPoint(ui->more_button->x(),ui->more_button->y());
+    QPoint q = QPoint(0, 0);
+    on_MainWindow_customContextMenuRequested(q);
+}
+
