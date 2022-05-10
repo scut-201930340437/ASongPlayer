@@ -1,20 +1,15 @@
 #include "ASongFFmpeg.h"
 #include "ASongAudio.h"
 #include "ASongVideo.h"
-
-#include "SDLPaint.h"
-
 #include "DataSink.h"
 
-#include <QDebug>
 
 QAtomicPointer<ASongFFmpeg> ASongFFmpeg::_instance = nullptr;
 QMutex ASongFFmpeg::_mutex;
+QMutex ASongFFmpeg::_mediaStatusMutex;
 
 ASongFFmpeg::~ASongFFmpeg()
 {
-    allowRead = false;
-    avformat_close_input(&pFormatCtx);
     if(nullptr != DataSink::getInstance())
     {
         delete DataSink::getInstance();
@@ -32,9 +27,29 @@ ASongFFmpeg* ASongFFmpeg::getInstance()
     return _instance;
 }
 
+void ASongFFmpeg::initPara()
+{
+    mediaMetaData.mediaType = 0;
+    mediaMetaData.path = "";
+    mediaMetaData.filename = "";
+    mediaMetaData.format = "";
+    mediaMetaData.durationSec = 0;
+    mediaMetaData.durationMSec = 0;
+    // 音频
+    mediaMetaData.audio_meta_data.sample_rate = 0;
+    mediaMetaData.audio_meta_data.channels = 0;
+    mediaMetaData.audio_meta_data.channel_layout = 0;
+    mediaMetaData.audio_meta_data.hasCover = false;
+    // 视频
+    mediaMetaData.video_meta_data.frame_rate = 0;
+    mediaMetaData.video_meta_data.width = 0;
+    mediaMetaData.video_meta_data.height = 0;
+}
+
 // 加载文件信息
 int ASongFFmpeg::load(QString path)
 {
+    initPara();
     // 加锁，保证_instance同一时间只能被一个线程使用
     //        QMutexLocker locker(&_mutex);
     pFormatCtx = avformat_alloc_context();
@@ -75,23 +90,7 @@ int ASongFFmpeg::load(QString path)
     // 找到音频流
     if(audioIdx != AVERROR_STREAM_NOT_FOUND)
     {
-        //        if(mediaMetaData.findAudio)
-        //        {
-        //            continue;
-        //        }
-        //        else
-        //        {
-        //            mediaMetaData.findAudio = true;
-        //        }
-        //        if(mediaMetaData.mediaType == 0)
-        //        {
         mediaMetaData.mediaType = 1;
-        //        }
-        // 设置streamIdx
-        //        audioIdx = (int)i;
-        //            ASongAudio::getInstance()->setAudioIdx(audioIdx);
-        //            // 设置时基
-        //            ASongAudio::getInstance()->setTimeBase(pFormatCtx->streams[i]->time_base);
         // 获取解码器
         AVCodecParameters *pCodecPara = pFormatCtx->streams[audioIdx]->codecpar;
         //        pCodec = avcodec_find_decoder(pCodecPara->codec_id);
@@ -158,53 +157,37 @@ int ASongFFmpeg::load(QString path)
             return -1;
         }
         // 获取视频流元数据
-        // 获取帧率
-        mediaMetaData.video_meta_data.frame_rate = ceil(av_q2d(pFormatCtx->streams[videoIdx]->avg_frame_rate));
+        // 获取帧率，对于带封面的音频文件，av_q2d(pFormatCtx->streams[videoIdx]->avg_frame_rate)为nan
+        double tmpFrameRate = av_q2d(pFormatCtx->streams[videoIdx]->avg_frame_rate);
+        if(tmpFrameRate == tmpFrameRate)// 判断是否为nan
+        {
+            // 不为nan
+            mediaMetaData.video_meta_data.frame_rate = ceil(tmpFrameRate);
+        }
+        else
+        {
+            // 为nan
+            mediaMetaData.audio_meta_data.hasCover = true;
+            mediaMetaData.video_meta_data.frame_rate = -1;
+        }
+        //        mediaMetaData.video_meta_data.frame_rate = ceil(av_q2d(pFormatCtx->streams[videoIdx]->avg_frame_rate));
         mediaMetaData.video_meta_data.width = pCodecPara->width;
         mediaMetaData.video_meta_data.height = pCodecPara->height;
         mediaMetaData.video_meta_data.pix_fmt = pVCodecCtx->pix_fmt;
     }
-    //    for (size_t i = 0; i < pFormatCtx->nb_streams; ++i)
-    //    {
-    //        // 如果是音频流
-    //        AVCodecParameters *pCodecPara = pFormatCtx->streams[i]->codecpar;
-    //        if(pCodecPara->codec_type == AVMEDIA_TYPE_AUDIO)
-    //        {
-    //            qDebug() << "audio";
-    //        }
-    //        else
-    //        {
-    //            if(pCodecPara->codec_type == AVMEDIA_TYPE_VIDEO)
-    //            {
-    //            }
-    //        }
-    //    }
     ASongAudio::getInstance()->setMetaData(pFormatCtx, pACodecCtx, audioIdx);
     if(mediaMetaData.mediaType == 2)
     {
         ASongVideo::getInstance()->setMetaData(pVCodecCtx, videoIdx,
-                                               pFormatCtx->streams[videoIdx]->time_base);
+                                               pFormatCtx->streams[videoIdx]->time_base, mediaMetaData.audio_meta_data.hasCover);
         SDLPaint::getInstance()->setMetaData(mediaMetaData.video_meta_data.width,
                                              mediaMetaData.video_meta_data.height,
                                              mediaMetaData.video_meta_data.frame_rate,
                                              mediaMetaData.video_meta_data.pix_fmt);
+        //        qDebug() << mediaMetaData.video_meta_data.frame_rate;
     }
     pACodec = pVCodec = nullptr;
     //    qDebug() << "load finish";
-    return 0;
-}
-
-// 启动各线程
-int ASongFFmpeg::play(int mediaType)
-{
-    start();
-    ASongAudio::getInstance()->start();
-    if(mediaType == 2)
-    {
-        //        qDebug() << "start";
-        ASongVideo::getInstance()->start();
-    }
-    //    qDebug() << "start";
     return 0;
 }
 
@@ -212,8 +195,6 @@ int ASongFFmpeg::play(int mediaType)
 void ASongFFmpeg::start(Priority pro)
 {
     allowRead = true;
-    // 切换为播放态
-    curMediaStatus = 1;
     //
     //    qDebug() << "vIdx" << videoIdx << ' ' << audioIdx;
     QThread::start(pro);
@@ -221,18 +202,17 @@ void ASongFFmpeg::start(Priority pro)
 
 void ASongFFmpeg::run()
 {
-    //    bool hasMedia = true;
     while(allowRead)
     {
         if(DataSink::getInstance()->packetListSize(0) >= DataSink::maxPacketListLength
                 && DataSink::getInstance()->packetListSize(1) >= DataSink::maxPacketListLength)
         {
-            msleep(20);
+            msleep(80);
         }
         else
         {
             AVPacket *packet = readFrame();
-            if(!packet)
+            if(nullptr == packet)
             {
                 qDebug() << "Couldn't open file.";
                 //                hasMedia = false;
@@ -267,6 +247,7 @@ AVPacket* ASongFFmpeg::readFrame()
     QMutexLocker locker(&_mutex);
     if(!pFormatCtx)
     {
+        //        qDebug() << "pFormat";
         return nullptr;
     }
     AVPacket* packet = av_packet_alloc();
@@ -280,12 +261,6 @@ AVPacket* ASongFFmpeg::readFrame()
     return packet;
 }
 
-void ASongFFmpeg::setMediaStatus(int status)
-{
-    QMutexLocker locker(&_mediaStatusMutex);
-    curMediaStatus = status;
-}
-
 int ASongFFmpeg::getMediaType()
 {
     return mediaMetaData.mediaType;
@@ -293,69 +268,147 @@ int ASongFFmpeg::getMediaType()
 
 int ASongFFmpeg::getMediaStatus()
 {
-    QMutexLocker locker(&_mediaStatusMutex);
+    //    QMutexLocker locker(&_mediaStatusMutex);
     //    qDebug() << curMediaStatus;
     return curMediaStatus;
 }
 
-int ASongFFmpeg::pause()
+int ASongFFmpeg::getCurPlaySec()
 {
-    QMutexLocker locker(&_mediaStatusMutex);
-    curMediaStatus = 2;
-    allowRead = false;
-    ASongAudio::getInstance()->pause();
-    ASongVideo::getInstance()->pause();
-    SDLPaint::getInstance()->pause();
+    return (int)ASongAudio::getInstance()->getAudioClock();
+}
+
+QString ASongFFmpeg::getFilepath()
+{
+    return mediaMetaData.path;
+}
+
+bool ASongFFmpeg::audioHasCover()
+{
+    return mediaMetaData.audio_meta_data.hasCover;
+}
+
+// 开始播放
+int ASongFFmpeg::play(QString path, QWidget *_screenWidget)
+{
+    // 切换为播放态
+    //    QMutexLocker locker(&_mediaStatusMutex);
+    curMediaStatus = 1;
+    // 加载媒体文件信息
+    load(path);
+    // 初始化音频各参数及设备
+    ASongAudio::getInstance()->initAndStartDevice(this);
+    // 读取packet线程启动
+    start();
+    // 音频解码线程和播放线程启动
+    ASongAudio::getInstance()->start();
+    //    qDebug() << mediaMetaData.mediaType;
+    if(mediaMetaData.mediaType == 2)
+    {
+        //        qDebug() << "start";
+        // SDL初始化
+        painter = SDLPaint::getInstance();
+        int ret = painter->init(_screenWidget);
+        if(ret != 0)
+        {
+            qDebug() << "init sdl failed";
+        }
+        // 视频解码线程启动
+        ASongVideo::getInstance()->start();
+    }
+    //    qDebug() << "start";
     return 0;
 }
 
+int ASongFFmpeg::_continue(bool isReplay)
+{
+    // 切换为播放态
+    //    QMutexLocker locker(&_mediaStatusMutex);
+    curMediaStatus = 1;
+    // 读取packet线程启动
+    start();
+    // 音频解码线程和播放线程启动
+    ASongAudio::getInstance()->start();
+    // 带封面的音频在不是重新播放的情况下不启动视频解码线程和SDL
+    if(mediaMetaData.mediaType == 2 && (!mediaMetaData.audio_meta_data.hasCover || mediaMetaData.audio_meta_data.hasCover && isReplay))
+    {
+        // 视频解码线程启动
+        ASongVideo::getInstance()->start();
+        // SDL重启
+        painter->reStart();
+    }
+    //    qDebug() << "start";
+    return 0;
+}
+
+int ASongFFmpeg::pause()
+{
+    //    QMutexLocker locker(&_mediaStatusMutex);
+    curMediaStatus = 2;
+    // 结束各线程
+    ASongAudio::getInstance()->pause();
+    if(mediaMetaData.mediaType == 2)
+    {
+        ASongVideo::getInstance()->pause();
+        SDLPaint::getInstance()->pause();
+    }
+    if(isRunning())
+    {
+        allowRead = false;
+        wait();
+    }
+    return 0;
+}
 
 int ASongFFmpeg::stop()
 {
-    QMutexLocker locker(&_mediaStatusMutex);
-    curMediaStatus = 3;
-    allowRead = false;
+    //    QMutexLocker locker(&_mediaStatusMutex);
+    curMediaStatus = 0;
+    // 结束各线程
+    ASongAudio::getInstance()->stop();
+    if(mediaMetaData.mediaType == 2)
+    {
+        ASongVideo::getInstance()->stop();
+        SDLPaint::getInstance()->stop();
+    }
+    if(isRunning())
+    {
+        allowRead = false;
+        wait();
+    }
+    // 清空队列
+    DataSink::getInstance()->clearList();
+    if(nullptr == pFormatCtx)
+    {
+        return -1;
+    }
+    // 通过seek_frame移至开头
+    int ret = av_seek_frame(pFormatCtx, -1, 0, AVSEEK_FLAG_ANY);
+    if(ret < 0)
+    {
+        return -1;
+    }
     return 0;
 }
 
-
-//AVFormatContext* ASongFFmpeg::getFormatCtx()
-//{
-//    return pFormatCtx;
-//}
-
-//int ASongFFmpeg::getSampleRate()
-//{
-//    return mediaMetaData.audio_meta_data.sample_rate;
-//}
-
-//int ASongFFmpeg::getChannels()
-//{
-//    return mediaMetaData.audio_meta_data.channels;
-//}
-
-//int ASongFFmpeg::getSrcWidth()
-//{
-//    return mediaMetaData.video_meta_data.width;
-//}
-
-//int ASongFFmpeg::getSrcHeight()
-//{
-//    return mediaMetaData.video_meta_data.height;
-//}
-
-//enum AVPixelFormat ASongFFmpeg::getPixFmt()
-//{
-//    return mediaMetaData.video_meta_data.pix_fmt;
-//}
-
-
-//int ASongFFmpeg::getFrameRate()
-//{
-//    return mediaMetaData.video_meta_data.frame_rate;
-//}
-
-//void ASongFFmpeg::setMediaStatus(int status)
-//{
-//    curMediaStatus=status;
-//}
+int ASongFFmpeg::seek(int posSec)
+{
+    // 先结束各线程，但是各上下文不关闭
+    pause();
+    // 清空队列
+    DataSink::getInstance()->clearList();
+    //    QMutexLocker locker(&_mutex);
+    if(nullptr == pFormatCtx)
+    {
+        return -1;
+    }
+    int ret = av_seek_frame(pFormatCtx, -1,
+                            (int64_t)posSec * AV_TIME_BASE,
+                            AVSEEK_FLAG_ANY);
+    if(ret < 0)
+    {
+        return -1;
+    }
+    _continue(false);
+    return 0;
+}

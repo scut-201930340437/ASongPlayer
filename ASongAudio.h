@@ -11,8 +11,6 @@
 #include <QAudioOutput>
 #include <QAudioSink>
 
-#include "DataSink.h"
-
 extern "C"
 {
 #include "libavcodec/avcodec.h"
@@ -45,7 +43,6 @@ extern "C"
 class ASongAudio: public QThread
 {
 public:
-    ~ASongAudio();
     // 前端交互
     //    static const int MaxVolume = 100;
     //    static const int MinVolume = 0;
@@ -58,7 +55,7 @@ public:
     // 初始化音频设备参数
     void initAndStartDevice(QObject *par);
     // 初始化重采样参数
-    void initSwr();
+    //    void initSwr();
     // 初始化元数据，从ffmpeg的load中读取
     void setMetaData(AVFormatContext *_pFormatCtx, AVCodecContext *_pCodecCtx, int _audioIdx);
     /* 访问成员变量*/
@@ -78,19 +75,17 @@ public:
     void mute();
 
     //
-    static const int maxFrameSize = 19200;
 
 private:
-
     ASongAudio() = default;
 
     // thread 音频解码
     void run() override;
 
-    // 重采样
-    int swrToPCM(uint8_t *outBuffer, AVFrame*frame, AVFormatContext *pFormatCtx);
-    // 写入音频输出设备
-    void writeToDevice(QList<AVFrame*>&frame_list);
+    //    // 重采样
+    //    int swrToPCM(uint8_t *outBuffer, AVFrame*frame, AVFormatContext *pFormatCtx);
+    //    // 写入音频输出设备
+    //    void writeToDevice(QList<AVFrame*>&frame_list);
 
 
     // 使用QAtomicPointer，对指针保证与平台无关的原子操作
@@ -99,7 +94,8 @@ private:
     static QMutex _mutex;
 
     //    QAtomicPointer<DataSink> dataInstance = nullptr;
-
+    // 当前播放时长
+    //    double curPlayPos = 0.0;
     // 时钟，音频为准
     double audioClock = 0.0;
     // 时基
@@ -114,14 +110,14 @@ private:
     // 音频解码器上下文
     AVCodecContext *pCodecCtx = nullptr;
     // 重采样上下文
-    SwrContext *pSwrCtx = nullptr;
+    //    SwrContext *pSwrCtx = nullptr;
     // 音频播放设备
-    QMediaDevices *mediaDevice = nullptr;
-    QIODevice *audioIO = nullptr;
-    QAudioSink *audioOutput = nullptr;
+    //    QMediaDevices *mediaDevice = nullptr;
+    //    QIODevice *audioIO = nullptr;
+    //    QAudioSink *audioOutput = nullptr;
 
-    //    int preVolume;
-    //    int volumeTranRate = 100;
+    // 音量和转换系数
+    qreal preVolume = 0.5;
 };
 
 #endif // ASONGAUDIO_H

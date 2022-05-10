@@ -5,11 +5,6 @@
 //#define SFM_PAUSE_EVENT   (SDL_USEREVENT + 2)
 //#define SFM_BREAK_EVENT  (SDL_USEREVENT + 3)
 
-#include "ASongFFmpeg.h"
-#include "ASongVideo.h"
-
-#include "DataSink.h"
-
 #include <QWidget>
 #include <QTimer>
 #include <QDebug>
@@ -18,6 +13,7 @@ extern "C"
 {
 #include "libavcodec/avcodec.h"
 #include "libavformat/avformat.h"
+#include "libswscale/swscale.h"
 #include "SDL2/SDL.h"
 };
 class SDLPaint: public QObject
@@ -27,7 +23,7 @@ public:
     static SDLPaint* getInstance();
     ~SDLPaint();
     // 初始化sdl
-    int init(QWidget *screenWidget);
+    int init(QWidget *_screenWidget);
 
     void setMetaData(const int width, const int height, const int _frameRate, const enum AVPixelFormat _pix_fmt);
     // 根据输出窗口重设sdl的参数
@@ -41,6 +37,7 @@ public:
     //    static int sfp_signal_thread(void* opaque);
 
     void pause();
+    void stop();
     void reStart();
 
     //    int getFrameRate();
@@ -53,6 +50,7 @@ private:
 
     //------------SDL----------------
     //    int screenWidth = 0, screenHeight = 0;
+
     SDL_Window *screen = nullptr;
     SDL_Renderer *sdlRenderer = nullptr;
     SDL_Texture *sdlTexture = nullptr;
@@ -75,7 +73,7 @@ private:
     // 输出图像的宽高
     int dstWidth, dstHeight;
     // 帧率
-    int frameRate = 1;
+    int frameRate = -1;
     //
     int preDelay = 0;
 };

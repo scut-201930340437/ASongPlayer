@@ -2,21 +2,20 @@
 #define ASONGFFMPEG_H
 
 
-
-#include <QString>
+#include <QWidget>
 #include <QDebug>
+#include <QString>
 
 #include <QThread>
 #include <QMutex>
 #include <QMutexLocker>
+
+#include "SDLPaint.h"
+
 extern "C"
 {
 #include "libavcodec/avcodec.h"
 #include "libavformat/avformat.h"
-
-
-    //#include "libswresample/swresample.h"
-
 };
 
 struct AudioMetaData
@@ -25,8 +24,9 @@ struct AudioMetaData
     int sample_rate = 0;
     int channels = 0;
     uint64_t channel_layout = 0;
-    // 音视频同步以音频时间为基准
-    double curPlayPos = 0.0;
+    // 是否有封面
+    bool hasCover = false;
+
 };
 
 struct VideoMetaData
@@ -57,6 +57,8 @@ struct MediaMetaDate
 class ASongFFmpeg: public QThread
 {
 public:
+    // 播放状态锁
+    static QMutex _mediaStatusMutex;
     ~ASongFFmpeg();
     static ASongFFmpeg* getInstance();
     //    static int sfp_signal_thread(void* opaque);
@@ -71,7 +73,8 @@ public:
     //    void decode__(AVPacket *packet, QList<AVFrame*>&frame_list);
     //    double getPts(AVFrame *frame, int streamIdx);
 
-
+    // 初始化参数
+    void initPara();
     /* 获取成员变量*/
     //    AVFormatContext* getFormatCtx();
     //    AVCodecContext* getACodecCtx();
@@ -79,6 +82,9 @@ public:
     //    SwrContext* getSwrCtx();
     int getMediaType();
     int getMediaStatus();
+    int getCurPlaySec();
+    QString getFilepath();
+    bool audioHasCover();
     //    int getSampleRate();
     //    int getChannels();
     //    int getSrcWidth();
@@ -86,11 +92,14 @@ public:
     //    int getFrameRate();
     //    enum AVPixelFormat getPixFmt();
     /*播放控制*/
-    int play(int media_type);
+    int play(QString path, QWidget *_screenWidget);
     int pause();
+    int _continue(bool isReplay);
     int stop();
+    int seek(int posSec);
     // 设置播放器状态
-    void setMediaStatus(int status);
+    //    void setMediaStatus(int status);
+
 private:
     ASongFFmpeg() = default;
 
@@ -99,10 +108,10 @@ private:
     // 单一实例
     static QAtomicPointer<ASongFFmpeg>_instance;
     static QMutex _mutex;
-    // 播放状态锁
-    QMutex _mediaStatusMutex;
-    // 播放状态: 0-没有文件  1-正在播放  2-暂停   3-停止
-    int curMediaStatus = 0;
+    //sdlPainter
+    SDLPaint *painter = nullptr;
+    // 播放状态: -1 - 没有文件  0-停止  1-播放   2-暂停
+    int curMediaStatus = -1;
     // metaData
     MediaMetaDate mediaMetaData;
 

@@ -1,17 +1,10 @@
 #include "ASongFFmpeg.h"
 #include "ASongAudio.h"
 #include "ASongVideo.h"
-
 #include "DataSink.h"
 
 QAtomicPointer<ASongVideo> ASongVideo:: _instance = nullptr;
 QMutex ASongVideo::_mutex;
-
-ASongVideo::~ASongVideo()
-{
-    allowRunVideo = false;
-    avcodec_close(pCodecCtx);
-}
 
 ASongVideo* ASongVideo::getInstance()
 {
@@ -26,7 +19,7 @@ ASongVideo* ASongVideo::getInstance()
 }
 
 // 初始化参数
-void ASongVideo::setMetaData(AVCodecContext *_pCodecCtx, const int _videoIdx, const AVRational timeBase)
+void ASongVideo::setMetaData(AVCodecContext *_pCodecCtx, const int _videoIdx, const AVRational timeBase, bool _hasCover)
 {
     pCodecCtx = _pCodecCtx;
     videoIdx = _videoIdx;
@@ -34,6 +27,7 @@ void ASongVideo::setMetaData(AVCodecContext *_pCodecCtx, const int _videoIdx, co
     //    frameRate = _frameRate;
     srcWidth = pCodecCtx->width;
     srcHeight = pCodecCtx->height;
+    hasCover = _hasCover;
 }
 
 /*thread*/
@@ -45,56 +39,19 @@ void ASongVideo::start(Priority pro)
     QThread::start(pro);
 }
 
-// decode后续可能需要重新编写------------------
-//AVFrame* ASongFFmpeg::decode(AVPacket* packet)
-//{
-//    QMutexLocker locker(&_mutex);
-//    if(!pFormatCtx)
-//    {
-//        return nullptr;
-//    }
-//    AVFrame* frame = av_frame_alloc();
-//    AVCodecContext *pCodecCtx = nullptr;
-//    if(packet->stream_index == audioIdx)
-//    {
-//        pCodecCtx = pACodecCtx;
-//    }
-//    else
-//    {
-//        if(packet->stream_index == videoIdx)
-//        {
-//            pCodecCtx = pVCodecCtx;
-//        }
-//    }
-//    int ret = avcodec_send_packet(pCodecCtx, packet);
-//    if(ret != 0)
-//    {
-//        return nullptr;
-//    }
-//    //
-//    ret = avcodec_receive_frame(pCodecCtx, frame);
-//    if(ret != 0)
-//    {
-//        return nullptr;
-//    }
-//    return frame;
-//}
-
 void ASongVideo::run()
 {
     AVPacket *packet = nullptr;
+    bool coverAlready = false;
     while(allowRunVideo)
     {
-        if(DataSink::getInstance()->frameListSize() < maxFrameListLen)
+        if(DataSink::getInstance()->frameListSize(1) >= DataSink::maxFrameListLength)
         {
-            //            if(DataSink::getInstance()->packetListSize(1) > 0)
-            //            {
+            msleep(20);
+        }
+        else
+        {
             packet = DataSink::getInstance()->takeNextPacket(1);
-            //            // 同步
-            //            while(allowRunVideo && timestamp > ASongAudio::getInstance()->getTimestamp())
-            //            {
-            //                msleep(1);
-            //            }
             // 解码
             int ret = avcodec_send_packet(pCodecCtx, packet);
             // avcodec_send_packet成功
@@ -107,25 +64,21 @@ void ASongVideo::run()
                 if(ret == 0)
                 {
                     frame->opaque = (double*)new double(getPts(frame));
-                    //                        frame_list.append(frame);
-                    DataSink::getInstance()->appendFrameList(frame);
-                    //                    av_frame_unref(frame);
+                    DataSink::getInstance()->appendFrameList(1, frame);
+                    // 如果是带音频的封面，该线程只做一次循环
+                    if(hasCover)
+                    {
+                        coverAlready = true;
+                    }
                 }
                 else
                 {
-                    av_frame_free(&frame);
                     if(ret == AVERROR_EOF)
                     {
                         // 复位解码器
                         avcodec_flush_buffers(pCodecCtx);
                     }
-                    else
-                    {
-                        if(ret == AVERROR(EINVAL))
-                        {
-                            break;
-                        }
-                    }
+                    av_frame_free(&frame);
                 }
             }
             else
@@ -139,27 +92,24 @@ void ASongVideo::run()
                         ret = avcodec_receive_frame(pCodecCtx, frame);
                         if(ret == AVERROR_EOF)
                         {
-                            //                            av_frame_unref(frame);
                             av_frame_free(&frame);
                             // 复位解码器
                             avcodec_flush_buffers(pCodecCtx);
                             break;
                         }
                         frame->opaque = (double*)new double(getPts(frame));
-                        DataSink::getInstance()->appendFrameList(frame);
+                        DataSink::getInstance()->appendFrameList(1, frame);
                     }
                     // 然后再调用avcodec_send_packet
                     ret = avcodec_send_packet(pCodecCtx, packet);
                     if(ret == 0)
                     {
-                        //                        while(1)
-                        //                        {
                         AVFrame *frame = av_frame_alloc();
                         ret = avcodec_receive_frame(pCodecCtx, frame);
                         if(ret == 0)
                         {
                             frame->opaque = (double*)new double(getPts(frame));
-                            DataSink::getInstance()->appendFrameList(frame);
+                            DataSink::getInstance()->appendFrameList(1, frame);
                         }
                         else
                         {
@@ -172,29 +122,16 @@ void ASongVideo::run()
                         }
                     }
                 }
-                else
-                {
-                    if(ret == AVERROR(EINVAL))
-                    {
-                        break;
-                    }
-                }
             }
             // 释放
-            //            av_packet_unref(packet);
             av_packet_free(&packet);
-            //            //            }
-            //            //            else
-            //            //            {
-            //            //                msleep(1);
-            //            //            }
         }
-        else
+        if(coverAlready)
         {
-            msleep(20);
+            allowRunVideo = false;
+            break;
         }
     }
-    //    qDebug() << "thread quit";
 }
 
 double ASongVideo::getPts(AVFrame *frame)
@@ -285,27 +222,32 @@ double ASongVideo::synVideo(const double pts)
 
 void ASongVideo::pause()
 {
-    allowRunVideo = false;
+    if(isRunning())
+    {
+        allowRunVideo = false;
+        wait();
+    }
+    //    return true;
 }
 
 void ASongVideo::stop()
 {
-    allowRunVideo = false;
-    // videoClock
-    //    videoClock = 0.0;
-    //    // frameTime
-    //    frameTime = 0.0;
-    //    // 上一帧pts
-    //    lastFramePts = 0.0;
-    //    // 上一帧delay
-    //    lastFrameDelay = 0.0;
-    //    // stream_index
-    //    videoIdx = -1;
-    //    // 视频解码器上下文
-    //    avcodec_close(pCodecCtx);
-    //    pCodecCtx = nullptr;
-    //    //
-    //    //    frameRate = 0;
-    //    // 源视频流的宽高
-    //    srcWidth = 0, srcHeight = 0;
+    pause();
+    // 关闭视频解码器上下文
+    if(nullptr != pCodecCtx)
+    {
+        avcodec_close(pCodecCtx);
+    }
+    pCodecCtx = nullptr;
+    videoClock = 0.0;
+    // frameTime
+    frameTime = 0.0;
+    // 上一帧pts
+    lastFramePts = 0.0;
+    // 上一帧delay
+    lastFrameDelay = 0.0;
+    // stream_index
+    videoIdx = -1;
+    // 源视频流的宽高
+    srcWidth = 0, srcHeight = 0;
 }

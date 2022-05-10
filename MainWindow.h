@@ -1,10 +1,6 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "ASongFFmpeg.h"
-#include "ASongAudio.h"
-#include "SDLPaint.h"
-
 #include <QMainWindow>
 #include <QTimer>
 
@@ -20,15 +16,16 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
-public:
-    MainWindow(QWidget *parent = nullptr);
+public: MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
 private slots:
     void on_play_button_clicked();
 
+    void on_stop_button_clicked();
+
 private:
-    SDLPaint *painter = nullptr;
+
     //    QTimer *sdlTimer = nullptr;
     Ui::MainWindow *ui;
 

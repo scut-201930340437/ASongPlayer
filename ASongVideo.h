@@ -21,13 +21,12 @@ extern "C"
 class ASongVideo: public QThread
 {
 public:
-    ~ASongVideo();
     static ASongVideo* getInstance();
 
     // thread
     void start(Priority = InheritPriority);
 
-    void setMetaData(AVCodecContext *_pCodecCtx, const int _videoIdx,  const AVRational timeBase);
+    void setMetaData(AVCodecContext *_pCodecCtx, const int _videoIdx,  const AVRational timeBase, bool _hasCover);
     //    void resetWH(const int _out_width, const int _out_height);
     // 获取pts
     double getPts(AVFrame *frame);
@@ -48,14 +47,13 @@ private:
     // 校准pts
     double caliBratePts(AVFrame *frame, double pts);
 
-
     static QAtomicPointer<ASongVideo>_instance;
     static QMutex _mutex;
 
-
-
     // 允许线程运行
     bool allowRunVideo = false;
+    // 音频有封面
+    bool hasCover = false;
     // videoClock
     double videoClock = 0.0;
     // frameTime
@@ -80,8 +78,7 @@ private:
     // 输出宽高
     //    int out_width = 0, out_height = 0;
 
-    // 帧list最大长度
-    const int maxFrameListLen = 20;
+
 
     // 同步阈值
     const double synLowerBound = 0.01;

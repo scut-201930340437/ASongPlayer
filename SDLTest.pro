@@ -25,6 +25,7 @@ contains(QT_ARCH,i386){
 
 SOURCES += \
     ASongAudio.cpp \
+    ASongAudioOutput.cpp \
     ASongFFmpeg.cpp \
     ASongVideo.cpp \
     DataSink.cpp \
@@ -35,6 +36,7 @@ SOURCES += \
 
 HEADERS += \
     ASongAudio.h \
+    ASongAudioOutput.h \
     ASongFFmpeg.h \
     ASongVideo.h \
     DataSink.h \
