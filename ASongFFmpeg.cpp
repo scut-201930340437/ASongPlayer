@@ -388,6 +388,7 @@ int ASongFFmpeg::stop()
     {
         return -1;
     }
+    //    qDebug()<<""
     return 0;
 }
 

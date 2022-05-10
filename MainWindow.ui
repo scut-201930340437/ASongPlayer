@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1091</width>
-    <height>728</height>
+    <width>800</width>
+    <height>600</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -229,7 +229,7 @@
         </spacer>
        </item>
        <item>
-        <widget class="QTableWidget" name="play_table">
+        <widget class="PlayTable" name="play_table">
          <property name="minimumSize">
           <size>
            <width>200</width>
@@ -337,6 +337,12 @@
       <layout class="QHBoxLayout" name="horizontalLayout_3">
        <item>
         <widget class="QPushButton" name="playmode_button">
+         <property name="minimumSize">
+          <size>
+           <width>100</width>
+           <height>50</height>
+          </size>
+         </property>
          <property name="text">
           <string>循环播放</string>
          </property>
@@ -366,6 +372,12 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+         <property name="minimumSize">
+          <size>
+           <width>100</width>
+           <height>50</height>
+          </size>
+         </property>
          <property name="text">
           <string>上一首</string>
          </property>
@@ -383,7 +395,7 @@
           <string notr="true"/>
          </property>
          <property name="text">
-          <string>播放</string>
+          <string/>
          </property>
         </widget>
        </item>
@@ -394,6 +406,12 @@
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>100</width>
+           <height>50</height>
+          </size>
          </property>
          <property name="text">
           <string>下一首</string>
@@ -418,7 +436,7 @@
          <property name="minimumSize">
           <size>
            <width>100</width>
-           <height>20</height>
+           <height>50</height>
           </size>
          </property>
          <property name="styleSheet">
@@ -431,6 +449,12 @@
        </item>
        <item>
         <widget class="MySlider" name="volume_ctrl">
+         <property name="minimumSize">
+          <size>
+           <width>100</width>
+           <height>0</height>
+          </size>
+         </property>
          <property name="maximumSize">
           <size>
            <width>100</width>
@@ -488,7 +512,6 @@
     </item>
    </layout>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
   <action name="action_openFile">
    <property name="text">
     <string>打开文件</string>
@@ -509,6 +532,11 @@
    <extends>QWidget</extends>
    <header location="global">mytitlebar.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>PlayTable</class>
+   <extends>QTableWidget</extends>
+   <header location="global">PlayTable.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

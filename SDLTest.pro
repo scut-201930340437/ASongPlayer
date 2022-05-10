@@ -33,6 +33,7 @@ SOURCES += \
     MainWindow.cpp \
     MySlider.cpp \
     MyTitleBar.cpp \
+    PlayTable.cpp \
     SDLPaint.cpp
 
 HEADERS += \
@@ -44,6 +45,7 @@ HEADERS += \
     MainWindow.h \
     MySlider.h \
     MyTitleBar.h \
+    PlayTable.h \
     SDLPaint.h
 
 FORMS += \

@@ -19,6 +19,12 @@ MainWindow::MainWindow(QWidget *parent)
     playModeChangable = true;
     //音量
     this->volumeValueChangable = true;
+
+    connect(this->ui->play_table,SIGNAL(cellDoubleClicked(int,int)),this,SLOT(onPlayTableCellDoubleClicked(int, int)));
+    //启用鼠标拖拽放下操做
+    setAcceptDrops(true);
+    //上一次进程关闭时保存的文件路径
+    readFilePath();
 }
 
 MainWindow::~MainWindow()
@@ -47,34 +53,26 @@ void MainWindow::on_play_button_clicked()
     {
         case -1:
         {
-            QString path = QFileDialog::getOpenFileName(this,
-                           tr("选择音视频文件"),
-                           tr("."),
-                           tr(
-                               "视频文件(*.mp4 *.flv *.avi);;音频文件(*.mp3);;所有文件(*.*)"));
-            if(!path.isEmpty())
-            {
-                ASongFFmpeg::getInstance()->play(path, this->ui->play_widget);
-            }
-            else
-            {
-                qDebug() << "file empty";
-            }
+            openFile();
+            ui->play_button->setText("暂停");
             break;
         }
         case 1:
             ASongFFmpeg::getInstance()->pause();
+            ui->play_button->setText("播放");
             break;
         case 2:
         {
             ASongFFmpeg::getInstance()->_continue(false);
+            ui->play_button->setText("暂停");
             break;
         }
         case 0:
         {
             //            QString path = ASongFFmpeg::getInstance()->getFilepath();
             //            ASongFFmpeg::getInstance()->play(path, this->ui->play_widget);
-            ASongFFmpeg::getInstance()->_continue(true);
+            ASongFFmpeg::getInstance()->play(filePath,this->ui->play_widget);
+            ui->play_button->setText("播放");
             break;
         }
     }
@@ -82,6 +80,7 @@ void MainWindow::on_play_button_clicked()
 
 void MainWindow::on_stop_button_clicked()
 {
+    this->ui->play_button->setText("播放");
     QMutexLocker locker(&ASongFFmpeg::_mediaStatusMutex);
     if(ASongFFmpeg::getInstance()->getMediaStatus() > 0)
     {
@@ -186,7 +185,7 @@ void MainWindow::on_MainWindow_customContextMenuRequested(const QPoint &pos)
 
         QAction *action1 = new QAction(tr("打开文件"), this);
         cmenu->addAction(action1);
-        connect(action1, SIGNAL(triggered(bool)), this, SLOT(on_play_button_clicked()));
+        connect(action1, SIGNAL(triggered(bool)), this, SLOT(openFile()));
         cmenu->exec(QCursor::pos());
 }
 
@@ -196,5 +195,129 @@ void MainWindow::on_more_button_clicked()
 //    QPoint q = QPoint(ui->more_button->x(),ui->more_button->y());
     QPoint q = QPoint(0, 0);
     on_MainWindow_customContextMenuRequested(q);
+}
+
+void MainWindow::openFile()
+{
+    QString path = QFileDialog::getOpenFileName(this,
+                   tr("选择音视频文件"),
+                   tr("."),
+                   tr(
+                       "视频文件(*.mp4 *.flv *.avi);;音频文件(*.mp3);;所有文件(*.*)"));
+    if(!path.isEmpty())
+    {
+        filePath=path;
+        ASongFFmpeg::getInstance()->stop();
+        ASongFFmpeg::getInstance()->play(path, this->ui->play_widget);
+        setListFromFilePath();
+        saveFilePath();
+    }
+    else
+    {
+        qDebug() << "file empty";
+    }
+}
+
+void MainWindow::setListFromFilePath(){
+    //设置播放列表
+    QString path=filePath.section('/',0,-2);
+    QDir Dir(path);
+    if(!Dir.exists())
+        { qDebug("路径出错");}
+    else
+    {
+        QFileInfoList _list = Dir.entryInfoList(QDir::Files);
+        QFileInfoList neededList;
+        qint16 count_row=0;
+        foreach (QFileInfo file,_list)                  			//遍历只加载音视频文件到文件列表
+        {
+            if(ui->play_table->isNeededFile(file))          //判断进行再次确认是可播放文件
+            {
+                if(file.absoluteFilePath()==filePath)
+                {
+                    ui->play_table->playPos=count_row;
+                }
+                neededList.append(file);
+                count_row++;
+            }
+        }
+        ui->play_table->setTable(neededList);
+    }
+}
+
+void MainWindow::onPlayTableCellDoubleClicked(int row, int column)
+{
+    QString path =this->ui->play_table->getPath(row);
+    if(path=="")
+    {
+        qDebug()<<"视频列表双击空对象";
+        return;
+    }
+    QDir dir(path);
+    if(!dir.exists(path))
+    {
+        qDebug()<<"视频已不存在";
+        setListFromFilePath();
+        return;
+    }
+    filePath=path;
+    saveFilePath();
+
+    ASongFFmpeg::getInstance()->stop();
+    ASongFFmpeg::getInstance()->play(filePath, this->ui->play_widget);
+    this->ui->play_table->playPos=row;//确认可以播放，记录播放位置
+
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent *e)
+{
+      e->acceptProposedAction(); //能够在这个窗口部件上拖放对象
+}
+
+void MainWindow::dropEvent(QDropEvent *e)
+{
+    QList<QUrl> urls = e->mimeData()->urls();
+    if(urls.isEmpty())
+       return ;
+    QFileInfo _fileInfo(urls.first().toString());
+    //判断是否属于支持的音视频文件
+    if(this->ui->play_table->isNeededFile(_fileInfo))
+    {
+        filePath=urls.first().toLocalFile();
+        setListFromFilePath();
+
+        ASongFFmpeg::getInstance()->stop();
+        ASongFFmpeg::getInstance()->play(filePath, this->ui->play_widget);
+        saveFilePath();
+    }
+    else
+    {
+        qDebug()<<"拖拽文件类型不匹配";
+    }
+}
+
+void MainWindow::saveFilePath()
+{
+    //存储播放路径txt
+    QFile file(SavePath);
+    if(!file.open(QIODevice::WriteOnly))//以写的方式打开文件，如果文件不存在则创建，
+        qDebug()<<file.errorString();
+//    QString ch_filename=filename.toUtf8();
+    QByteArray buf=filePath.toUtf8();
+    file.write(buf);
+    file.close();
+}
+
+void MainWindow::readFilePath()
+{
+    //读取，设置播放路径
+    QFile file(SavePath);
+    if(!file.open(QIODevice::ReadOnly))//以读的方式打开文件，如果文件不存在则报错，
+        qDebug()<<file.errorString();
+    QByteArray line = file.readAll();
+    filePath=QString(line);
+    file.close();
+    //通过filename设置播放列表
+    setListFromFilePath();
 }
 

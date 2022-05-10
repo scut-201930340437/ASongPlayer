@@ -4,6 +4,12 @@
 #include <QMainWindow>
 #include <QTimer>
 #include <QMenu>
+#include "PlayTable.h"
+#include <QFileInfo>
+#include <QUrl>
+#include <QMimeData>
+#include <QEvent>
+
 
 
 QT_BEGIN_NAMESPACE
@@ -17,9 +23,7 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
-    //<<<<<<< HEAD
-    //public: MainWindow(QWidget *parent = nullptr);
-    //=======
+
 public:
 
     //播放模式 0 只播当前 1 顺序 2 随机 3 单个循环
@@ -29,16 +33,17 @@ public:
     //可切换音量
     bool volumeValueChangable;
 
+
     MainWindow(QWidget *parent = nullptr);
-    //>>>>>>> ca5a45ac5d740f82fd6cb03c15977bf4f3b34780
+
     ~MainWindow();
 
 private slots:
     void on_play_button_clicked();
 
-    //    <<< <<< < HEAD
+
     void on_stop_button_clicked();
-    //    == == == =
+
     void on_playmode_button_clicked();
 
     void on_mute_button_clicked();
@@ -56,12 +61,29 @@ private slots:
     void on_MainWindow_customContextMenuRequested(const QPoint &pos);
 
     void on_more_button_clicked();
-    //    >>> >>> > ca5a45ac5d740f82fd6cb03c15977bf4f3b34780
+
+
+    //打开文件选择窗口,并播放文件(问题，如果打开错误类型的文件如何处理)
+    void openFile();
+
+    void onPlayTableCellDoubleClicked(int row, int column);
+
+    void dropEvent(QDropEvent *e);
 
 private:
 
     //    QTimer *sdlTimer = nullptr;
     Ui::MainWindow *ui;
+    QString filePath;
+    //存储播放路径的文件的路径
+    QString SavePath = "filename.txt";
+
+    void setListFromFilePath();
+    void dragEnterEvent(QDragEnterEvent *e);
+    //读取/存储历史播放
+    void saveFilePath();
+    void readFilePath();
+
 
 };
 #endif // MAINWINDOW_H
