@@ -7,7 +7,9 @@ DataSink::DataSink()
 {
     audioSem = new QSemaphore(0);
     videoSem = new QSemaphore(0);
-    audioFraSem = new QSemaphore(0);
+    //    audioFraSem = new QSemaphore(0);
+    audioFraCon = new QWaitCondition;
+    videoFraCon = new QWaitCondition;
     //    audioFraEmpSem = new QSemaphore(maxFrameListLength);
     //    videoFraEmpSem = new QSemaphore(maxFrameListLength);
 }
@@ -16,7 +18,7 @@ DataSink::~DataSink()
 {
     delete audioSem;
     delete videoSem;
-    delete audioFraSem;
+    //    delete audioFraSem;
     //    delete audioFraEmpSem;
     //    delete videoFraEmpSem;
 }
@@ -53,9 +55,18 @@ AVFrame* DataSink::takeNextFrame(int type)
 {
     if(type == 0)
     {
-        audioFraSem->acquire();
-        //        audioFraEmpSem->release();
-        return aFrameList.takeFirst();
+        if(!aFrameList.isEmpty())
+        {
+            //        audioFraEmpSem->release();
+            AVFrame *frame = aFrameList.takeFirst();
+            audioFraCon->wakeOne();
+            return frame;
+        }
+        //        audioFraSem->acquire();
+        else
+        {
+            return nullptr;
+        }
     }
     else
     {
@@ -63,7 +74,9 @@ AVFrame* DataSink::takeNextFrame(int type)
         {
             //            AVFrame *frame = vFrameList.takeFirst();
             //            videoFraEmpSem->release();
-            return vFrameList.takeFirst();
+            AVFrame *frame = vFrameList.takeFirst();
+            videoFraCon->wakeOne();
+            return frame;
         }
         else
         {
@@ -96,7 +109,7 @@ void DataSink::appendFrameList(int type, AVFrame *frame)
     {
         //        audioFraEmpSem->acquire();
         aFrameList.append(frame);
-        audioFraSem->release();
+        //        audioFraSem->release();
     }
     else
     {
@@ -105,13 +118,63 @@ void DataSink::appendFrameList(int type, AVFrame *frame)
     }
 }
 
+void DataSink::allowAppendAFrame()
+{
+    if(aFrameList.size() > maxFrameListLength)
+    {
+        // 上锁
+        QMutexLocker locker(&audioFraCon_mutex);
+        audioFraCon->wait(&audioFraCon_mutex);
+    }
+}
+
+void DataSink::allowAppendVFrame()
+{
+    if(vFrameList.size() > maxFrameListLength)
+    {
+        // 上锁
+        QMutexLocker locker(&videoFraCon_mutex);
+        audioFraCon->wait(&videoFraCon_mutex);
+    }
+}
+
+qsizetype DataSink::packetListSize(int type)
+{
+    if(type == 0)
+    {
+        return aPacketList.size();
+    }
+    else
+    {
+        return vPacketList.size();
+    }
+}
+
+//qsizetype DataSink::frameListSize(int type)
+//{
+//    if(type == 0)
+//    {
+//        return aFrameList.size();
+//    }
+//    else
+//    {
+//        return vFrameList.size();
+//    }
+//}
+
+void DataSink::wake()
+{
+    audioFraCon->wakeOne();
+    videoFraCon->wakeOne();
+}
+
 void DataSink::clearList()
 {
     AVFrame *frame = nullptr;
     // 将资源信号量重置为0
     audioSem->acquire(audioSem->available());
     videoSem->acquire(videoSem->available());
-    audioFraSem->acquire(audioFraSem->available());
+    //    audioFraSem->acquire(audioFraSem->available());
     // 清理队列
     while(!aFrameList.isEmpty())
     {
@@ -148,28 +211,4 @@ void DataSink::clearList()
     // 将空位信号量置为队列最大长度
     //    audioFraEmpSem->release(maxFrameListLength - audioFraEmpSem->available());
     //    videoFraEmpSem->release(maxFrameListLength - videoFraEmpSem->available());
-}
-
-qsizetype DataSink::packetListSize(int type)
-{
-    if(type == 0)
-    {
-        return aPacketList.size();
-    }
-    else
-    {
-        return vPacketList.size();
-    }
-}
-
-qsizetype DataSink::frameListSize(int type)
-{
-    if(type == 0)
-    {
-        return aFrameList.size();
-    }
-    else
-    {
-        return vFrameList.size();
-    }
 }

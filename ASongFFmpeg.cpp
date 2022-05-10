@@ -335,7 +335,7 @@ int ASongFFmpeg::_continue(bool isReplay)
     // 音频解码线程和播放线程启动
     ASongAudio::getInstance()->start();
     // 带封面的音频在不是重新播放的情况下不启动视频解码线程和SDL
-    qDebug() << mediaMetaData.audio_meta_data.hasCover;
+    //    qDebug() << mediaMetaData.audio_meta_data.hasCover;
     if(mediaMetaData.mediaType == 2 && (!mediaMetaData.audio_meta_data.hasCover || mediaMetaData.audio_meta_data.hasCover && isReplay))
     {
         // 视频解码线程启动
@@ -352,6 +352,8 @@ int ASongFFmpeg::pause()
     //    QMutexLocker locker(&_mediaStatusMutex);
     curMediaStatus = 2;
     // 结束各线程
+    // 先wake一下，解码线程可能阻塞
+    DataSink::getInstance()->wake();
     ASongAudio::getInstance()->pause();
     if(mediaMetaData.mediaType == 2)
     {
@@ -371,6 +373,9 @@ int ASongFFmpeg::stop()
     //    QMutexLocker locker(&_mediaStatusMutex);
     curMediaStatus = 0;
     // 结束各线程
+    // 先wake一下
+    DataSink::getInstance()->wake();
+    // 再结束
     ASongAudio::getInstance()->stop();
     if(mediaMetaData.mediaType == 2)
     {

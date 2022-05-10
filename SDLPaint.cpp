@@ -121,7 +121,6 @@ void SDLPaint::resetWHPara()
 // 转换为YUV图像并进行同步
 void SDLPaint::getFrameYUV()
 {
-    //
     AVFrame *frame = DataSink::getInstance()->takeNextFrame(1);
     if(nullptr == frame)
     {

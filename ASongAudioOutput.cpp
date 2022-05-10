@@ -68,60 +68,63 @@ void ASongAudioOutput::run()
     {
         // 如果是planar（每个声道数据单独存放），一定要重采样，因为PCM是packed（每个声道数据交错存放）
         AVFrame *frame = DataSink::getInstance()->takeNextFrame(0);
-        if(av_sample_fmt_is_planar(sample_fmt) == 1)
+        if(nullptr != frame)
         {
-            uint8_t *outBuffer = (uint8_t*)av_malloc(maxFrameSize * 2);
-            //            while(!frame_list.empty())
-            //            {
-            //            frame = frame_list.takeFirst();
-            int out_size = swrToPCM(outBuffer, frame);
-            //            qDebug() << out_size;
-            //            qDebug() << audioOutput->bytesFree();
-            // 计算该帧时长
-            double duration = 1.0 * out_size / (sample_rate * 4);
-            if(audioOutput->bytesFree() < out_size)
+            if(av_sample_fmt_is_planar(sample_fmt) == 1)
             {
-                msleep(ceil(1000.0 * duration));
+                uint8_t *outBuffer = (uint8_t*)av_malloc(maxFrameSize * 2);
+                //            while(!frame_list.empty())
+                //            {
+                //            frame = frame_list.takeFirst();
+                int out_size = swrToPCM(outBuffer, frame);
+                //            qDebug() << out_size;
+                //            qDebug() << audioOutput->bytesFree();
+                // 计算该帧时长
+                double duration = 1.0 * out_size / (sample_rate * 4);
+                if(audioOutput->bytesFree() < out_size)
+                {
+                    msleep(ceil(1000.0 * duration));
+                }
+                while(audioOutput->bytesFree() < out_size)
+                {
+                    msleep(5);
+                }
+                // 更新时钟
+                ASongAudio::getInstance()->setAudioClock(frame, duration);
+                // 写入设备
+                audioIO->write((char*)outBuffer, out_size);
+                //            }
+                // 释放
+                av_frame_free(&frame);
+                av_free(outBuffer);
             }
-            while(audioOutput->bytesFree() < out_size)
+            // 否则直接写入设备缓存
+            else
             {
-                msleep(5);
+                //            while(!frame_list.empty())
+                //            {
+                //            frame = frame_list.takeFirst();
+                int out_size = av_samples_get_buffer_size(nullptr, channels,
+                               frame->nb_samples, AV_SAMPLE_FMT_S16,
+                               0);
+                // 计算该帧时长
+                double duration = 1.0 * out_size / (sample_rate * 4);
+                if(audioOutput->bytesFree() < out_size)
+                {
+                    msleep(ceil(1000.0 * duration));
+                }
+                while(audioOutput->bytesFree() < out_size)
+                {
+                    msleep(5);
+                }
+                // 更新时钟
+                ASongAudio::getInstance()->setAudioClock(frame, duration);
+                // 写入设备
+                audioIO->write((char*)frame->data, out_size);
+                //            av_frame_unref(frame);
+                av_frame_free(&frame);
+                //            }
             }
-            // 更新时钟
-            ASongAudio::getInstance()->setAudioClock(frame, duration);
-            // 写入设备
-            audioIO->write((char*)outBuffer, out_size);
-            //            }
-            // 释放
-            av_frame_free(&frame);
-            av_free(outBuffer);
-        }
-        // 否则直接写入设备缓存
-        else
-        {
-            //            while(!frame_list.empty())
-            //            {
-            //            frame = frame_list.takeFirst();
-            int out_size = av_samples_get_buffer_size(nullptr, channels,
-                           frame->nb_samples, AV_SAMPLE_FMT_S16,
-                           0);
-            // 计算该帧时长
-            double duration = 1.0 * out_size / (sample_rate * 4);
-            if(audioOutput->bytesFree() < out_size)
-            {
-                msleep(ceil(1000.0 * duration));
-            }
-            while(audioOutput->bytesFree() < out_size)
-            {
-                msleep(5);
-            }
-            // 更新时钟
-            ASongAudio::getInstance()->setAudioClock(frame, duration);
-            // 写入设备
-            audioIO->write((char*)frame->data, out_size);
-            //            av_frame_unref(frame);
-            av_frame_free(&frame);
-            //            }
         }
     }
     closeDevice();

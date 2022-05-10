@@ -30,9 +30,13 @@ public:
     void appendPacketList(int type, AVPacket *packet);
     void appendFrameList(int type, AVFrame *frame);
     //    void appendAFrameList(AVFrame *frame);
+    void allowAppendAFrame();
+    void allowAppendVFrame();
 
     qsizetype packetListSize(int type);
-    qsizetype frameListSize(int type);
+    //    qsizetype frameListSize(int type);
+
+    void wake();
 
     void clearList();
 
@@ -57,8 +61,12 @@ private:
     QList<AVFrame*>vFrameList;
 
     // 信号量
-    QSemaphore *audioSem = nullptr, *videoSem = nullptr, *audioFraSem = nullptr;
+    QSemaphore *audioSem = nullptr, *videoSem = nullptr;
+    //    *audioFraSem = nullptr;
+    // 条件变量
     QWaitCondition *audioFraCon = nullptr, *videoFraCon = nullptr;
+    // 条件变量对应的锁
+    QMutex audioFraCon_mutex, videoFraCon_mutex;
 
     // packetList是共享资源，需要加锁
     //    QMutex aPacketListMutex;
