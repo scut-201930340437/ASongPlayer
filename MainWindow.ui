@@ -229,7 +229,7 @@
         </spacer>
        </item>
        <item>
-        <widget class="QTableWidget" name="play_table">
+        <widget class="PlayTable" name="play_table">
          <property name="minimumSize">
           <size>
            <width>200</width>
@@ -509,6 +509,11 @@
    <extends>QWidget</extends>
    <header location="global">mytitlebar.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>PlayTable</class>
+   <extends>QTableWidget</extends>
+   <header location="global">PlayTable.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
