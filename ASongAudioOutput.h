@@ -29,8 +29,8 @@ public:
     // 初始化重采样参数
     void initSwr();
     void closeDevice();
-    // 获取设备缓存剩余空间
-    int getAvailSize();
+    // 获取当前设备缓存已用空间
+    int getUsedSize();
     // 获取设备音量
     qreal getVolume();
     // 播放控制

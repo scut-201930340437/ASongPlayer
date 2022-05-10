@@ -74,6 +74,7 @@ private:
     int dstWidth, dstHeight;
     // 帧率
     int frameRate = -1;
+    // 帧之间的延时
     //
     int preDelay = 0;
 };

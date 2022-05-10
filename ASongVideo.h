@@ -45,7 +45,7 @@ private:
     void run() override;
 
     // 校准pts
-    double caliBratePts(AVFrame *frame, double pts);
+    void caliBratePts(AVFrame *frame, double &pts);
 
     static QAtomicPointer<ASongVideo>_instance;
     static QMutex _mutex;
@@ -62,8 +62,8 @@ private:
     double lastFramePts = 0.0;
     // 上一帧delay
     double lastFrameDelay = 0.0;
-    // 时基
-    AVRational tb;
+    // av_q2d后的时基
+    double tb;
 
     // stream_index
     int videoIdx = -1;
@@ -78,13 +78,10 @@ private:
     // 输出宽高
     //    int out_width = 0, out_height = 0;
 
-
-
     // 同步阈值
     const double synLowerBound = 0.01;
     // 非同步阈值
     const double noSynUpperBound = 10.0;
-
 };
 
 #endif // ASONGVIDEO_H

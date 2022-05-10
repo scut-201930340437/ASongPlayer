@@ -17,9 +17,9 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
-<<<<<<< HEAD
-public: MainWindow(QWidget *parent = nullptr);
-=======
+    //<<<<<<< HEAD
+    //public: MainWindow(QWidget *parent = nullptr);
+    //=======
 public:
 
     //播放模式 0 只播当前 1 顺序 2 随机 3 单个循环
@@ -30,15 +30,15 @@ public:
     bool volumeValueChangable;
 
     MainWindow(QWidget *parent = nullptr);
->>>>>>> ca5a45ac5d740f82fd6cb03c15977bf4f3b34780
+    //>>>>>>> ca5a45ac5d740f82fd6cb03c15977bf4f3b34780
     ~MainWindow();
 
 private slots:
     void on_play_button_clicked();
 
-<<<<<<< HEAD
+    //    <<< <<< < HEAD
     void on_stop_button_clicked();
-=======
+    //    == == == =
     void on_playmode_button_clicked();
 
     void on_mute_button_clicked();
@@ -56,7 +56,7 @@ private slots:
     void on_MainWindow_customContextMenuRequested(const QPoint &pos);
 
     void on_more_button_clicked();
->>>>>>> ca5a45ac5d740f82fd6cb03c15977bf4f3b34780
+    //    >>> >>> > ca5a45ac5d740f82fd6cb03c15977bf4f3b34780
 
 private:
 

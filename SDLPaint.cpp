@@ -74,9 +74,10 @@ int SDLPaint::init(QWidget *_screenWidget)
     // 开启定时器
     if(frameRate != -1)
     {
+        preDelay = int(1000.0 / frameRate + 0.5);
         sdlTimer = new QTimer(this);
         connect(sdlTimer, &QTimer::timeout, this, &SDLPaint::getFrameYUV);
-        sdlTimer->start(int(1000.0 / frameRate + 0.5));
+        sdlTimer->start(preDelay);
     }
     else
     {
@@ -123,7 +124,6 @@ void SDLPaint::getFrameYUV()
     AVFrame *frame = DataSink::getInstance()->takeNextFrame(1);
     if(nullptr == frame)
     {
-        //        qDebug() << "---";
         return;
     }
     AVFrame *frameYUV = av_frame_alloc();
@@ -142,8 +142,8 @@ void SDLPaint::getFrameYUV()
         // 绘制
         paint(frameYUV);
         // 重设延时
-        preDelay = actualDelay * 1000.0 + 0.5;
-        sdlTimer->start(preDelay);
+        preDelay = int(actualDelay * 1000.0 + 0.5);
+        sdlTimer->setInterval(preDelay);
         // 释放
         av_free(out_buffer);
         av_frame_free(&frameYUV);

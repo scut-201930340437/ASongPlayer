@@ -61,8 +61,9 @@ public:
     /* 访问成员变量*/
     // 获取时钟，用于同步，音频为基准
     double getAudioClock();
-    // 获取pts
-    void setAudioClock(AVPacket *packet);
+    // 设置音频时钟
+    //    void setAudioClock(AVPacket *packet);
+    void setAudioClock(AVFrame *frame, const double duration);
     // 获取audioOutput的剩余空间(/Byte)
     //    int getAvaiMem();
 

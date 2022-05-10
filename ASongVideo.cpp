@@ -23,7 +23,8 @@ void ASongVideo::setMetaData(AVCodecContext *_pCodecCtx, const int _videoIdx, co
 {
     pCodecCtx = _pCodecCtx;
     videoIdx = _videoIdx;
-    tb = timeBase;
+    tb = av_q2d(timeBase);
+    lastFrameDelay = tb;
     //    frameRate = _frameRate;
     srcWidth = pCodecCtx->width;
     srcHeight = pCodecCtx->height;
@@ -141,15 +142,15 @@ double ASongVideo::getPts(AVFrame *frame)
     {
         pts = 0.0;
     }
-    pts *= av_q2d(tb);
-    pts = caliBratePts(frame, pts);
+    pts *= tb;
+    caliBratePts(frame, pts);
     return pts;
 }
-
-double ASongVideo::caliBratePts(AVFrame *frame, double pts)
+// 修正pts
+void ASongVideo::caliBratePts(AVFrame *frame, double &pts)
 {
     double frameDelay;
-    // 如果通过frame->best_effort_timestamp获取到了最合适的clock，更新videe
+    // 如果通过frame->best_effort_timestamp获取到了最合适的clock，更新videoClock
     if(pts != 0.0)
     {
         videoClock = pts;
@@ -159,12 +160,11 @@ double ASongVideo::caliBratePts(AVFrame *frame, double pts)
     {
         pts = videoClock;
     }
-    frameDelay = av_q2d(tb);
+    frameDelay = tb;
     // extra_delay = repeat_pict / (2*fps)
     // frameDelay = 1/fps+extra_delay
-    frameDelay += frameDelay * 0.5 * frame->repeat_pict;
+    frameDelay *= (1.0 + 0.5 * frame->repeat_pict);
     videoClock += frameDelay; // 此时videoClock实际上也是下一帧的时间点
-    return pts;
 }
 
 // 同步
@@ -173,12 +173,12 @@ double ASongVideo::synVideo(const double pts)
     //    double pts = *((double*)frame->opaque);
     //    qDebug() << pts;
     double delay = pts - lastFramePts;
-    // 延时太小或太大都不正常
+    // 延时太小或太大都不正常，使用上一帧计算的delay
     if(delay <= 0.0 || delay  >= 1.0)
     {
         delay = lastFrameDelay;
     }
-    // 保存参数
+    // 更新参数
     lastFramePts = pts;
     lastFrameDelay = delay;
     // 获取音频时钟
@@ -194,14 +194,15 @@ double ASongVideo::synVideo(const double pts)
         if(diff <= -minFlushT)
         {
             delay = 0.0;
+            //            qDebug() << 0;
         }
         else
         {
             // 视频快于音频的时间超过最小刷新时间，增加延迟
             if(diff >= minFlushT)
             {
-                //                    qDebug() << "----";
                 delay *= 2.0;
+                //                qDebug() << 1;
             }
         }
     }
@@ -209,7 +210,7 @@ double ASongVideo::synVideo(const double pts)
     // 真正延时时间
     //    qDebug() << tmp;
     double actualDelay = fmax(frameTime - av_gettime() / 1000000.0, synLowerBound);
-    //        qDebug() << actualDelay;
+    qDebug() << actualDelay;
     //        actualDelay = fmax(actualDelay, 0.010);
     return actualDelay;
 }
