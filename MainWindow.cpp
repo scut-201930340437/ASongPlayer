@@ -54,9 +54,18 @@ void MainWindow::on_play_button_clicked()
     {
         case -1:
         {
-            openFile();
-            ui->play_button->setText("暂停");
-            break;
+            if(filePath!="")
+            {
+                ASongFFmpeg::getInstance()->play(this, filePath, this->ui->play_widget);
+                ui->play_button->setText("暂停");
+                break;
+            }
+            else
+            {
+                openFile();
+                ui->play_button->setText("暂停");
+                break;
+            }
         }
         case 1:
             ASongFFmpeg::getInstance()->pause();
@@ -344,4 +353,44 @@ void MainWindow::handleTimeout()
 {
     int posSlider = ASongFFmpeg::getInstance()->getCurPlaySec() / ASongFFmpeg::getInstance()->getDuration() * 10000;
     ui->position_ctrl->setValue(100);
+}
+
+void MainWindow::on_fullScreen_button_clicked()
+{
+    qDebug()<<"全屏";
+//    ui->play_widget->showFullScreen();
+//    ui->play_widget->resize(this->size());
+//    ui->play_widget->move(0, 0);
+}
+
+//上一首
+void MainWindow::on_last_button_clicked()
+{
+    qint16 n=ui->play_table->numFile;
+    if(n==0){
+        on_play_button_clicked();
+        return;
+    }
+    ui->play_table->playPos =(ui->play_table->playPos-1 + n) % n;
+    filePath=ui->play_table->getPath(ui->play_table->playPos);
+    ASongFFmpeg::getInstance()->stop();
+    ASongFFmpeg::getInstance()->play(this, filePath, this->ui->play_widget);
+    saveFilePath();
+
+}
+
+//下一首
+void MainWindow::on_next_button_clicked()
+{
+     qint16 n=ui->play_table->numFile;
+    if(n==0){
+        on_play_button_clicked();
+        return;
+    }
+    ui->play_table->playPos =(ui->play_table->playPos + 1 + n) % n;
+    filePath=ui->play_table->getPath(ui->play_table->playPos);
+    ASongFFmpeg::getInstance()->stop();
+    ASongFFmpeg::getInstance()->play(this, filePath, this->ui->play_widget);
+    saveFilePath();
+
 }

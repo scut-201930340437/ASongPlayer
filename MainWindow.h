@@ -72,6 +72,13 @@ private slots:
     //定时事件
     void handleTimeout();
 
+    void on_fullScreen_button_clicked();
+
+    void on_last_button_clicked();
+
+    void on_next_button_clicked();
+
+
 private:
 
     //    QTimer *sdlTimer = nullptr;
