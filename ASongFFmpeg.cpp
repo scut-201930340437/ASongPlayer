@@ -191,12 +191,10 @@ int ASongFFmpeg::load(QString path)
     return 0;
 }
 
-//thread
+// thread
 void ASongFFmpeg::start(Priority pro)
 {
     allowRead = true;
-    //
-    //    qDebug() << "vIdx" << videoIdx << ' ' << audioIdx;
     QThread::start(pro);
 }
 
@@ -352,8 +350,6 @@ int ASongFFmpeg::pause()
     //    QMutexLocker locker(&_mediaStatusMutex);
     curMediaStatus = 2;
     // 结束各线程
-    // 先wake一下，解码线程可能阻塞
-    DataSink::getInstance()->wake();
     ASongAudio::getInstance()->pause();
     if(mediaMetaData.mediaType == 2)
     {
@@ -373,9 +369,7 @@ int ASongFFmpeg::stop()
     //    QMutexLocker locker(&_mediaStatusMutex);
     curMediaStatus = 0;
     // 结束各线程
-    // 先wake一下
-    DataSink::getInstance()->wake();
-    // 再结束
+    // 再结束音频解码和音频播放线程
     ASongAudio::getInstance()->stop();
     if(mediaMetaData.mediaType == 2)
     {
@@ -390,6 +384,7 @@ int ASongFFmpeg::stop()
     }
     // 清空队列
     DataSink::getInstance()->clearList();
+    // 关闭文件流上下文
     if(nullptr != pFormatCtx)
     {
         avformat_close_input(&pFormatCtx);
@@ -406,6 +401,8 @@ int ASongFFmpeg::stop()
 
 int ASongFFmpeg::seek(int posSec)
 {
+    // 先给播放状态加锁
+    QMutexLocker locker(&_mediaStatusMutex);
     // 先结束各线程，但是各上下文不关闭
     pause();
     // 清空队列

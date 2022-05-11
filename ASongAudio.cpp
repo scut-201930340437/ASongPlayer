@@ -186,6 +186,8 @@ void ASongAudio::pause()
     if(isRunning())
     {
         allowRunAudio = false;
+        // 解码线程可能由于frame队列过长而阻塞，先唤醒
+        DataSink::getInstance()->wakeAudio();
         wait();
     }
 }
@@ -194,7 +196,7 @@ void ASongAudio::stop()
 {
     // 结束音频解码线程和音频播放线程
     pause();
-    // 关闭设备
+    // 关闭音频设备
     ASongAudioOutput::getInstance()->stop();
     // 关闭解码器上下文
     if(nullptr != pCodecCtx)

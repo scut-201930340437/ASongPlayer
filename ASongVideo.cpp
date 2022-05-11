@@ -227,6 +227,8 @@ void ASongVideo::pause()
     if(isRunning())
     {
         allowRunVideo = false;
+        // 解码线程可能由于frame队列过长而阻塞，先唤醒
+        DataSink::getInstance()->wakeVideo();
         wait();
     }
     //    return true;
@@ -234,6 +236,7 @@ void ASongVideo::pause()
 
 void ASongVideo::stop()
 {
+    // 先结束视频解码线程
     pause();
     // 关闭视频解码器上下文
     if(nullptr != pCodecCtx)

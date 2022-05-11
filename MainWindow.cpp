@@ -210,8 +210,10 @@ void MainWindow::openFile()
     if(!path.isEmpty())
     {
         filePath = path;
+        //        QMutexLocker locker(&ASongFFmpeg::_mediaStatusMutex);
         ASongFFmpeg::getInstance()->stop();
         ASongFFmpeg::getInstance()->play(this, path, this->ui->play_widget);
+        //        locker.unlock();
         setListFromFilePath();
         saveFilePath();
     }

@@ -194,6 +194,6 @@ void ASongAudioOutput::stop()
         swr_free(&pSwrCtx);
         pSwrCtx = nullptr;
     }
-    //    closeDevice();
+    closeDevice();
     //    return true;
 }

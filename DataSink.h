@@ -36,7 +36,8 @@ public:
     qsizetype packetListSize(int type);
     //    qsizetype frameListSize(int type);
 
-    void wake();
+    void wakeAudio();
+    void wakeVideo();
 
     void clearList();
 
@@ -61,7 +62,7 @@ private:
     QList<AVFrame*>vFrameList;
 
     // 信号量
-    QSemaphore *audioSem = nullptr, *videoSem = nullptr;
+    QSemaphore *audioPackSem = nullptr, *videoPackSem = nullptr;
     //    *audioFraSem = nullptr;
     // 条件变量
     QWaitCondition *audioFraCon = nullptr, *videoFraCon = nullptr;

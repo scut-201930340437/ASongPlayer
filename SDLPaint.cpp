@@ -58,6 +58,7 @@ int SDLPaint::init(QWidget *_screenWidget)
     resetWHPara();
     // 创建纹理
     sdlTexture = SDL_CreateTexture(sdlRenderer, SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STREAMING, dstWidth, dstHeight);
+    //    sdlTexture = SDL_CreateTexture(sdlRenderer, SDL_PIXELFORMAT_BGRA4444, SDL_TEXTUREACCESS_STREAMING, dstWidth, dstHeight);
     if(nullptr == sdlTexture)
     {
         qDebug() << "create texture failed";
