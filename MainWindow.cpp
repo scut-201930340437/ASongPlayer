@@ -15,11 +15,12 @@ MainWindow::MainWindow(QWidget *parent)
     //    asongFFmpeg = new ASongFFmpeg(ui->screen_widget);
     //播放模式初始为1 顺序
     playMode = 1;
-    //    //定时器
-    //    myTimer = new QTimer();
-    //    myTimer->setInterval(1000); //1秒
-    //    connect(myTimer, SIGNAL(timeout()), this, SLOT(handleTimeout()));
-    //    myTimer->start();
+        //定时器
+        myTimer = new QTimer();
+        myTimer->setInterval(1000); //1秒
+        connect(myTimer, SIGNAL(timeout()), this, SLOT(handleTimeout()));
+        myTimer->start();
+
     connect(this->ui->play_table, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(onPlayTableCellDoubleClicked(int, int)));
     //启用鼠标拖拽放下操做
     setAcceptDrops(true);
@@ -44,6 +45,27 @@ MainWindow::~MainWindow()
         delete ASongAudio::getInstance();
     }
     delete ui;
+}
+
+QString MainWindow::getTimeString(int position){
+    QString ph = QString::number(position / 3600);
+    if(ph.length() == 1)
+    {
+        ph = "0" + ph;
+    }
+    position %= 3600;
+    QString pm = QString::number(position / 60);
+    if(pm.length() == 1)
+    {
+        pm = "0" + pm;
+    }
+    QString ps = QString::number(position % 60);
+    if(ps.length() == 1)
+    {
+        ps = "0" + ps;
+    }
+    QString posiStr = ph + ":" + pm + ":" + ps ;
+    return posiStr;
 }
 
 void MainWindow::on_play_button_clicked()
@@ -344,15 +366,23 @@ void MainWindow::readFilePath()
 
 void MainWindow::on_position_ctrl_valueChanged(int value)
 {
-    double percentage = 1.0 * value / 10000.0; //精确到小数点后四位
-    int posSec = ASongFFmpeg::getInstance()->getDuration() * percentage;
-    ASongFFmpeg::getInstance()->seek(posSec);
+//    double percentage = 1.0 * value / 10000.0; //精确到小数点后四位
+//    int posSec = ASongFFmpeg::getInstance()->getDuration() * percentage;
+//    ASongFFmpeg::getInstance()->seek(posSec);
 }
 
 void MainWindow::handleTimeout()
 {
-    int posSlider = ASongFFmpeg::getInstance()->getCurPlaySec() / ASongFFmpeg::getInstance()->getDuration() * 10000;
-    ui->position_ctrl->setValue(100);
+    int duration = ASongFFmpeg::getInstance()->getDuration();
+    int nowSec = ASongFFmpeg::getInstance()->getCurPlaySec();
+
+    if(duration == 0) return;  //没有视频就不用动
+    //进度条
+    int posSlider = 10000.0 * nowSec / duration;
+    ui->position_ctrl->setValue(posSlider);
+    qDebug()<<nowSec<<duration<<posSlider;
+    //进度时间
+    ui->position_duration->setText(getTimeString(nowSec)+"/"+getTimeString(duration));
 }
 
 void MainWindow::on_fullScreen_button_clicked()
@@ -393,4 +423,20 @@ void MainWindow::on_next_button_clicked()
     ASongFFmpeg::getInstance()->play(this, filePath, this->ui->play_widget);
     saveFilePath();
 
+}
+
+void MainWindow::on_position_ctrl_sliderPressed()
+{
+    //停下定时器
+    this->myTimer->stop();
+}
+
+
+void MainWindow::on_position_ctrl_sliderReleased()
+{
+    //重开定时器
+    this->myTimer->start();
+        double percentage = 1.0 * ui->position_ctrl->value() / 10000.0; //精确到小数点后四位
+        int posSec = ASongFFmpeg::getInstance()->getDuration() * percentage;
+        ASongFFmpeg::getInstance()->seek(posSec);
 }

@@ -27,6 +27,9 @@ class MainWindow : public QMainWindow
 
 public:
 
+    //定时器
+    QTimer* myTimer;
+
     //播放模式 0 只播当前 1 顺序 2 随机 3 单个循环
     int playMode;
 
@@ -34,6 +37,8 @@ public:
     MainWindow(QWidget *parent = nullptr);
 
     ~MainWindow();
+
+    QString getTimeString(int position);
 
 private slots:
     void on_play_button_clicked();
@@ -78,6 +83,9 @@ private slots:
 
     void on_next_button_clicked();
 
+    void on_position_ctrl_sliderPressed();
+
+    void on_position_ctrl_sliderReleased();
 
 private:
 
@@ -92,8 +100,6 @@ private:
     //读取/存储历史播放
     void saveFilePath();
     void readFilePath();
-    //定时器
-    QTimer* myTimer;
 
 
 };
