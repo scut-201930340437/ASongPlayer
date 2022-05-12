@@ -462,7 +462,7 @@ void MainWindow::on_play_widget_customContextMenuRequested(const QPoint &pos)
     QAction *stop = new QAction(tr("停止"), this);
 
     QAction *muteOrUnmute = new QAction(tr(ui->mute_button->text().toStdString().c_str()), this);
-    QAction *fullScreen = new QAction(tr("全屏"), this);
+    QAction *fullScreen = new QAction(tr(ui->fullScreen_button->text().toStdString().c_str()), this);
     //添加菜单项
     cmenu->addAction(openFIle);
 
@@ -499,10 +499,20 @@ void MainWindow::on_play_widget_customContextMenuRequested(const QPoint &pos)
 
 void MainWindow::keyPressEvent(QKeyEvent *event)
 {
-    if(event->key()== Qt::Key_Escape)
+    switch (event->key())
     {
+    case Qt::Key_Space:
+        on_next_button_clicked();
+        break;
+    case Qt::Key_Escape:
         if(ui->play_widget->size()==this->size())
             on_fullScreen_button_clicked();
+        break;
     }
+}
+
+void MainWindow::keyReleaseEvent(QKeyEvent *event)
+{
+
 }
 

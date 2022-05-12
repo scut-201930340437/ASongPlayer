@@ -256,3 +256,8 @@ void ASongVideo::stop()
     // 源视频流的宽高
     srcWidth = 0, srcHeight = 0;
 }
+
+void ASongVideo::flushBeforeSeek()
+{
+    avcodec_flush_buffers(pCodecCtx);
+}

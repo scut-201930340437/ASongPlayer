@@ -88,6 +88,8 @@ private slots:
 
     void keyPressEvent(QKeyEvent *event);
 
+    void keyReleaseEvent(QKeyEvent *event);
+
 
 private:
 

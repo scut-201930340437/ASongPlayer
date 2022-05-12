@@ -401,6 +401,10 @@ int ASongFFmpeg::stop()
 
 int ASongFFmpeg::seek(int posSec)
 {
+    if(nullptr == pFormatCtx)
+    {
+        return -1;
+    }
     // 先给播放状态加锁
     QMutexLocker locker(&_mediaStatusMutex);
     // 先结束各线程，但是各上下文不关闭
@@ -408,13 +412,10 @@ int ASongFFmpeg::seek(int posSec)
     // 清空队列
     DataSink::getInstance()->clearList();
     //    QMutexLocker locker(&_mutex);
-    if(nullptr == pFormatCtx)
-    {
-        return -1;
-    }
+    ASongVideo::getInstance()->flushBeforeSeek();
     int ret = av_seek_frame(pFormatCtx, -1,
                             (int64_t)posSec * AV_TIME_BASE,
-                            AVSEEK_FLAG_ANY);
+                            AVSEEK_FLAG_BACKWARD);
     if(ret < 0)
     {
         return -1;

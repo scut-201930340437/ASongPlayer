@@ -37,6 +37,7 @@ public:
     // 暂停
     void pause();
     void stop();
+    void flushBeforeSeek();
 
     //    QList<AVFrame*>frame_list;
 private:

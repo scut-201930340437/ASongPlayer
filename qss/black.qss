@@ -1,9 +1,10 @@
 /*优雅的黑色*/
 
 /*一些测试*/
+/*
 #play_button{
     image: url(:/img/play.png);
-}
+}*/
 
 /*给标题栏下，显示窗口上加一个边框*/
 #show_widget{
