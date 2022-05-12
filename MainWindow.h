@@ -60,8 +60,6 @@ private slots:
 
     void on_title_widget_customContextMenuRequested(const QPoint &pos);
 
-    void on_MainWindow_customContextMenuRequested(const QPoint &pos);
-
     void on_more_button_clicked();
 
 
@@ -71,8 +69,6 @@ private slots:
     void onPlayTableCellDoubleClicked(int row, int column);
 
     void dropEvent(QDropEvent *e);
-
-    void on_position_ctrl_valueChanged(int value);
 
     //定时事件
     void handleTimeout();
@@ -86,6 +82,8 @@ private slots:
     void on_position_ctrl_sliderPressed();
 
     void on_position_ctrl_sliderReleased();
+
+    void on_play_widget_customContextMenuRequested(const QPoint &pos);
 
 private:
 

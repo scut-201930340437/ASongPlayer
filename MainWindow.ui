@@ -209,6 +209,9 @@
          <property name="mouseTracking">
           <bool>false</bool>
          </property>
+         <property name="contextMenuPolicy">
+          <enum>Qt::CustomContextMenu</enum>
+         </property>
          <layout class="QHBoxLayout" name="horizontalLayout_4"/>
         </widget>
        </item>
@@ -398,7 +401,7 @@
           <string notr="true"/>
          </property>
          <property name="text">
-          <string/>
+          <string>播放</string>
          </property>
         </widget>
        </item>
@@ -518,6 +521,21 @@
   <action name="action_openFile">
    <property name="text">
     <string>打开文件</string>
+   </property>
+  </action>
+  <action name="action3">
+   <property name="text">
+    <string>3</string>
+   </property>
+  </action>
+  <action name="actiontestaction">
+   <property name="text">
+    <string>testaction</string>
+   </property>
+  </action>
+  <action name="actionaaa">
+   <property name="text">
+    <string>aaa</string>
    </property>
   </action>
  </widget>

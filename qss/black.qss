@@ -39,7 +39,7 @@
 }
 
 /*软件视窗主色调*/
-#centralwidget {
+#MainWindow {
         background-color:#000000;
         border-radius:5px;
 }

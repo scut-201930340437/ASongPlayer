@@ -214,21 +214,13 @@ void MainWindow::on_title_widget_customContextMenuRequested(const QPoint &pos)
 }
 
 
-void MainWindow::on_MainWindow_customContextMenuRequested(const QPoint &pos)
-{
-    QMenu *cmenu = new QMenu(ui->title_widget);
-    QAction *action1 = new QAction(tr("打开文件"), this);
-    cmenu->addAction(action1);
-    connect(action1, SIGNAL(triggered(bool)), this, SLOT(openFile()));
-    cmenu->exec(QCursor::pos());
-}
 
 
 void MainWindow::on_more_button_clicked()
 {
     //    QPoint q = QPoint(ui->more_button->x(),ui->more_button->y());
     QPoint q = QPoint(0, 0);
-    on_MainWindow_customContextMenuRequested(q);
+    on_play_widget_customContextMenuRequested(q);
 }
 
 void MainWindow::openFile()
@@ -363,14 +355,6 @@ void MainWindow::readFilePath()
     setListFromFilePath();
 }
 
-
-void MainWindow::on_position_ctrl_valueChanged(int value)
-{
-//    double percentage = 1.0 * value / 10000.0; //精确到小数点后四位
-//    int posSec = ASongFFmpeg::getInstance()->getDuration() * percentage;
-//    ASongFFmpeg::getInstance()->seek(posSec);
-}
-
 void MainWindow::handleTimeout()
 {
     int duration = ASongFFmpeg::getInstance()->getDuration();
@@ -380,7 +364,6 @@ void MainWindow::handleTimeout()
     //进度条
     int posSlider = 10000.0 * nowSec / duration;
     ui->position_ctrl->setValue(posSlider);
-    qDebug()<<nowSec<<duration<<posSlider;
     //进度时间
     ui->position_duration->setText(getTimeString(nowSec)+"/"+getTimeString(duration));
 }
@@ -436,7 +419,65 @@ void MainWindow::on_position_ctrl_sliderReleased()
 {
     //重开定时器
     this->myTimer->start();
-        double percentage = 1.0 * ui->position_ctrl->value() / 10000.0; //精确到小数点后四位
-        int posSec = ASongFFmpeg::getInstance()->getDuration() * percentage;
-        ASongFFmpeg::getInstance()->seek(posSec);
+    //切换进度要在松开鼠标后实现
+    double percentage = 1.0 * ui->position_ctrl->value() / 10000.0; //精确到小数点后四位
+    int posSec = ASongFFmpeg::getInstance()->getDuration() * percentage;
+    ASongFFmpeg::getInstance()->seek(posSec);
 }
+
+void MainWindow::on_play_widget_customContextMenuRequested(const QPoint &pos)
+{
+    QMenu *cmenu = new QMenu(ui->title_widget);
+
+    //定义菜单项
+    QAction *openFIle = new QAction(tr("打开文件"), this);
+
+    QMenu *playMode = new QMenu(tr("模式"), this);
+        //四种播放模式
+        QAction *mode0 = new QAction(tr("单次播放"), this);
+        QAction *mode1 = new QAction(tr("顺序播放"), this);
+        QAction *mode2 = new QAction(tr("随机播放"), this);
+        QAction *mode3 = new QAction(tr("单曲循环"), this);
+
+    QAction *play = new QAction(tr(ui->play_button->text().toStdString().c_str()), this);
+    QAction *last = new QAction(tr("上一个"), this);
+    QAction *next = new QAction(tr("下一个"), this);
+    QAction *stop = new QAction(tr("停止"), this);
+
+    QAction *muteOrUnmute = new QAction(tr(ui->mute_button->text().toStdString().c_str()), this);
+    QAction *fullScreen = new QAction(tr("全屏"), this);
+    //添加菜单项
+    cmenu->addAction(openFIle);
+
+    cmenu->addMenu(playMode);
+        playMode->addAction(mode0);
+        playMode->addAction(mode1);
+        playMode->addAction(mode2);
+        playMode->addAction(mode3);
+    cmenu->addAction(play);
+    cmenu->addAction(last);
+    cmenu->addAction(next);
+    cmenu->addAction(stop);
+
+    cmenu->addAction(muteOrUnmute);
+    cmenu->addAction(fullScreen);
+
+    //连接槽
+    connect(openFIle, SIGNAL(triggered(bool)), this, SLOT(openFile()));
+    connect(mode0, SIGNAL(triggered(bool)), this, SLOT(on_playmode_button_clicked()));
+    connect(mode1, SIGNAL(triggered(bool)), this, SLOT(on_playmode_button_clicked()));
+    connect(mode2, SIGNAL(triggered(bool)), this, SLOT(on_playmode_button_clicked()));
+    connect(mode3, SIGNAL(triggered(bool)), this, SLOT(on_playmode_button_clicked()));
+    connect(play, SIGNAL(triggered(bool)), this, SLOT(on_play_button_clicked()));
+    connect(last, SIGNAL(triggered(bool)), this, SLOT(on_last_button_clicked()));
+    connect(next, SIGNAL(triggered(bool)), this, SLOT(on_next_button_clicked()));
+    connect(stop, SIGNAL(triggered(bool)), this, SLOT(on_stop_button_clicked()));
+    connect(muteOrUnmute, SIGNAL(triggered(bool)), this, SLOT(on_mute_button_clicked()));
+    connect(fullScreen, SIGNAL(triggered(bool)), this, SLOT(on_fullScreen_button_clicked()));
+
+
+
+    cmenu->exec(QCursor::pos());
+}
+
+
