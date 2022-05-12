@@ -29,14 +29,8 @@ SDLPaint* SDLPaint::getInstance()
     return _instance;
 }
 
-int SDLPaint::init(void *winID, const int initWidth, const int initHeight)
+int SDLPaint::init(void *winID)
 {
-    //    if(nullptr == _screenWidget)
-    //    {
-    //        return -1;
-    //    }
-    //    screenWidget = _screenWidget;
-    //    qDebug() << "init";
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER))
     {
         qDebug() << "Could not initialize SDL" << SDL_GetError();
@@ -55,9 +49,9 @@ int SDLPaint::init(void *winID, const int initWidth, const int initHeight)
         return -1;
     }
     // 设置输出宽高和pix_fmt
-    setDstWH(initWidth, initHeight);
+    //    setDstWH(initWidth, initHeight);
     // 创建纹理
-    sdlTexture = SDL_CreateTexture(sdlRenderer, SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STREAMING, dstWidth, dstHeight);
+    sdlTexture = SDL_CreateTexture(sdlRenderer, SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STREAMING, srcWidth, srcHeight);
     //    sdlTexture = SDL_CreateTexture(sdlRenderer, SDL_PIXELFORMAT_BGRA4444, SDL_TEXTUREACCESS_STREAMING, dstWidth, dstHeight);
     if(nullptr == sdlTexture)
     {
@@ -66,7 +60,7 @@ int SDLPaint::init(void *winID, const int initWidth, const int initHeight)
     }
     // 初始化swsCtx
     pSwsCtx = sws_getCachedContext(pSwsCtx, srcWidth, srcHeight, pix_fmt,
-                                   dstWidth, dstHeight, AV_PIX_FMT_YUV420P, SWS_BICUBIC, NULL, NULL, NULL);
+                                   srcWidth, srcHeight, AV_PIX_FMT_YUV420P, SWS_BICUBIC, NULL, NULL, NULL);
     if(nullptr == pSwsCtx)
     {
         qDebug() << "swsGetCtx failed";
@@ -83,9 +77,7 @@ int SDLPaint::init(void *winID, const int initWidth, const int initHeight)
     }
     else
     {
-        //        qDebug() << "single";
         QTimer::singleShot(1500, this, &SDLPaint::getFrameYUV);
-        //        sdlTimer->start(500);
     }
     return 0;
 }
@@ -95,27 +87,27 @@ void SDLPaint::setMetaData(const int width, const int height, const int _frameRa
     // 设置参数
     srcWidth = width;
     srcHeight = height;
-    srcRate = (float)srcWidth / srcHeight;
+    //    srcRate = (float)srcWidth / srcHeight;
     frameRate = _frameRate;
     pix_fmt = _pix_fmt;
 }
 
-void SDLPaint::setDstWH(const int screenWidth, const int screenHeight)
-{
-    // 保证源视频流的宽高比
-    // 宽>高，以宽为基准
-    if(srcRate > 1.0)
-    {
-        dstWidth = screenWidth;
-        dstHeight = screenWidth / srcRate;
-    }
-    // 宽<=高，以高为基准
-    else
-    {
-        dstHeight = screenHeight;
-        dstWidth = screenHeight * srcRate;
-    }
-}
+//void SDLPaint::setDstWH(const int screenWidth, const int screenHeight)
+//{
+//    // 保证源视频流的宽高比
+//    // 宽>高，以宽为基准
+//    if(srcRate > 1.0)
+//    {
+//        dstWidth = screenWidth;
+//        dstHeight = screenWidth / srcRate;
+//    }
+//    // 宽<=高，以高为基准
+//    else
+//    {
+//        dstHeight = screenHeight;
+//        dstWidth = screenHeight * srcRate;
+//    }
+//}
 
 // 转换为YUV图像并进行同步
 void SDLPaint::getFrameYUV()
@@ -132,8 +124,8 @@ void SDLPaint::getFrameYUV()
     }
     AVFrame *frameYUV = av_frame_alloc();
     uint8_t *out_buffer = (uint8_t*)av_malloc(av_image_get_buffer_size(AV_PIX_FMT_YUV420P,
-                          dstWidth, dstHeight, 1));
-    av_image_fill_arrays(frameYUV->data, frameYUV->linesize, out_buffer, AV_PIX_FMT_YUV420P, dstWidth, dstHeight, 1);
+                          srcWidth, srcHeight, 1));
+    av_image_fill_arrays(frameYUV->data, frameYUV->linesize, out_buffer, AV_PIX_FMT_YUV420P, srcWidth, srcHeight, 1);
     sws_scale(pSwsCtx, (const uint8_t* const*)frame->data,
               frame->linesize, 0, srcHeight,
               frameYUV->data, frameYUV->linesize);
@@ -173,11 +165,9 @@ void SDLPaint::paint(AVFrame *frameYUV)
 
 void SDLPaint::pause()
 {
-    //    qDebug() << "sdltimer stop";
     if(nullptr != sdlTimer)
     {
         sdlTimer->stop();
-        //        qDebug() << "stop";
     }
 }
 
@@ -186,18 +176,29 @@ void SDLPaint::stop()
     // 停止定时器
     pause();
     // 渲染黑色图像
-    SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, 255);
-    SDL_RenderClear(sdlRenderer);
-    SDL_RenderPresent(sdlRenderer);
-    // 关闭sdl
-    SDL_DestroyRenderer(sdlRenderer);
-    sdlRenderer = nullptr;
-    SDL_DestroyTexture(sdlTexture);
-    sdlTexture = nullptr;
-    SDL_DestroyWindow(screen);
-    screen = nullptr;
+    if(nullptr != sdlRenderer)
+    {
+        SDL_SetRenderDrawColor(sdlRenderer, 0, 0, 0, 255);
+        SDL_RenderClear(sdlRenderer);
+        SDL_RenderPresent(sdlRenderer);
+        // 销毁渲染器
+        SDL_DestroyRenderer(sdlRenderer);
+        sdlRenderer = nullptr;
+    }
+    // 销毁纹理
+    if(nullptr != sdlTexture)
+    {
+        SDL_DestroyTexture(sdlTexture);
+        sdlTexture = nullptr;
+    }
+    if(nullptr != screen)
+    {
+        SDL_DestroyWindow(screen);
+        screen = nullptr;
+    }
+    // 退出sdl
     SDL_Quit();
-    // 关闭图像缩放处理上下文
+    // 关闭图像处理上下文
     if(nullptr != pSwsCtx)
     {
         sws_freeContext(pSwsCtx);

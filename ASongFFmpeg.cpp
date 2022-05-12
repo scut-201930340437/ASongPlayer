@@ -186,10 +186,8 @@ int ASongFFmpeg::load(QString path)
                                              mediaMetaData.video_meta_data.height,
                                              mediaMetaData.video_meta_data.frame_rate,
                                              mediaMetaData.video_meta_data.pix_fmt);
-        //        qDebug() << mediaMetaData.video_meta_data.frame_rate;
     }
     pACodec = pVCodec = nullptr;
-    //    qDebug() << "load finish";
     mediaMetaData.hasPacket = true;
     return 0;
 }
@@ -282,8 +280,6 @@ bool ASongFFmpeg::hasPakcet()
 
 int ASongFFmpeg::getMediaStatus()
 {
-    //    QMutexLocker locker(&_mediaStatusMutex);
-    //    qDebug() << curMediaStatus;
     return curMediaStatus;
 }
 
@@ -308,7 +304,7 @@ bool ASongFFmpeg::audioHasCover()
 }
 
 // 开始播放
-int ASongFFmpeg::play(QObject *par, QString path, void *winID, const int initWidth, const int initHeight)
+int ASongFFmpeg::play(QObject *par, QString path, void *winID)
 {
     // 切换为播放态
     curMediaStatus = 1;
@@ -320,27 +316,42 @@ int ASongFFmpeg::play(QObject *par, QString path, void *winID, const int initWid
     start();
     // 音频解码线程和播放线程启动
     ASongAudio::getInstance()->start();
-    //    qDebug() << mediaMetaData.mediaType;
     if(mediaMetaData.mediaType == 2)
     {
-        // SDL初始化
-        if(nullptr == painter)
-        {
-            painter = SDLPaint::getInstance();
-            int ret = painter->init(winID, initWidth, initHeight);
-            if(ret != 0)
-            {
-                qDebug() << "init sdl failed";
-            }
-        }
         // 视频解码线程启动
         ASongVideo::getInstance()->start();
+        // SDL初始化并开启sdl渲染定时器
+        painter = SDLPaint::getInstance();
+        int ret = painter->init(winID);
+        if(ret != 0)
+        {
+            qDebug() << "init sdl failed";
+        }
     }
-    //    qDebug() << "start";
     return 0;
 }
 
-int ASongFFmpeg::_continue(bool isReplay)
+//int ASongFFmpeg::_continue(bool isReplay)
+//{
+//    // 切换为播放态
+//    curMediaStatus = 1;
+//    // 读取packet线程启动
+//    start();
+//    // 音频解码线程和播放线程启动
+//    ASongAudio::getInstance()->start();
+//    // 带封面的音频在不是重新播放的情况下不启动视频解码线程和SDL
+//    if(mediaMetaData.mediaType == 2 && (!mediaMetaData.audio_meta_data.hasCover || mediaMetaData.audio_meta_data.hasCover && isReplay))
+//    {
+//        // 视频解码线程启动
+//        ASongVideo::getInstance()->start();
+//        // SDL重启
+//        painter->reStart();
+//    }
+//    //    qDebug() << "start";
+//    return 0;
+//}
+
+int ASongFFmpeg::_continue()
 {
     // 切换为播放态
     curMediaStatus = 1;
@@ -349,8 +360,7 @@ int ASongFFmpeg::_continue(bool isReplay)
     // 音频解码线程和播放线程启动
     ASongAudio::getInstance()->start();
     // 带封面的音频在不是重新播放的情况下不启动视频解码线程和SDL
-    //    qDebug() << mediaMetaData.audio_meta_data.hasCover;
-    if(mediaMetaData.mediaType == 2 && (!mediaMetaData.audio_meta_data.hasCover || mediaMetaData.audio_meta_data.hasCover && isReplay))
+    if(mediaMetaData.mediaType == 2 && !mediaMetaData.audio_meta_data.hasCover)
     {
         // 视频解码线程启动
         ASongVideo::getInstance()->start();
@@ -372,7 +382,7 @@ int ASongFFmpeg::pause()
         ASongVideo::getInstance()->pause();
         SDLPaint::getInstance()->pause();
     }
-    if(isRunning())
+    if(!isFinished())
     {
         allowRead = false;
         wait();
@@ -395,7 +405,7 @@ int ASongFFmpeg::stop()
         ASongVideo::getInstance()->stop();
         SDLPaint::getInstance()->stop();
     }
-    if(isRunning())
+    if(!isFinished())
     {
         allowRead = false;
         wait();
@@ -446,6 +456,6 @@ int ASongFFmpeg::seek(int posSec)
     {
         return -1;
     }
-    _continue(false);
+    _continue();
     return 0;
 }

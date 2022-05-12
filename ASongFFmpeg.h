@@ -97,9 +97,10 @@ public:
     //    int getFrameRate();
     //    enum AVPixelFormat getPixFmt();
     /*播放控制*/
-    int play(QObject *par, QString path, void *winID, const int initWidth, const int initHeight);
+    int play(QObject *par, QString path, void *winID);
     int pause();
-    int _continue(bool isReplay);
+    //    int _continue(bool isReplay);
+    int _continue();
     int stop();
     int seek(int posSec);
     // 设置播放器状态

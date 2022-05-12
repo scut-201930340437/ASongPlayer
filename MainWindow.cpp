@@ -78,8 +78,7 @@ void MainWindow::on_play_button_clicked()
         {
             if(filePath != "")
             {
-                ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId(),
-                                                 ui->play_widget->width(), ui->play_widget->height());
+                ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId());
                 ui->play_button->setText("暂停");
                 break;
             }
@@ -96,14 +95,13 @@ void MainWindow::on_play_button_clicked()
             break;
         case 2:
         {
-            ASongFFmpeg::getInstance()->_continue(false);
+            ASongFFmpeg::getInstance()->_continue();
             ui->play_button->setText("暂停");
             break;
         }
         case 0:
         {
-            ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId(),
-                                             ui->play_widget->width(), ui->play_widget->height());
+            ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId());
             ui->play_button->setText("播放");
             break;
         }
@@ -212,9 +210,6 @@ void MainWindow::on_title_widget_customContextMenuRequested(const QPoint &pos)
     cmenu->exec(QCursor::pos());
 }
 
-
-
-
 void MainWindow::on_more_button_clicked()
 {
     //    QPoint q = QPoint(ui->more_button->x(),ui->more_button->y());
@@ -233,8 +228,7 @@ void MainWindow::openFile()
     {
         filePath = path;
         ASongFFmpeg::getInstance()->stop();
-        ASongFFmpeg::getInstance()->play(this, path, (void*)ui->play_widget->winId(),
-                                         ui->play_widget->width(), ui->play_widget->height());
+        ASongFFmpeg::getInstance()->play(this, path, (void*)ui->play_widget->winId());
         setListFromFilePath();
         saveFilePath();
     }
@@ -292,8 +286,7 @@ void MainWindow::onPlayTableCellDoubleClicked(int row, int column)
     filePath = path;
     saveFilePath();
     ASongFFmpeg::getInstance()->stop();
-    ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId(),
-                                     ui->play_widget->width(), ui->play_widget->height());
+    ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId());
     this->ui->play_table->playPos = row; //确认可以播放，记录播放位置
 }
 
@@ -316,8 +309,7 @@ void MainWindow::dropEvent(QDropEvent *e)
         filePath = urls.first().toLocalFile();
         setListFromFilePath();
         ASongFFmpeg::getInstance()->stop();
-        ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId(),
-                                         ui->play_widget->width(), ui->play_widget->height());
+        ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId());
         saveFilePath();
     }
     else
@@ -405,8 +397,7 @@ void MainWindow::on_last_button_clicked()
     ui->play_table->playPos = (ui->play_table->playPos - 1 + n) % n;
     filePath = ui->play_table->getPath(ui->play_table->playPos);
     ASongFFmpeg::getInstance()->stop();
-    ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId(),
-                                     ui->play_widget->width(), ui->play_widget->height());
+    ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId());
     saveFilePath();
 }
 
@@ -422,8 +413,7 @@ void MainWindow::on_next_button_clicked()
     ui->play_table->playPos = (ui->play_table->playPos + 1 + n) % n;
     filePath = ui->play_table->getPath(ui->play_table->playPos);
     ASongFFmpeg::getInstance()->stop();
-    ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId(),
-                                     ui->play_widget->width(), ui->play_widget->height());
+    ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId());
     saveFilePath();
 }
 

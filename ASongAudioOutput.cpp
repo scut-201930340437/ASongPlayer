@@ -29,7 +29,7 @@ void ASongAudioOutput::initAudioPara(const int _channels, const int _sample_rate
 void ASongAudioOutput::initAndStartDevice(QObject *par)
 {
     // 先关闭当前音频播放
-    closeDevice();
+    //    closeDevice();
     mediaDevice = new QMediaDevices(par);
 }
 
@@ -183,12 +183,15 @@ qreal ASongAudioOutput::getVolume()
 
 void ASongAudioOutput::setVolume(const qreal curVolume)
 {
-    audioOutput->setVolume(curVolume);
+    if(nullptr != audioOutput)
+    {
+        audioOutput->setVolume(curVolume);
+    }
 }
 
 void ASongAudioOutput::pause()
 {
-    if(isRunning())
+    if(!isFinished())
     {
         allowPlay = false;
         wait();

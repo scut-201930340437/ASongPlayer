@@ -23,11 +23,11 @@ public:
     static SDLPaint* getInstance();
     ~SDLPaint();
     // 初始化sdl
-    int init(void *winID, const int initWidth, const int initHeight);
+    int init(void *winID);
 
     void setMetaData(const int width, const int height, const int _frameRate, const enum AVPixelFormat _pix_fmt);
     // 根据输出窗口重设sdl的参数
-    void setDstWH(const int screenWidth, const int screenHeight);
+    //    void setDstWH(const int screenWidth, const int screenHeight);
     // 将一帧图像转储为YUVFrame
     void getFrameYUV();
     // 绘制
@@ -67,11 +67,11 @@ private:
     // 源视频流宽高
     int srcWidth, srcHeight;
     // 源视频流宽高比
-    float srcRate = 0.0;
+    //    float srcRate = 0.0;
     // 输出widget
     //    QWidget* screenWidget = nullptr;
     // 输出图像的宽高
-    int dstWidth, dstHeight;
+    //    int dstWidth, dstHeight;
     // 帧率
     int frameRate = -1;
     // 帧之间的延时

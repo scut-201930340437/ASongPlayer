@@ -76,7 +76,7 @@ private:
     //
     //    int frameRate = 0;
     // 源视频流的宽高
-    int srcWidth = 0, srcHeight = 0;
+    //    int srcWidth = 0, srcHeight = 0;
 
     // 输出宽高
     //    int out_width = 0, out_height = 0;

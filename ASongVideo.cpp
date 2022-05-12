@@ -26,8 +26,8 @@ void ASongVideo::setMetaData(AVCodecContext *_pCodecCtx, const int _videoIdx, co
     tb = av_q2d(timeBase);
     lastFrameDelay = tb;
     //    frameRate = _frameRate;
-    srcWidth = pCodecCtx->width;
-    srcHeight = pCodecCtx->height;
+    //    srcWidth = pCodecCtx->width;
+    //    srcHeight = pCodecCtx->height;
     hasCover = _hasCover;
 }
 
@@ -41,7 +41,6 @@ void ASongVideo::start(Priority pro)
 {
     allowRunVideo = true;
     frameTime = av_gettime() / 1000000.0;
-    //    qDebug() << "videoThread begin";
     QThread::start(pro);
 }
 
@@ -231,14 +230,13 @@ double ASongVideo::synVideo(const double pts)
 
 void ASongVideo::pause()
 {
-    if(isRunning())
+    if(!isFinished())
     {
         allowRunVideo = false;
         // 解码线程可能由于frame队列过长而阻塞，先唤醒
         DataSink::getInstance()->wakeVideoWithFraCond();
         wait();
     }
-    //    return true;
 }
 
 void ASongVideo::stop()
@@ -261,9 +259,10 @@ void ASongVideo::stop()
     // stream_index
     videoIdx = -1;
     // 源视频流的宽高
-    srcWidth = 0, srcHeight = 0;
+    //    srcWidth = 0, srcHeight = 0;
 }
 
+// 进度跳转前的解码器缓存清理
 void ASongVideo::flushBeforeSeek()
 {
     avcodec_flush_buffers(pCodecCtx);

@@ -31,7 +31,6 @@ void ASongAudio::initAndStartDevice(QObject *par)
             pCodecCtx->channel_layout, pCodecCtx->sample_fmt);
     ASongAudioOutput::getInstance()->initAndStartDevice(par);
     ASongAudioOutput::getInstance()->initSwr();
-    ASongAudioOutput::getInstance()->start();
 }
 
 /*thread*/
@@ -39,6 +38,10 @@ void ASongAudio::start(Priority pro)
 {
     allowRunAudio = true;
     QThread::start(pro);
+    // 等待解码线程启动，解码线程启动后，播放线程才能启动
+    //    while(!isRunning())
+    //    {
+    //    }
     ASongAudioOutput::getInstance()->start();
 }
 
@@ -190,7 +193,7 @@ void ASongAudio::pause()
     // 先结束音频播放线程
     ASongAudioOutput::getInstance()->pause();
     // 再结束音频解码线程
-    if(isRunning())
+    if(!isFinished())
     {
         allowRunAudio = false;
         // 解码线程可能由于frame队列过长而阻塞，先唤醒
