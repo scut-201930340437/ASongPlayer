@@ -21,7 +21,6 @@ public:
     QString getPath(qint16 row);
 
 
-
 private:
     QFileInfoList *playTable;
     QVector<QString> neededFile={"mp3","mp4","flv","avi","mkv"};

@@ -79,11 +79,15 @@ private slots:
 
     void on_next_button_clicked();
 
+
     void on_position_ctrl_sliderPressed();
 
     void on_position_ctrl_sliderReleased();
 
     void on_play_widget_customContextMenuRequested(const QPoint &pos);
+
+    void keyPressEvent(QKeyEvent *event);
+
 
 private:
 
@@ -98,7 +102,6 @@ private:
     //读取/存储历史播放
     void saveFilePath();
     void readFilePath();
-
 
 };
 #endif // MAINWINDOW_H

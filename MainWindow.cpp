@@ -370,10 +370,27 @@ void MainWindow::handleTimeout()
 
 void MainWindow::on_fullScreen_button_clicked()
 {
-    qDebug()<<"全屏";
-//    ui->play_widget->showFullScreen();
-//    ui->play_widget->resize(this->size());
-//    ui->play_widget->move(0, 0);
+    if(ui->play_widget->size()==this->size())
+    {
+       ui->title_widget->show();
+       ui->play_table->show();
+       ui->control_widget->show();
+       this->showNormal();
+       ui->play_widget->showNormal();
+       ui->fullScreen_button->setText("全屏");
+    }
+    else
+    {
+        ui->title_widget->hide();
+        ui->play_table->hide();
+        ui->control_widget->hide();
+        this->showFullScreen();
+        ui->play_widget->move(0, 0);
+        ui->play_widget->resize(this->size());
+        ui->fullScreen_button->setText("退出全屏");
+
+    }
+
 }
 
 //上一首
@@ -480,4 +497,12 @@ void MainWindow::on_play_widget_customContextMenuRequested(const QPoint &pos)
     cmenu->exec(QCursor::pos());
 }
 
+void MainWindow::keyPressEvent(QKeyEvent *event)
+{
+    if(event->key()== Qt::Key_Escape)
+    {
+        if(ui->play_widget->size()==this->size())
+            on_fullScreen_button_clicked();
+    }
+}
 

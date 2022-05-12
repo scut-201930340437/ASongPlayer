@@ -48,6 +48,3 @@ QString PlayTable::getPath(qint16 row)
         return "";
     return this->item(row,1)->text();
 }
-
-
-
