@@ -18,6 +18,7 @@ extern "C"
 
 class ASongAudioOutput: public QThread
 {
+    Q_OBJECT
 public:
     // 单例模式，全局访问点
     static ASongAudioOutput* getInstance();
@@ -65,6 +66,9 @@ private:
     QMediaDevices *mediaDevice = nullptr;
     QIODevice *audioIO = nullptr;
     QAudioSink *audioOutput = nullptr;
+
+signals:
+    void playFinish();
 
 };
 

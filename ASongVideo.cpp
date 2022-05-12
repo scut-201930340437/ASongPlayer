@@ -31,6 +31,11 @@ void ASongVideo::setMetaData(AVCodecContext *_pCodecCtx, const int _videoIdx, co
     hasCover = _hasCover;
 }
 
+void ASongVideo::setNeededVideoCode()
+{
+    neededVideoCode = true;
+}
+
 /*thread*/
 void ASongVideo::start(Priority pro)
 {
@@ -44,94 +49,96 @@ void ASongVideo::run()
 {
     AVPacket *packet = nullptr;
     bool coverAlready = false;
-    while(allowRunVideo)
+    while(allowRunVideo && neededVideoCode)
     {
-        //        if(DataSink::getInstance()->frameListSize(1) >= DataSink::maxFrameListLength)
-        //        {
-        //            msleep(20);
-        //        }
-        //        else
-        //        {
         DataSink::getInstance()->allowAppendVFrame();
         packet = DataSink::getInstance()->takeNextPacket(1);
-        // 解码
-        int ret = avcodec_send_packet(pCodecCtx, packet);
-        // avcodec_send_packet成功
-        if(ret == 0)
+        if(nullptr != packet)
         {
-            //                while(1)
-            //                {
-            AVFrame *frame = av_frame_alloc();
-            ret = avcodec_receive_frame(pCodecCtx, frame);
+            // 解码
+            int ret = avcodec_send_packet(pCodecCtx, packet);
+            // avcodec_send_packet成功
             if(ret == 0)
             {
-                frame->opaque = (double*)new double(getPts(frame));
-                DataSink::getInstance()->appendFrameList(1, frame);
-                // 如果是带音频的封面，该线程只做一次循环
-                if(hasCover)
+                //                while(1)
+                //                {
+                AVFrame *frame = av_frame_alloc();
+                ret = avcodec_receive_frame(pCodecCtx, frame);
+                if(ret == 0)
                 {
-                    coverAlready = true;
+                    frame->opaque = (double*)new double(getPts(frame));
+                    DataSink::getInstance()->appendFrameList(1, frame);
+                    // 如果是带音频的封面，该线程只做一次循环
+                    if(hasCover)
+                    {
+                        coverAlready = true;
+                    }
+                }
+                else
+                {
+                    if(ret == AVERROR_EOF)
+                    {
+                        // 复位解码器
+                        avcodec_flush_buffers(pCodecCtx);
+                    }
+                    av_frame_free(&frame);
                 }
             }
             else
             {
-                if(ret == AVERROR_EOF)
+                // 如果是AVERROR(EAGAIN)，需要先调用avcodec_receive_frame将frame读取出来
+                if(ret == AVERROR(EAGAIN))
                 {
-                    // 复位解码器
-                    avcodec_flush_buffers(pCodecCtx);
+                    while(1)
+                    {
+                        AVFrame *frame = av_frame_alloc();
+                        ret = avcodec_receive_frame(pCodecCtx, frame);
+                        if(ret == AVERROR_EOF)
+                        {
+                            av_frame_free(&frame);
+                            // 复位解码器
+                            avcodec_flush_buffers(pCodecCtx);
+                            break;
+                        }
+                        frame->opaque = (double*)new double(getPts(frame));
+                        DataSink::getInstance()->appendFrameList(1, frame);
+                    }
+                    // 然后再调用avcodec_send_packet
+                    ret = avcodec_send_packet(pCodecCtx, packet);
+                    if(ret == 0)
+                    {
+                        AVFrame *frame = av_frame_alloc();
+                        ret = avcodec_receive_frame(pCodecCtx, frame);
+                        if(ret == 0)
+                        {
+                            frame->opaque = (double*)new double(getPts(frame));
+                            DataSink::getInstance()->appendFrameList(1, frame);
+                        }
+                        else
+                        {
+                            if(ret == AVERROR_EOF)
+                            {
+                                // 复位解码器
+                                avcodec_flush_buffers(pCodecCtx);
+                            }
+                            av_frame_free(&frame);
+                        }
+                    }
                 }
-                av_frame_free(&frame);
+            }
+            // 释放
+            av_packet_free(&packet);
+            //        }
+            if(coverAlready)
+            {
+                allowRunVideo = false;
+                break;
             }
         }
         else
         {
-            // 如果是AVERROR(EAGAIN)，需要先调用avcodec_receive_frame将frame读取出来
-            if(ret == AVERROR(EAGAIN))
-            {
-                while(1)
-                {
-                    AVFrame *frame = av_frame_alloc();
-                    ret = avcodec_receive_frame(pCodecCtx, frame);
-                    if(ret == AVERROR_EOF)
-                    {
-                        av_frame_free(&frame);
-                        // 复位解码器
-                        avcodec_flush_buffers(pCodecCtx);
-                        break;
-                    }
-                    frame->opaque = (double*)new double(getPts(frame));
-                    DataSink::getInstance()->appendFrameList(1, frame);
-                }
-                // 然后再调用avcodec_send_packet
-                ret = avcodec_send_packet(pCodecCtx, packet);
-                if(ret == 0)
-                {
-                    AVFrame *frame = av_frame_alloc();
-                    ret = avcodec_receive_frame(pCodecCtx, frame);
-                    if(ret == 0)
-                    {
-                        frame->opaque = (double*)new double(getPts(frame));
-                        DataSink::getInstance()->appendFrameList(1, frame);
-                    }
-                    else
-                    {
-                        if(ret == AVERROR_EOF)
-                        {
-                            // 复位解码器
-                            avcodec_flush_buffers(pCodecCtx);
-                        }
-                        av_frame_free(&frame);
-                    }
-                }
-            }
-        }
-        // 释放
-        av_packet_free(&packet);
-        //        }
-        if(coverAlready)
-        {
             allowRunVideo = false;
-            break;
+            neededVideoCode = false;
         }
     }
 }
@@ -228,7 +235,7 @@ void ASongVideo::pause()
     {
         allowRunVideo = false;
         // 解码线程可能由于frame队列过长而阻塞，先唤醒
-        DataSink::getInstance()->wakeVideo();
+        DataSink::getInstance()->wakeVideoWithFraCond();
         wait();
     }
     //    return true;

@@ -46,92 +46,94 @@ void ASongAudio::run()
 {
     //    QList<AVFrame*>frame_list;
     AVPacket *packet = nullptr;
-    while(allowRunAudio)
+    while(allowRunAudio && neededAudioCode)
     {
-        //        if(DataSink::getInstance()->frameListSize(0) >= DataSink::maxFrameListLength)
-        //        {
-        //            msleep(20);
-        //        }
-        //        else
-        //        {
         DataSink::getInstance()->allowAppendAFrame();
         packet = DataSink::getInstance()->takeNextPacket(0);
-        // 设置时钟
-        //            setAudioClock(packet);
-        int ret = avcodec_send_packet(pCodecCtx, packet);
-        // avcodec_send_packet成功
-        if(ret == 0)
+        if(nullptr != packet)
         {
-            while(1)
-            {
-                AVFrame *frame = av_frame_alloc();
-                ret = avcodec_receive_frame(pCodecCtx, frame);
-                if(ret == 0)
-                {
-                    //                    qDebug() << "---";
-                    DataSink::getInstance()->appendFrameList(0, frame);
-                }
-                else
-                {
-                    if(ret == AVERROR_EOF)
-                    {
-                        // 复位解码器
-                        avcodec_flush_buffers(pCodecCtx);
-                    }
-                    av_frame_free(&frame);
-                    break;
-                }
-                //            qDebug() << "decode";
-            }
-        }
-        else
-        {
-            // 如果是AVERROR(EAGAIN)，需要先调用avcodec_receive_frame将frame读取出来
-            if(ret == AVERROR(EAGAIN))
+            // 设置时钟
+            //            setAudioClock(packet);
+            int ret = avcodec_send_packet(pCodecCtx, packet);
+            // avcodec_send_packet成功
+            if(ret == 0)
             {
                 while(1)
                 {
                     AVFrame *frame = av_frame_alloc();
                     ret = avcodec_receive_frame(pCodecCtx, frame);
-                    if(ret == AVERROR_EOF)
+                    if(ret == 0)
                     {
+                        //                    qDebug() << "---";
+                        DataSink::getInstance()->appendFrameList(0, frame);
+                    }
+                    else
+                    {
+                        if(ret == AVERROR_EOF)
+                        {
+                            // 复位解码器
+                            avcodec_flush_buffers(pCodecCtx);
+                        }
                         av_frame_free(&frame);
-                        // 复位解码器
-                        avcodec_flush_buffers(pCodecCtx);
                         break;
                     }
                     //            qDebug() << "decode";
-                    DataSink::getInstance()->appendFrameList(0, frame);
                 }
-                // 然后再调用avcodec_send_packet
-                ret = avcodec_send_packet(pCodecCtx, packet);
-                if(ret == 0)
+            }
+            else
+            {
+                // 如果是AVERROR(EAGAIN)，需要先调用avcodec_receive_frame将frame读取出来
+                if(ret == AVERROR(EAGAIN))
                 {
                     while(1)
                     {
                         AVFrame *frame = av_frame_alloc();
                         ret = avcodec_receive_frame(pCodecCtx, frame);
-                        if(ret == 0)
+                        if(ret == AVERROR_EOF)
                         {
-                            DataSink::getInstance()->appendFrameList(0, frame);
-                        }
-                        else
-                        {
-                            if(ret == AVERROR_EOF)
-                            {
-                                // 复位解码器
-                                avcodec_flush_buffers(pCodecCtx);
-                            }
                             av_frame_free(&frame);
+                            // 复位解码器
+                            avcodec_flush_buffers(pCodecCtx);
                             break;
+                        }
+                        //            qDebug() << "decode";
+                        DataSink::getInstance()->appendFrameList(0, frame);
+                    }
+                    // 然后再调用avcodec_send_packet
+                    ret = avcodec_send_packet(pCodecCtx, packet);
+                    if(ret == 0)
+                    {
+                        while(1)
+                        {
+                            AVFrame *frame = av_frame_alloc();
+                            ret = avcodec_receive_frame(pCodecCtx, frame);
+                            if(ret == 0)
+                            {
+                                DataSink::getInstance()->appendFrameList(0, frame);
+                            }
+                            else
+                            {
+                                if(ret == AVERROR_EOF)
+                                {
+                                    // 复位解码器
+                                    avcodec_flush_buffers(pCodecCtx);
+                                }
+                                av_frame_free(&frame);
+                                break;
+                            }
                         }
                     }
                 }
             }
+            // 释放
+            av_packet_free(&packet);
+            //        }
         }
-        // 释放
-        av_packet_free(&packet);
-        //        }
+        else
+        {
+            allowRunAudio = false;
+            neededAudioCode = false;
+        }
     }
 }
 
@@ -168,6 +170,11 @@ void ASongAudio::setAudioClock(AVFrame *frame, const double duration)
     audioClock += duration;
 }
 
+void ASongAudio::setNeededAudioCode()
+{
+    neededAudioCode = true;
+}
+
 //获取时钟
 double ASongAudio::getAudioClock()
 {
@@ -187,7 +194,7 @@ void ASongAudio::pause()
     {
         allowRunAudio = false;
         // 解码线程可能由于frame队列过长而阻塞，先唤醒
-        DataSink::getInstance()->wakeAudio();
+        DataSink::getInstance()->wakeAudioWithFraCond();
         wait();
     }
 }

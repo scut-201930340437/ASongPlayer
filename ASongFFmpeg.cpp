@@ -7,6 +7,7 @@
 QAtomicPointer<ASongFFmpeg> ASongFFmpeg::_instance = nullptr;
 QMutex ASongFFmpeg::_mutex;
 QMutex ASongFFmpeg::_mediaStatusMutex;
+QMutex ASongFFmpeg::_hasPacketMutex;
 
 ASongFFmpeg::~ASongFFmpeg()
 {
@@ -30,6 +31,7 @@ ASongFFmpeg* ASongFFmpeg::getInstance()
 void ASongFFmpeg::initPara()
 {
     mediaMetaData.mediaType = 0;
+    mediaMetaData.mediaType = false;
     mediaMetaData.path = "";
     mediaMetaData.filename = "";
     mediaMetaData.format = "";
@@ -188,6 +190,7 @@ int ASongFFmpeg::load(QString path)
     }
     pACodec = pVCodec = nullptr;
     //    qDebug() << "load finish";
+    mediaMetaData.hasPacket = true;
     return 0;
 }
 
@@ -212,31 +215,37 @@ void ASongFFmpeg::run()
             AVPacket *packet = readFrame();
             if(nullptr == packet)
             {
-                qDebug() << "Couldn't open file.";
-                //                hasMedia = false;
+                QMutexLocker locker(&_hasPacketMutex);
+                //                qDebug() << "Couldn't open file.";
+                mediaMetaData.hasPacket = false;
+                locker.unlock();
+                // 唤醒可能阻塞的解码线程
+                DataSink::getInstance()->appendPacketList(0, nullptr);
+                DataSink::getInstance()->appendPacketList(1, nullptr);
+                //                DataSink::getInstance()->wakeAudioWithPackCond();
+                //                DataSink::getInstance()->wakeVideoWithPackCond();
                 allowRead = false;
                 break;
             }
             // 如果是音频
             if(packet->stream_index == audioIdx)
             {
-                // 如果当前未被解码的packet过多，阻塞该读取线程
                 DataSink::getInstance()->appendPacketList(0, packet);
+                //                DataSink::getInstance()->wakeAudioWithPackCond();
                 //                audioList.append(*packet);
             }
             else
             {
                 if(packet->stream_index == videoIdx)
                 {
-                    //                    QMutexLocker locker(&videoListMutex);
-                    // 如果当前未被解码的packet过多，阻塞该读取线程
                     DataSink::getInstance()->appendPacketList(1, packet);
+                    //                    DataSink::getInstance()->wakeVideoWithPackCond();
                     //                    videoList.append(*packet);
                 }
             }
         }
     }
-    // 文件结束
+    // 解复用结束
     //    qDebug() << "thread quit";
 }
 
@@ -246,12 +255,14 @@ AVPacket* ASongFFmpeg::readFrame()
     if(!pFormatCtx)
     {
         //        qDebug() << "pFormat";
+        // 文件未打开
         return nullptr;
     }
     AVPacket* packet = av_packet_alloc();
     int ret = av_read_frame(pFormatCtx, packet);
     if(ret < 0)
     {
+        // 所有的packet已经读取完毕
         av_packet_free(&packet);
         packet = nullptr;
     }
@@ -262,6 +273,11 @@ AVPacket* ASongFFmpeg::readFrame()
 int ASongFFmpeg::getMediaType()
 {
     return mediaMetaData.mediaType;
+}
+
+bool ASongFFmpeg::hasPakcet()
+{
+    return mediaMetaData.hasPacket;
 }
 
 int ASongFFmpeg::getMediaStatus()
@@ -292,10 +308,9 @@ bool ASongFFmpeg::audioHasCover()
 }
 
 // 开始播放
-int ASongFFmpeg::play(QObject *par, QString path, QWidget *_screenWidget)
+int ASongFFmpeg::play(QObject *par, QString path, void *winID, const int initWidth, const int initHeight)
 {
     // 切换为播放态
-    //    QMutexLocker locker(&_mediaStatusMutex);
     curMediaStatus = 1;
     // 加载媒体文件信息
     load(path);
@@ -308,13 +323,15 @@ int ASongFFmpeg::play(QObject *par, QString path, QWidget *_screenWidget)
     //    qDebug() << mediaMetaData.mediaType;
     if(mediaMetaData.mediaType == 2)
     {
-        //        qDebug() << "start";
         // SDL初始化
-        painter = SDLPaint::getInstance();
-        int ret = painter->init(_screenWidget);
-        if(ret != 0)
+        if(nullptr == painter)
         {
-            qDebug() << "init sdl failed";
+            painter = SDLPaint::getInstance();
+            int ret = painter->init(winID, initWidth, initHeight);
+            if(ret != 0)
+            {
+                qDebug() << "init sdl failed";
+            }
         }
         // 视频解码线程启动
         ASongVideo::getInstance()->start();
@@ -326,7 +343,6 @@ int ASongFFmpeg::play(QObject *par, QString path, QWidget *_screenWidget)
 int ASongFFmpeg::_continue(bool isReplay)
 {
     // 切换为播放态
-    //    QMutexLocker locker(&_mediaStatusMutex);
     curMediaStatus = 1;
     // 读取packet线程启动
     start();
@@ -366,14 +382,16 @@ int ASongFFmpeg::pause()
 
 int ASongFFmpeg::stop()
 {
-    //    QMutexLocker locker(&_mediaStatusMutex);
+    if(nullptr == pFormatCtx)
+    {
+        return -1;
+    }
     curMediaStatus = 0;
     // 结束各线程
     // 再结束音频解码和音频播放线程
     ASongAudio::getInstance()->stop();
     if(mediaMetaData.mediaType == 2)
     {
-        //        qDebug() << "ffmpeg stop";
         ASongVideo::getInstance()->stop();
         SDLPaint::getInstance()->stop();
     }
@@ -405,6 +423,8 @@ int ASongFFmpeg::seek(int posSec)
     {
         return -1;
     }
+    ASongAudio::getInstance()->setNeededAudioCode();
+    ASongVideo::getInstance()->setNeededVideoCode();
     // 先给播放状态加锁
     QMutexLocker locker(&_mediaStatusMutex);
     // 先结束各线程，但是各上下文不关闭
@@ -413,6 +433,12 @@ int ASongFFmpeg::seek(int posSec)
     DataSink::getInstance()->clearList();
     //    QMutexLocker locker(&_mutex);
     ASongVideo::getInstance()->flushBeforeSeek();
+    // 清理解码器缓存，否则可能出现花屏的现象(仅对视频)
+    if(mediaMetaData.mediaType == 2 && !mediaMetaData.audio_meta_data.hasCover)
+    {
+        ASongVideo::getInstance()->flushBeforeSeek();
+    }
+    // seek I frame
     int ret = av_seek_frame(pFormatCtx, -1,
                             (int64_t)posSec * AV_TIME_BASE,
                             AVSEEK_FLAG_BACKWARD);

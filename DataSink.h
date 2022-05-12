@@ -4,7 +4,7 @@
 #include <QDebug>
 
 #include <QMutex>
-#include <QSemaphore>
+//#include <QSemaphore>
 #include <QWaitCondition>
 #include <QList>
 extern "C"
@@ -36,8 +36,11 @@ public:
     qsizetype packetListSize(int type);
     //    qsizetype frameListSize(int type);
 
-    void wakeAudio();
-    void wakeVideo();
+    void wakeAudioWithFraCond();
+    void wakeVideoWithFraCond();
+
+    //    void wakeAudioWithPackCond();
+    //    void wakeVideoWithPackCond();
 
     void clearList();
 
@@ -62,12 +65,13 @@ private:
     QList<AVFrame*>vFrameList;
 
     // 信号量
-    QSemaphore *audioPackSem = nullptr, *videoPackSem = nullptr;
+    //    QSemaphore *audioPackSem = nullptr, *videoPackSem = nullptr;
     //    *audioFraSem = nullptr;
     // 条件变量
-    QWaitCondition *audioFraCon = nullptr, *videoFraCon = nullptr;
+    QWaitCondition *audioPackCond = nullptr, *videoPackCond = nullptr, *audioFraCond = nullptr, *videoFraCond = nullptr;
     // 条件变量对应的锁
-    QMutex audioFraCon_mutex, videoFraCon_mutex;
+    //    QMutex audioPackCond_mutex, videoPackCond_mutex;
+    QMutex audioFraCond_mutex, videoFraCond_mutex;
 
     // packetList是共享资源，需要加锁
     //    QMutex aPacketListMutex;

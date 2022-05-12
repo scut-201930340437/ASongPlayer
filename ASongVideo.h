@@ -28,6 +28,7 @@ public:
 
     void setMetaData(AVCodecContext *_pCodecCtx, const int _videoIdx,  const AVRational timeBase, bool _hasCover);
     //    void resetWH(const int _out_width, const int _out_height);
+    void setNeededVideoCode();
     // 获取pts
     double getPts(AVFrame *frame);
     // 同步
@@ -53,6 +54,7 @@ private:
 
     // 允许线程运行
     bool allowRunVideo = false;
+    bool neededVideoCode = true;
     // 音频有封面
     bool hasCover = false;
     // videoClock

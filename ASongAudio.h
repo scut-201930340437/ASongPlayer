@@ -43,12 +43,15 @@ public:
     //    void initSwr();
     // 初始化元数据，从ffmpeg的load中读取
     void setMetaData(AVFormatContext *_pFormatCtx, AVCodecContext *_pCodecCtx, int _audioIdx);
-    /* 访问成员变量*/
-    // 获取时钟，用于同步，音频为基准
-    double getAudioClock();
     // 设置音频时钟
     //    void setAudioClock(AVPacket *packet);
     void setAudioClock(AVFrame *frame, const double duration);
+    // 设置需要解码
+    void setNeededAudioCode();
+    /* 访问成员变量*/
+    // 获取时钟，用于同步，音频为基准
+    double getAudioClock();
+
     // 获取audioOutput的剩余空间(/Byte)
     //    int getAvaiMem();
 
@@ -86,6 +89,8 @@ private:
     AVRational tb;
     // 允许解码标志
     bool allowRunAudio = false;
+    // 还需不需要解码
+    bool neededAudioCode = true;
 
     // stream_index
     int audioIdx = -1;

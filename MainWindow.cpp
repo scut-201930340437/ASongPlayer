@@ -15,12 +15,11 @@ MainWindow::MainWindow(QWidget *parent)
     //    asongFFmpeg = new ASongFFmpeg(ui->screen_widget);
     //播放模式初始为1 顺序
     playMode = 1;
-        //定时器
-        myTimer = new QTimer();
-        myTimer->setInterval(1000); //1秒
-        connect(myTimer, SIGNAL(timeout()), this, SLOT(handleTimeout()));
-        myTimer->start();
-
+    //定时器
+    myTimer = new QTimer();
+    myTimer->setInterval(1000); //1秒
+    connect(myTimer, SIGNAL(timeout()), this, SLOT(handleTimeout()));
+    myTimer->start();
     connect(this->ui->play_table, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(onPlayTableCellDoubleClicked(int, int)));
     //启用鼠标拖拽放下操做
     setAcceptDrops(true);
@@ -47,7 +46,8 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-QString MainWindow::getTimeString(int position){
+QString MainWindow::getTimeString(int position)
+{
     QString ph = QString::number(position / 3600);
     if(ph.length() == 1)
     {
@@ -76,9 +76,10 @@ void MainWindow::on_play_button_clicked()
     {
         case -1:
         {
-            if(filePath!="")
+            if(filePath != "")
             {
-                ASongFFmpeg::getInstance()->play(this, filePath, this->ui->play_widget);
+                ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId(),
+                                                 ui->play_widget->width(), ui->play_widget->height());
                 ui->play_button->setText("暂停");
                 break;
             }
@@ -101,9 +102,8 @@ void MainWindow::on_play_button_clicked()
         }
         case 0:
         {
-            //            QString path = ASongFFmpeg::getInstance()->getFilepath();
-            //            ASongFFmpeg::getInstance()->play(path, this->ui->play_widget);
-            ASongFFmpeg::getInstance()->play(this, filePath, this->ui->play_widget);
+            ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId(),
+                                             ui->play_widget->width(), ui->play_widget->height());
             ui->play_button->setText("播放");
             break;
         }
@@ -120,7 +120,6 @@ void MainWindow::on_stop_button_clicked()
         if(ret == -1)
         {
             qDebug() << "stop failed";
-            //            exit(0);
         }
     }
 }
@@ -233,10 +232,9 @@ void MainWindow::openFile()
     if(!path.isEmpty())
     {
         filePath = path;
-        //        QMutexLocker locker(&ASongFFmpeg::_mediaStatusMutex);
         ASongFFmpeg::getInstance()->stop();
-        ASongFFmpeg::getInstance()->play(this, path, this->ui->play_widget);
-        //        locker.unlock();
+        ASongFFmpeg::getInstance()->play(this, path, (void*)ui->play_widget->winId(),
+                                         ui->play_widget->width(), ui->play_widget->height());
         setListFromFilePath();
         saveFilePath();
     }
@@ -294,7 +292,8 @@ void MainWindow::onPlayTableCellDoubleClicked(int row, int column)
     filePath = path;
     saveFilePath();
     ASongFFmpeg::getInstance()->stop();
-    ASongFFmpeg::getInstance()->play(this, filePath, this->ui->play_widget);
+    ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId(),
+                                     ui->play_widget->width(), ui->play_widget->height());
     this->ui->play_table->playPos = row; //确认可以播放，记录播放位置
 }
 
@@ -317,7 +316,8 @@ void MainWindow::dropEvent(QDropEvent *e)
         filePath = urls.first().toLocalFile();
         setListFromFilePath();
         ASongFFmpeg::getInstance()->stop();
-        ASongFFmpeg::getInstance()->play(this, filePath, this->ui->play_widget);
+        ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId(),
+                                         ui->play_widget->width(), ui->play_widget->height());
         saveFilePath();
     }
     else
@@ -359,25 +359,27 @@ void MainWindow::handleTimeout()
 {
     int duration = ASongFFmpeg::getInstance()->getDuration();
     int nowSec = ASongFFmpeg::getInstance()->getCurPlaySec();
-
-    if(duration == 0) return;  //没有视频就不用动
+    if(duration == 0)
+    {
+        return;    //没有视频就不用动
+    }
     //进度条
     int posSlider = 10000.0 * nowSec / duration;
     ui->position_ctrl->setValue(posSlider);
     //进度时间
-    ui->position_duration->setText(getTimeString(nowSec)+"/"+getTimeString(duration));
+    ui->position_duration->setText(getTimeString(nowSec) + "/" + getTimeString(duration));
 }
 
 void MainWindow::on_fullScreen_button_clicked()
 {
-    if(ui->play_widget->size()==this->size())
+    if(ui->play_widget->size() == this->size())
     {
-       ui->title_widget->show();
-       ui->play_table->show();
-       ui->control_widget->show();
-       this->showNormal();
-       ui->play_widget->showNormal();
-       ui->fullScreen_button->setText("全屏");
+        ui->title_widget->show();
+        ui->play_table->show();
+        ui->control_widget->show();
+        this->showNormal();
+        ui->play_widget->showNormal();
+        ui->fullScreen_button->setText("全屏");
     }
     else
     {
@@ -388,41 +390,41 @@ void MainWindow::on_fullScreen_button_clicked()
         ui->play_widget->move(0, 0);
         ui->play_widget->resize(this->size());
         ui->fullScreen_button->setText("退出全屏");
-
     }
-
 }
 
 //上一首
 void MainWindow::on_last_button_clicked()
 {
-    qint16 n=ui->play_table->numFile;
-    if(n==0){
+    qint16 n = ui->play_table->numFile;
+    if(n == 0)
+    {
         on_play_button_clicked();
         return;
     }
-    ui->play_table->playPos =(ui->play_table->playPos-1 + n) % n;
-    filePath=ui->play_table->getPath(ui->play_table->playPos);
+    ui->play_table->playPos = (ui->play_table->playPos - 1 + n) % n;
+    filePath = ui->play_table->getPath(ui->play_table->playPos);
     ASongFFmpeg::getInstance()->stop();
-    ASongFFmpeg::getInstance()->play(this, filePath, this->ui->play_widget);
+    ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId(),
+                                     ui->play_widget->width(), ui->play_widget->height());
     saveFilePath();
-
 }
 
 //下一首
 void MainWindow::on_next_button_clicked()
 {
-     qint16 n=ui->play_table->numFile;
-    if(n==0){
+    qint16 n = ui->play_table->numFile;
+    if(n == 0)
+    {
         on_play_button_clicked();
         return;
     }
-    ui->play_table->playPos =(ui->play_table->playPos + 1 + n) % n;
-    filePath=ui->play_table->getPath(ui->play_table->playPos);
+    ui->play_table->playPos = (ui->play_table->playPos + 1 + n) % n;
+    filePath = ui->play_table->getPath(ui->play_table->playPos);
     ASongFFmpeg::getInstance()->stop();
-    ASongFFmpeg::getInstance()->play(this, filePath, this->ui->play_widget);
+    ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId(),
+                                     ui->play_widget->width(), ui->play_widget->height());
     saveFilePath();
-
 }
 
 void MainWindow::on_position_ctrl_sliderPressed()
@@ -445,40 +447,33 @@ void MainWindow::on_position_ctrl_sliderReleased()
 void MainWindow::on_play_widget_customContextMenuRequested(const QPoint &pos)
 {
     QMenu *cmenu = new QMenu(ui->title_widget);
-
     //定义菜单项
     QAction *openFIle = new QAction(tr("打开文件"), this);
-
     QMenu *playMode = new QMenu(tr("模式"), this);
-        //四种播放模式
-        QAction *mode0 = new QAction(tr("单次播放"), this);
-        QAction *mode1 = new QAction(tr("顺序播放"), this);
-        QAction *mode2 = new QAction(tr("随机播放"), this);
-        QAction *mode3 = new QAction(tr("单曲循环"), this);
-
+    //四种播放模式
+    QAction *mode0 = new QAction(tr("单次播放"), this);
+    QAction *mode1 = new QAction(tr("顺序播放"), this);
+    QAction *mode2 = new QAction(tr("随机播放"), this);
+    QAction *mode3 = new QAction(tr("单曲循环"), this);
     QAction *play = new QAction(tr(ui->play_button->text().toStdString().c_str()), this);
     QAction *last = new QAction(tr("上一个"), this);
     QAction *next = new QAction(tr("下一个"), this);
     QAction *stop = new QAction(tr("停止"), this);
-
     QAction *muteOrUnmute = new QAction(tr(ui->mute_button->text().toStdString().c_str()), this);
     QAction *fullScreen = new QAction(tr(ui->fullScreen_button->text().toStdString().c_str()), this);
     //添加菜单项
     cmenu->addAction(openFIle);
-
     cmenu->addMenu(playMode);
-        playMode->addAction(mode0);
-        playMode->addAction(mode1);
-        playMode->addAction(mode2);
-        playMode->addAction(mode3);
+    playMode->addAction(mode0);
+    playMode->addAction(mode1);
+    playMode->addAction(mode2);
+    playMode->addAction(mode3);
     cmenu->addAction(play);
     cmenu->addAction(last);
     cmenu->addAction(next);
     cmenu->addAction(stop);
-
     cmenu->addAction(muteOrUnmute);
     cmenu->addAction(fullScreen);
-
     //连接槽
     connect(openFIle, SIGNAL(triggered(bool)), this, SLOT(openFile()));
     connect(mode0, SIGNAL(triggered(bool)), this, SLOT(on_playmode_button_clicked()));
@@ -491,9 +486,6 @@ void MainWindow::on_play_widget_customContextMenuRequested(const QPoint &pos)
     connect(stop, SIGNAL(triggered(bool)), this, SLOT(on_stop_button_clicked()));
     connect(muteOrUnmute, SIGNAL(triggered(bool)), this, SLOT(on_mute_button_clicked()));
     connect(fullScreen, SIGNAL(triggered(bool)), this, SLOT(on_fullScreen_button_clicked()));
-
-
-
     cmenu->exec(QCursor::pos());
 }
 
@@ -501,18 +493,19 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     switch (event->key())
     {
-    case Qt::Key_Space:
-        on_next_button_clicked();
-        break;
-    case Qt::Key_Escape:
-        if(ui->play_widget->size()==this->size())
-            on_fullScreen_button_clicked();
-        break;
+        case Qt::Key_Space:
+            on_next_button_clicked();
+            break;
+        case Qt::Key_Escape:
+            if(ui->play_widget->size() == this->size())
+            {
+                on_fullScreen_button_clicked();
+            }
+            break;
     }
 }
 
 void MainWindow::keyReleaseEvent(QKeyEvent *event)
 {
-
 }
 

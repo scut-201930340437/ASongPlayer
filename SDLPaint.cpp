@@ -29,20 +29,20 @@ SDLPaint* SDLPaint::getInstance()
     return _instance;
 }
 
-int SDLPaint::init(QWidget *_screenWidget)
+int SDLPaint::init(void *winID, const int initWidth, const int initHeight)
 {
-    if(nullptr == _screenWidget)
-    {
-        return -1;
-    }
-    srceenWidget = _screenWidget;
+    //    if(nullptr == _screenWidget)
+    //    {
+    //        return -1;
+    //    }
+    //    screenWidget = _screenWidget;
     //    qDebug() << "init";
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER))
     {
         qDebug() << "Could not initialize SDL" << SDL_GetError();
         return -1;
     }
-    screen = SDL_CreateWindowFrom((void*)srceenWidget->winId());
+    screen = SDL_CreateWindowFrom(winID);
     if (nullptr == screen)
     {
         qDebug() << "SDL: could not create window - exiting:" << SDL_GetError();
@@ -55,7 +55,7 @@ int SDLPaint::init(QWidget *_screenWidget)
         return -1;
     }
     // 设置输出宽高和pix_fmt
-    resetWHPara();
+    setDstWH(initWidth, initHeight);
     // 创建纹理
     sdlTexture = SDL_CreateTexture(sdlRenderer, SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STREAMING, dstWidth, dstHeight);
     //    sdlTexture = SDL_CreateTexture(sdlRenderer, SDL_PIXELFORMAT_BGRA4444, SDL_TEXTUREACCESS_STREAMING, dstWidth, dstHeight);
@@ -100,10 +100,8 @@ void SDLPaint::setMetaData(const int width, const int height, const int _frameRa
     pix_fmt = _pix_fmt;
 }
 
-void SDLPaint::resetWHPara()
+void SDLPaint::setDstWH(const int screenWidth, const int screenHeight)
 {
-    int screenWidth = srceenWidget->width();
-    int screenHeight = srceenWidget->height();
     // 保证源视频流的宽高比
     // 宽>高，以宽为基准
     if(srcRate > 1.0)
@@ -125,6 +123,11 @@ void SDLPaint::getFrameYUV()
     AVFrame *frame = DataSink::getInstance()->takeNextFrame(1);
     if(nullptr == frame)
     {
+        // 解码线程结束且拿不到frame，此时说明视频播放结束
+        if(ASongVideo::getInstance()->isFinished())
+        {
+            pause();
+        }
         return;
     }
     AVFrame *frameYUV = av_frame_alloc();

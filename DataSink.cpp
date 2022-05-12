@@ -1,25 +1,26 @@
 #include "DataSink.h"
+#include "ASongFFmpeg.h"
 
 QAtomicPointer<DataSink> DataSink::_instance = nullptr;
 QMutex DataSink::_mutex;
 
 DataSink::DataSink()
 {
-    audioPackSem = new QSemaphore(0);
-    videoPackSem = new QSemaphore(0);
+    audioPackCond = new QWaitCondition;
+    videoPackCond = new QWaitCondition;
     //    audioFraSem = new QSemaphore(0);
-    audioFraCon = new QWaitCondition;
-    videoFraCon = new QWaitCondition;
+    audioFraCond = new QWaitCondition;
+    videoFraCond = new QWaitCondition;
     //    audioFraEmpSem = new QSemaphore(maxFrameListLength);
     //    videoFraEmpSem = new QSemaphore(maxFrameListLength);
 }
 
 DataSink::~DataSink()
 {
-    delete audioPackSem;
-    delete videoPackSem;
-    delete audioFraCon;
-    delete videoFraCon;
+    delete audioPackCond;
+    delete videoPackCond;
+    delete audioFraCond;
+    delete videoFraCond;
     //    delete audioFraSem;
     //    delete audioFraEmpSem;
     //    delete videoFraEmpSem;
@@ -40,16 +41,55 @@ AVPacket* DataSink::takeNextPacket(int type)
 {
     if(type == 0)
     {
-        // 先down一下信号量，再拿资源
-        audioPackSem->acquire();
-        //        audioEmpSem->release();
-        return aPacketList.takeFirst();
+        if(!aPacketList.isEmpty())
+        {
+            return aPacketList.takeFirst();
+        }
+        else
+        {
+            QMutexLocker locker(&ASongFFmpeg::_hasPacketMutex);
+            bool hasPacket = ASongFFmpeg::getInstance()->hasPakcet();
+            if(!hasPacket)
+            {
+                return nullptr;
+            }
+            audioPackCond->wait(&ASongFFmpeg::_hasPacketMutex);
+            if(aPacketList.isEmpty())
+            {
+                // 说明没有packet
+                return nullptr;
+            }
+            else
+            {
+                return aPacketList.takeFirst();
+            }
+        }
     }
     else
     {
-        videoPackSem->acquire();
-        //        videoEmpSem->release();
-        return vPacketList.takeFirst();
+        if(!vPacketList.isEmpty())
+        {
+            return vPacketList.takeFirst();
+        }
+        else
+        {
+            QMutexLocker locker(&ASongFFmpeg::_hasPacketMutex);
+            bool hasPacket = ASongFFmpeg::getInstance()->hasPakcet();
+            if(!hasPacket)
+            {
+                return nullptr;
+            }
+            videoPackCond->wait(&ASongFFmpeg::_hasPacketMutex);
+            if(vPacketList.isEmpty())
+            {
+                // 说明没有packet
+                return nullptr;
+            }
+            else
+            {
+                return vPacketList.takeFirst();
+            }
+        }
     }
 }
 
@@ -61,7 +101,7 @@ AVFrame* DataSink::takeNextFrame(int type)
         {
             //        audioFraEmpSem->release();
             AVFrame *frame = aFrameList.takeFirst();
-            audioFraCon->wakeOne();
+            audioFraCond->wakeOne();
             return frame;
         }
         //        audioFraSem->acquire();
@@ -77,7 +117,7 @@ AVFrame* DataSink::takeNextFrame(int type)
             //            AVFrame *frame = vFrameList.takeFirst();
             //            videoFraEmpSem->release();
             AVFrame *frame = vFrameList.takeFirst();
-            videoFraCon->wakeOne();
+            videoFraCond->wakeOne();
             return frame;
         }
         else
@@ -91,37 +131,41 @@ void DataSink::appendPacketList(int type, AVPacket *packet)
 {
     if(type == 0)
     {
-        //        audioEmpSem->acquire();
-        aPacketList.append(packet);
-        // 先要生产资源，才能up一下信号量
-        audioPackSem->release();
+        if(nullptr != packet)
+        {
+            aPacketList.append(packet);
+        }
+        // 先要生产资源，才能唤醒线程
+        audioPackCond->wakeOne();
     }
     else
     {
-        //        videoEmpSem->acquire();
-        vPacketList.append(packet);
-        // 先要生产资源，才能up一下信号量
-        videoPackSem->release();
+        if(nullptr != packet)
+        {
+            vPacketList.append(packet);
+        }
+        // 先要生产资源，才能唤醒线程
+        videoPackCond->wakeOne();
     }
 }
 
 void DataSink::allowAppendAFrame()
 {
     // 上锁
-    QMutexLocker locker(&audioFraCon_mutex);
+    QMutexLocker locker(&audioFraCond_mutex);
     if(aFrameList.size() > maxFrameListLength)
     {
-        audioFraCon->wait(&audioFraCon_mutex);
+        audioFraCond->wait(&audioFraCond_mutex);
     }
 }
 
 void DataSink::allowAppendVFrame()
 {
     // 上锁
-    QMutexLocker locker(&videoFraCon_mutex);
+    QMutexLocker locker(&videoFraCond_mutex);
     if(vFrameList.size() > maxFrameListLength)
     {
-        videoFraCon->wait(&videoFraCon_mutex);
+        videoFraCond->wait(&videoFraCond_mutex);
     }
 }
 
@@ -152,22 +196,34 @@ qsizetype DataSink::packetListSize(int type)
     }
 }
 
-void DataSink::wakeAudio()
+// 通过frame条件变量唤醒
+void DataSink::wakeAudioWithFraCond()
 {
-    audioFraCon->wakeOne();
+    audioFraCond->wakeOne();
 }
 
-void DataSink::wakeVideo()
+void DataSink::wakeVideoWithFraCond()
 {
-    videoFraCon->wakeOne();
+    videoFraCond->wakeOne();
 }
+
+// 通过packet条件变量唤醒
+//void DataSink::wakeAudioWithPackCond()
+//{
+//    audioPackCond->wakeOne();
+//}
+
+//void DataSink::wakeVideoWithPackCond()
+//{
+//    videoPackCond->wakeOne();
+//}
 
 void DataSink::clearList()
 {
     AVFrame *frame = nullptr;
     // 将资源信号量重置为0
-    audioPackSem->acquire(audioPackSem->available());
-    videoPackSem->acquire(videoPackSem->available());
+    //    audioPackSem->acquire(audioPackSem->available());
+    //    videoPackSem->acquire(videoPackSem->available());
     //    audioFraSem->acquire(audioFraSem->available());
     // 清理队列
     while(!aFrameList.isEmpty())

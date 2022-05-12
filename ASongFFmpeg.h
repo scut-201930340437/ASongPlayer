@@ -42,6 +42,7 @@ struct VideoMetaData
 struct MediaMetaDate
 {
     int mediaType = 0;
+    bool hasPacket = false;
     //    bool findAudio = false;
     QString path = "";
     QString filename = "";
@@ -59,6 +60,8 @@ class ASongFFmpeg: public QThread
 public:
     // 播放状态锁
     static QMutex _mediaStatusMutex;
+    // hasPacket_mutex
+    static QMutex _hasPacketMutex;
     ~ASongFFmpeg();
     static ASongFFmpeg* getInstance();
     //    static int sfp_signal_thread(void* opaque);
@@ -81,6 +84,7 @@ public:
     //    AVCodecContext* getVCodecCtx();
     //    SwrContext* getSwrCtx();
     int getMediaType();
+    bool hasPakcet();
     int getMediaStatus();
     int getDuration();
     int getCurPlaySec();
@@ -93,7 +97,7 @@ public:
     //    int getFrameRate();
     //    enum AVPixelFormat getPixFmt();
     /*播放控制*/
-    int play(QObject *par, QString path, QWidget *_screenWidget);
+    int play(QObject *par, QString path, void *winID, const int initWidth, const int initHeight);
     int pause();
     int _continue(bool isReplay);
     int stop();
@@ -109,7 +113,7 @@ private:
     // 单一实例
     static QAtomicPointer<ASongFFmpeg>_instance;
     static QMutex _mutex;
-    //sdlPainter
+    // sdlPainter
     SDLPaint *painter = nullptr;
     // 播放状态: -1 - 没有文件  0-停止  1-播放   2-暂停
     int curMediaStatus = -1;
@@ -118,6 +122,7 @@ private:
 
     // 允许读取数据
     bool allowRead = false;
+
     //ffmpeg
     AVFormatContext *pFormatCtx = nullptr;
     int	videoIdx = -1, audioIdx = -1;

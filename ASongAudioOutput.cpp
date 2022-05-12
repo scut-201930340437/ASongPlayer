@@ -126,6 +126,15 @@ void ASongAudioOutput::run()
                 //            }
             }
         }
+        else
+        {
+            // 解码线程结束且拿不到frame，说明此时音频播放结束
+            if(ASongAudio::getInstance()->isFinished())
+            {
+                allowPlay = false;
+                emit playFinish();
+            }
+        }
     }
     closeDevice();
 }
@@ -197,3 +206,5 @@ void ASongAudioOutput::stop()
     closeDevice();
     //    return true;
 }
+
+
