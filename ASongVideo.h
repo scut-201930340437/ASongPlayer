@@ -27,7 +27,11 @@ public:
 
     void setMetaData(AVCodecContext *_pCodecCtx, const int _videoIdx,  const AVRational timeBase, bool _hasCover);
     //    void resetWH(const int _out_width, const int _out_height);
+<<<<<<< HEAD
     void setNeededVideoCode();
+=======
+    //    void setNeededVideoCode();
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
     // 获取pts
     double getPts(AVFrame *frame);
     // 同步
@@ -36,8 +40,16 @@ public:
     /*播放控制*/
     // thread
     void start(Priority = InheritPriority);
+<<<<<<< HEAD
     void stop();
     void pause();
+=======
+    void pauseThread();
+    void resumeThread();
+    //
+    void stop();
+    //    void pause();
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
     void resume();
     // 获取线程是否暂停
     //    bool isPaused();
@@ -45,17 +57,28 @@ public:
     void flushBeforeSeek();
 
     //    QList<AVFrame*>frame_list;
+<<<<<<< HEAD
+=======
+    std::atomic_bool stopFlag = false;
+    // 暂停标志
+    std::atomic_bool pauseFlag = false;
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 private:
     //    ASongVideo() = default;
 
     void run() override;
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
     // 校准pts
     void caliBratePts(AVFrame *frame, double &pts);
 
     //    static QAtomicPointer<ASongVideo>_instance;
     //    static QMutex _mutex;
 
+<<<<<<< HEAD
     // 允许线程运行
     std::atomic_bool allowRunVideo = false;
     std::atomic_bool neededVideoCode = true;
@@ -63,6 +86,14 @@ private:
     std::atomic_bool needPaused = false;
     // 暂停标志
     //    std::atomic_bool pauseFlag = false;
+=======
+    //
+    std::atomic_bool stopReq = false;
+    std::atomic_bool pauseReq = false;
+    // 需要暂停
+    //    std::atomic_bool needPaused = false;
+
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
     // 为使线程暂停所用的锁和条件变量
     QMutex _pauseMutex;
     QWaitCondition pauseCond;
@@ -70,8 +101,13 @@ private:
     bool hasCover = false;
     // videoClock
     double videoClock = 0.0;
+<<<<<<< HEAD
     // frameTime
     double frameTime = 0.0;
+=======
+    // frameTimer 最后一帧播放时刻
+    double frameTimer = 0.0;
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
     // 上一帧pts
     double lastFramePts = 0.0;
     // 上一帧delay
@@ -84,10 +120,21 @@ private:
 
     // 视频解码器上下文
     AVCodecContext *pCodecCtx = nullptr;
+<<<<<<< HEAD
     // 同步阈值
     const double synLowerBound = 0.01;
     // 非同步阈值
     const double noSynUpperBound = 10.0;
+=======
+    // 同步阈值下限
+    const double AV_SYNC_THRESHOLD_MIN = 0.010;
+    // 同步阈值上限
+    double AV_SYNC_THRESHOLD_MAX = 0.0;
+    // 非同步阈值
+    const double noSynUpperBound = 2.0;
+    // 单帧最大显示时间
+    const double AV_SYNC_FRAMEDUP_THRESHOLD = 0.07;
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 };
 
 #endif // ASONGVIDEO_H

@@ -1,8 +1,16 @@
+<<<<<<< HEAD
 ﻿#include "ASongAudioOutput.h"
 #include "ASongAudio.h"
 #include "DataSink.h"
 
 
+=======
+﻿//#include "ASongFFmpeg.h"
+#include "ASongAudioOutput.h"
+#include "ASongAudio.h"
+#include "DataSink.h"
+
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 Q_GLOBAL_STATIC(ASongAudioOutput, asongAudioOutput)
 
 //QAtomicPointer<ASongAudioOutput> ASongAudioOutput::_instance = nullptr;
@@ -26,6 +34,7 @@ void ASongAudioOutput::initAudioPara(const int _channels, const int _sample_rate
     channels = _channels;
     sample_rate = _sample_rate;
     channel_layout = _channel_layout;
+<<<<<<< HEAD
     sample_fmt = _sample_fmt;
 }
 
@@ -34,6 +43,13 @@ void ASongAudioOutput::initAndStartDevice(QObject *par)
 {
     // 先关闭当前音频播放
     //    closeDevice();
+=======
+    in_sample_fmt = _sample_fmt;
+}
+
+void ASongAudioOutput::createMediaDevice(QObject *par)
+{
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
     mediaDevice = new QMediaDevices(par);
 }
 
@@ -41,6 +57,7 @@ void ASongAudioOutput::initAndStartDevice(QObject *par)
 void ASongAudioOutput::initSwr()
 {
     // 音频重采样
+<<<<<<< HEAD
     //    pCodecCtx = pFormatCtx->streams[audioIdx]->codec;
     pSwrCtx = swr_alloc();
     // 设置重采样参数
@@ -50,6 +67,20 @@ void ASongAudioOutput::initSwr()
                        0, nullptr);
     // 初始化
     swr_init(pSwrCtx);
+=======
+    pSwrCtx = swr_alloc();
+    // 设置重采样参数
+    swr_alloc_set_opts(pSwrCtx,
+                       channel_layout, out_sample_fmt, sample_rate,
+                       channel_layout, in_sample_fmt, sample_rate,
+                       0, nullptr);
+    // 初始化
+    swr_init(pSwrCtx);
+    // 初始化sonic，包括倍速等参数
+    //    sonicInit();
+    //    sonicSetSpeed(2.0);
+    //    sonicSetVolume(ASongAudio::getInstance()->getVolume());
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 }
 
 // 重采样
@@ -57,6 +88,7 @@ int ASongAudioOutput::swrToPCM(uint8_t *outBuffer, AVFrame *frame)
 {
     if(!frame || !outBuffer)
     {
+<<<<<<< HEAD
         return 0;
     }
     int len = swr_convert(pSwrCtx, &outBuffer, sample_rate,
@@ -71,6 +103,63 @@ int ASongAudioOutput::swrToPCM(uint8_t *outBuffer, AVFrame *frame)
 }
 
 void ASongAudioOutput::closeDevice()
+=======
+        return -1;
+    }
+    int len = swr_convert(pSwrCtx, &outBuffer, sample_rate,
+                          (const uint8_t**)frame->data, frame->nb_samples);
+    if(len < 0)
+    {
+        return -1;
+    }
+    return av_samples_get_buffer_size(nullptr,
+                                      channels,
+                                      frame->nb_samples,
+                                      out_sample_fmt,
+                                      0);
+}
+// 倍速处理
+int ASongAudioOutput::changeSpeed(uint8_t *outBuffer, AVFrame *frame)
+{
+    //
+    //    int ret = sonicWriteShortToStream(sonicStream, (short*)outBuffer, frame->nb_samples);
+    //    int ret = sonicWriteUnsignedCharToStream(sonicStream, outBuffer, frame->nb_samples);
+    soundtouch_putSamples_i16(soundTouch, (short*)outBuffer, frame->nb_samples);
+    //    if(ret > 0)
+    //    {
+    // 乘2保证调用一次sonicReadShortFromStream可以读取全部数据
+    int numSamples = 2 * frame->nb_samples / speed;
+    //        qDebug() << numSamples;
+    //        if(speed < 1)
+    //        {
+    //            int size = numSamples * channels * av_get_bytes_per_sample(out_sample_fmt);
+    //            if(speedBufferSize < size)
+    //            {
+    //                speedBuffer = av_realloc(speedBuffer, size);
+    //                speedBufferSize = size;
+    //            }
+    //            outBuffer =
+    //        }
+    // 读取处理后的音频采样点数
+    //    int newNumSamples = sonicReadShortFromStream(sonicStream, (short*)outBuffer, numSamples);
+    int newNumSamples = soundtouch_receiveSamples_i16(soundTouch, (short*)outBuffer, numSamples);
+    //    qDebug() << newNumSamples;
+    //        int newNumSamples = sonicReadUnsignedCharFromStream(sonicStream, outBuffer, numSamples);
+    frame->nb_samples = newNumSamples;
+    // 重新计算数据大小
+    int resampleDataSize = newNumSamples * channels * av_get_bytes_per_sample(out_sample_fmt);
+    //        qDebug() << resampleDataSize;
+    return resampleDataSize;
+    //    }
+    //    else
+    //    {
+    //        qDebug() << "sonicWriteShortToStream failed";
+    //        return -1;
+    //    }
+}
+
+void ASongAudioOutput::closeAudioOuput()
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 {
     if(nullptr != audioOutput)
     {
@@ -82,6 +171,19 @@ void ASongAudioOutput::closeDevice()
         audioIO->close();
         audioIO = nullptr;
     }
+<<<<<<< HEAD
+=======
+    //    if (nullptr != sonicStream)
+    //    {
+    //        sonicDestroyStream(sonicStream);
+    //        sonicStream = nullptr;
+    //    }
+    if(nullptr != soundTouch)
+    {
+        soundtouch_destroyInstance(soundTouch);
+        soundTouch = nullptr;
+    }
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 }
 
 int ASongAudioOutput::getUsedSize()
@@ -102,9 +204,54 @@ void ASongAudioOutput::setVolume(const qreal curVolume)
     }
 }
 
+<<<<<<< HEAD
 void ASongAudioOutput::start(Priority pri)
 {
     allowPlay = true;
+=======
+void ASongAudioOutput::setSpeed(float _speed)
+{
+    if(_speed <= 0)
+    {
+        qDebug() << "speed<=0";
+        return;
+    }
+    // 先暂停音频播放线程，防止通过sonicSetSpeed后音频播放线程不能及时更新速率
+    pause();
+    //设置倍速
+    //    if(nullptr != sonicStream)
+    //    {
+    //        sonicSetSpeed(sonicStream, _speed);
+    //    }
+    if(nullptr != soundTouch)
+    {
+        soundtouch_setTempo(soundTouch, _speed);
+    }
+    speed = _speed;
+    resume();
+}
+
+float ASongAudioOutput::getSpeed()
+{
+    return speed;
+}
+
+void ASongAudioOutput::start(Priority pri)
+{
+    stopReq = false;
+    pauseReq = false;
+    pauseFlag = false;
+    stopFlag = false;
+    //初始化sonicStream
+    //    sonicStream = sonicCreateStream(sample_rate, channels);
+    soundTouch = soundtouch_createInstance();
+    soundtouch_setSampleRate(soundTouch, sample_rate);
+    soundtouch_setChannels(soundTouch, channels);
+    //设置倍速
+    setSpeed(speed);
+    // 设置质量
+    //    sonicSetQuality(sonicStream, 0);
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
     QThread::start(pri);
 }
 
@@ -112,38 +259,73 @@ void ASongAudioOutput::stop()
 {
     if(QThread::isRunning())
     {
+<<<<<<< HEAD
         allowPlay = false;
         needPaused = false;
         //                pauseFlag = false;
+=======
+        stopReq = true;
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
         pauseCond.wakeAll();
         QThread::quit();
         QThread::wait();
     }
+<<<<<<< HEAD
+=======
+    //    QMutexLocker locker(&DataSink::getInstance()->aFrameListMutex);
+    //    stopFlag = true;
+    //    DataSink::getInstance()->wakeAudioWithFraCond();
+    //    locker.unlock();
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
     // 关闭重采样上下文
     if(nullptr != pSwrCtx)
     {
         swr_free(&pSwrCtx);
         pSwrCtx = nullptr;
     }
+<<<<<<< HEAD
+=======
+    //    qDebug() << "122";
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 }
 
 void ASongAudioOutput::pause()
 {
+<<<<<<< HEAD
     if(QThread::isRunning())
     {
         QMutexLocker locker(&_pauseMutex);
         needPaused = true;
         pauseCond.wait(&_pauseMutex);
     }
+=======
+    QMutexLocker locker(&_pauseMutex);
+    if(!pauseFlag && QThread::isRunning())
+    {
+        pauseReq = true;
+        pauseCond.wait(&_pauseMutex);
+        locker.relock();
+    }
+    //    qDebug() << "1";
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 }
 
 void ASongAudioOutput::resume()
 {
+<<<<<<< HEAD
     if(QThread::isRunning())
     {
         needPaused = false;
         //        pauseFlag = false;
         pauseCond.wakeAll();
+=======
+    QMutexLocker locker(&_pauseMutex);
+    if(pauseFlag && QThread::isRunning())
+    {
+        pauseReq = false;
+        pauseCond.wakeAll();
+        pauseCond.wait(&_pauseMutex);
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
     }
 }
 
@@ -160,6 +342,7 @@ void ASongAudioOutput::run()
     audioIO = audioOutput->start();
     //    qDebug() << "audio output thread start";
     //    qDebug() << "";
+<<<<<<< HEAD
     while(allowPlay)
     {
         AVFrame *frame = DataSink::getInstance()->takeNextFrame(0);
@@ -235,10 +418,23 @@ void ASongAudioOutput::run()
         {
             QMutexLocker locker(&_pauseMutex);
             //            pauseFlag = true;
+=======
+    for(;;)
+    {
+        if(stopReq)
+        {
+            break;
+        }
+        if(pauseReq)
+        {
+            QMutexLocker locker(&_pauseMutex);
+            pauseFlag = true;
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
             // 唤醒主线程，此时主线程知道音频解码线程阻塞
             pauseCond.wakeAll();
             // 线程阻塞
             pauseCond.wait(&_pauseMutex);
+<<<<<<< HEAD
         }
     }
     allowPlay = false;
@@ -246,10 +442,134 @@ void ASongAudioOutput::run()
     //    qDebug() << "audio output thread end";
     //    qDebug() << "";
     closeDevice();
+=======
+            locker.relock();
+            pauseFlag = false;
+            // 唤醒主线程
+            pauseCond.wakeAll();
+        }
+        process();
+    }
+    //    allowPlay = false;
+    //    needPaused = false;
+    //    qDebug() << "audio output thread end";
+    //    qDebug() << "";
+    closeAudioOuput();
+    QMutexLocker locker(&stopMutex);
+    stopFlag = true;
+    locker.unlock();
+}
+
+void ASongAudioOutput::process()
+{
+    AVFrame *frame = DataSink::getInstance()->takeNextFrame(0);
+    if(nullptr != frame)
+    {
+        // 如果是planar（每个声道数据单独存放），一定要重采样，因为PCM是packed（每个声道数据交错存放）
+        if(av_sample_fmt_is_planar(in_sample_fmt) == 1)
+        {
+            uint8_t *outBuffer = (uint8_t*)av_malloc(maxFrameSize * 2);
+            int out_size = swrToPCM(outBuffer, frame);
+            if(out_size < 0)
+            {
+                qDebug() << "swr failed";
+                // 释放
+                av_frame_free(&frame);
+                av_free(outBuffer);
+                return;
+            }
+            //做倍速处理
+            if(speed > 1.00001 || speed < 0.99999)
+            {
+                out_size = changeSpeed(outBuffer, frame);
+            }
+            if(out_size < 0)
+            {
+                qDebug() << "changed speed failed";
+                // 释放
+                av_frame_free(&frame);
+                av_free(outBuffer);
+                return;
+            }
+            // 计算该帧时长
+            double duration = 1.0 * out_size / (sample_rate * 4);
+            if(audioOutput->bytesFree() < out_size)
+            {
+                msleep(1000.0 * duration + 0.5);
+            }
+            while(audioOutput->bytesFree() < out_size)
+            {
+                msleep(1);
+            }
+            // 更新时钟
+            ASongAudio::getInstance()->setAudioClock(frame, duration);
+            // 写入设备
+            audioIO->write((const char*)outBuffer, out_size);
+            //            }
+            av_free(outBuffer);
+            // 释放
+            av_frame_free(&frame);
+        }
+        // 否则不需要重采样
+        else
+        {
+            //            qDebug() << "packet audio";
+            int out_size = -1;
+            // 做倍速处理
+            if(speed > 1.00001 || speed < 0.99999)
+            {
+                out_size = changeSpeed((uint8_t*)frame->data, frame);
+            }
+            // 不需要倍速
+            else
+            {
+                out_size = av_samples_get_buffer_size(nullptr,
+                                                      channels,
+                                                      frame->nb_samples,
+                                                      out_sample_fmt,
+                                                      0);
+            }
+            if(out_size < 0)
+            {
+                qDebug() << "changed speed failed";
+                av_frame_free(&frame);
+                return;
+            }
+            // 计算该帧时长
+            double duration = 1.0 * out_size / (sample_rate * 4);
+            if(audioOutput->bytesFree() < out_size)
+            {
+                msleep(1000.0 * duration + 0.5);
+            }
+            while(audioOutput->bytesFree() < out_size)
+            {
+                msleep(1);
+            }
+            // 更新时钟
+            ASongAudio::getInstance()->setAudioClock(frame, duration);
+            // 写入设备
+            audioIO->write((const char*)frame->data, out_size);
+            av_frame_free(&frame);
+        }
+    }
+    else
+    {
+        // 解码线程结束且拿不到frame，说明此时音频播放结束
+        if(ASongAudio::getInstance()->isFinished())
+        {
+            stopReq = true;
+            emit playFinish();
+        }
+    }
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 }
 
 //bool ASongAudioOutput::isPaused()
 //{
+<<<<<<< HEAD
+=======
+//    QMutexLocker locker(&_pauseMutex);
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 //    if(pauseFlag)
 //    {
 //        return true;

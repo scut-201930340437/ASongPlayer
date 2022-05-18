@@ -16,6 +16,7 @@
 #include <QRadioButton>
 #include <QButtonGroup>
 #include <QSettings>
+#include <QString>
 
 
 
@@ -34,8 +35,8 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 
-public:
-    MainWindow(QWidget *parent = nullptr);
+
+public: MainWindow(QWidget *parent = nullptr);
 
     ~MainWindow();
 

@@ -84,9 +84,13 @@ int SDLPaint::init(void *winID)
         //        QTimer::singleShot(1000, this, &SDLPaint::getFrameYUV);
     }
     sdlTimer->start(preDelay);
+<<<<<<< HEAD
     //    SDL_ShowCursor(false);
     //    preFrame = av_frame_alloc();
     paused = false;
+=======
+    pauseFlag = false;
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
     return 0;
 }
 
@@ -117,29 +121,54 @@ void SDLPaint::setMetaData(const int width, const int height, const int _frameRa
 //    }
 //}
 
+<<<<<<< HEAD
+=======
+//void SDLPaint::createTimer()
+//{
+//}
+
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 // 转换为YUV图像并进行同步
 void SDLPaint::getFrameYUV()
 {
     // 没有暂停
+<<<<<<< HEAD
     if(!paused)
+=======
+    if(!pauseFlag)
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
     {
         // 取一帧
         AVFrame *frame = DataSink::getInstance()->takeNextFrame(1);
         if(nullptr == frame)
         {
             // 音频播放线程结束且拿不到frame，此时说明播放结束
+<<<<<<< HEAD
             if(ASongAudioOutput::getInstance()->isFinished())
+=======
+            if(ASongAudioOutput::getInstance()->stopFlag)
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
             {
                 stop();
                 // 释放preFrame
                 if(nullptr != pre_out_buffer)
                 {
                     av_free(pre_out_buffer);
+<<<<<<< HEAD
+=======
+                    pre_out_buffer = nullptr;
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
                 }
                 if(nullptr != preFrame)
                 {
                     av_frame_free(&preFrame);
+<<<<<<< HEAD
                 }
+=======
+                    preFrame = nullptr;
+                }
+                //
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
             }
             // 播放未结束但是拿不到frame，渲染上一帧
             else
@@ -152,6 +181,7 @@ void SDLPaint::getFrameYUV()
         }
         else
         {
+<<<<<<< HEAD
             AVFrame *frameYUV = av_frame_alloc();
             uint8_t *cur_out_buffer = (uint8_t*)av_malloc(av_image_get_buffer_size(AV_PIX_FMT_YUV420P,
                                       srcWidth, srcHeight, 1));
@@ -210,6 +240,60 @@ void SDLPaint::getFrameYUV()
             //            //        av_free(out_buffer);
             //            //        av_frame_free(&frameYUV);
             //        }
+=======
+            // 同步
+            double actualDelay = ASongVideo::getInstance()->synVideo(*((double*)frame->opaque));
+            // 倍速>=8，丢帧
+            if(ASongFFmpeg::getInstance()->getSpeed() >= 7.9999 && actualDelay <= 0.0001)
+            {
+                //                qDebug() << "delete";
+                av_frame_free(&frame);
+                // 对于视频，需要重设延时
+                preDelay = 1;
+                sdlTimer->setInterval(preDelay);
+                return;
+            }
+            else
+            {
+                AVFrame *frameYUV = av_frame_alloc();
+                uint8_t *cur_out_buffer = (uint8_t*)av_malloc(av_image_get_buffer_size(AV_PIX_FMT_YUV420P,
+                                          srcWidth, srcHeight, 1));
+                av_image_fill_arrays(frameYUV->data, frameYUV->linesize,
+                                     cur_out_buffer, AV_PIX_FMT_YUV420P,
+                                     srcWidth, srcHeight, 1);
+                sws_scale(pSwsCtx, (const uint8_t* const*)frame->data,
+                          frame->linesize, 0, srcHeight,
+                          frameYUV->data, frameYUV->linesize);
+                if(frameRate != -1)
+                {
+                    // 绘制
+                    paint(frameYUV);
+                    // 对于视频，需要重设延时
+                    preDelay = int(actualDelay * 1000.0 + 0.5);
+                    sdlTimer->setInterval(preDelay);
+                }
+                else
+                {
+                    // 绘制
+                    paint(frameYUV);
+                }
+                // 同步后释放该帧
+                av_frame_free(&frame);
+                // 修改preFrame
+                if(nullptr != pre_out_buffer)
+                {
+                    av_free(pre_out_buffer);
+                    pre_out_buffer = nullptr;
+                }
+                if(nullptr != preFrame)
+                {
+                    av_frame_free(&preFrame);
+                    preFrame = nullptr;
+                }
+                pre_out_buffer = cur_out_buffer;
+                preFrame = frameYUV;
+            }
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
         }
     }
     else
@@ -230,11 +314,14 @@ void SDLPaint::paint(AVFrame *frameYUV)
     SDL_RenderPresent(sdlRenderer);
 }
 
+<<<<<<< HEAD
 void SDLPaint::pause()
 {
     paused = true;
 }
 
+=======
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 void SDLPaint::stop()
 {
     // 停止定时器
@@ -276,14 +363,51 @@ void SDLPaint::stop()
         delete sdlTimer;
         sdlTimer = nullptr;
     }
+<<<<<<< HEAD
     paused = false;
+=======
+    pauseFlag = false;
+}
+
+void SDLPaint::pause()
+{
+    pauseFlag = true;
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 }
 
 void SDLPaint::resume()
 {
+<<<<<<< HEAD
     paused = false;
 }
 
+=======
+    pauseFlag = false;
+}
+
+void SDLPaint::restartTimer()
+{
+    if(nullptr != sdlTimer)
+    {
+        sdlTimer->start(preDelay);
+    }
+}
+
+void SDLPaint::stopTimer()
+{
+    if(nullptr != sdlTimer)
+    {
+        sdlTimer->stop();
+    }
+}
+
+//void SDLPaint::paintNextFrame()
+//{
+//    //    QTimer::singleShot()
+//    getFrameYUV();
+//}
+
+>>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 //int SDLPaint::sfp_signal_thread(void *opaque)
 //{
 //    double *avg_frame_rate = (double*)opaque;

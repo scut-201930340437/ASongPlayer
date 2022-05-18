@@ -30,7 +30,10 @@ public:
     void setMetaData(const int width, const int height, const int _frameRate, const enum AVPixelFormat _pix_fmt);
     // 根据输出窗口重设sdl的参数
     //    void setDstWH(const int screenWidth, const int screenHeight);
+
+    //    void createTimer();
     // 将一帧图像转储为YUVFrame
+
     void getFrameYUV();
     // 绘制
     void paint(AVFrame *frameYUV);
@@ -41,8 +44,12 @@ public:
     void pause();
     void stop();
     void resume();
-
+    //    void paintNextFrame();
+    void restartTimer();
+    void stopTimer();
     //    int getFrameRate();
+    // 是否停止
+    //    std::atomic_bool stopFlag = false;
 private:
     //    SDLPaint() = default;
     //    int got_picture = 0;
@@ -67,7 +74,7 @@ private:
     AVFrame *preFrame = nullptr;
     uint8_t *pre_out_buffer = nullptr;
     // 是否暂停
-    std::atomic_bool paused = false;
+    std::atomic_bool pauseFlag = false;
     // 样本格式
     enum AVPixelFormat pix_fmt;
 

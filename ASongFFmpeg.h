@@ -61,11 +61,14 @@ struct MediaMetaData
 
 class ASongFFmpeg: public QThread
 {
+
+    Q_OBJECT
 public:
+
     // 播放状态锁
     static QMutex _mediaStatusMutex;
     // hasPacket_mutex
-    static QMutex _hasPacketMutex;
+    //    static QMutex _hasPacketMutex;
     static ASongFFmpeg* getInstance();
     //    static int sfp_signal_thread(void* opaque);
 
@@ -81,26 +84,33 @@ public:
     //    double getPts(AVFrame *frame, int streamIdx);
 
     // 初始化参数
-    void initPara();
+    //    void initPara();
     /* 获取成员变量*/
-
-    bool hasPakcet();
+    int getMediaType();
     int getMediaStatus();
     int getDuration();
-    int getCurPlaySec();
+    int64_t getCurPlaySec();
     QString getFilepath();
     bool audioHasCover();
+    float getSpeed();
     /*播放控制*/
     int play(QObject *par, QString path, void *winID);
     // thread
     void start(Priority = InheritPriority);
     int stop();
     int pause();
+
     int resume();
-    // 获取线程是否暂停
+    int seek(int64_t posSec);
+
+    //
     //    bool isPaused();
 
-    int seek(int posSec);
+    // 逐帧
+    void step_to_next_frame();
+    // 设置倍速
+    void setSpeed(float _speed);
+
     // 设置播放器状态
     //    void setMediaStatus(int status);
     // 隐藏光标
@@ -108,28 +118,38 @@ public:
     // 显示光标
     void showCursor();
 
+    // 暂停标志
+    //    std::atomic_bool pauseFlag = false;
+    QMutex stopMutex;
+    // 停止标志
+    std::atomic_bool stopFlag = true;
+    std::atomic_bool pauseFlag = false;
+
 private:
     // thread
     void run() override;
+    void pauseThread();
+    void resumeThread();
+    // 跳转
+    void handleSeek();
+
+
     // 单一实例
     // static QAtomicPointer<ASongFFmpeg>_instance;
     // static QMutex _mutex;
     // sdlPainter
-    SDLPaint *painter = nullptr;
+    //    SDLPaint *painter = nullptr;
     // 播放状态: -1 - 没有文件  0-停止  1-播放   2-暂停
     std::atomic_int curMediaStatus = -1;
-    // hasmorePacket
-    std::atomic_bool hasMorePacket = false;
     // metaData
     //MediaMetaDate mediaMetaData;
     MediaMetaData *mediaMetaData = nullptr;
     bool hasCover = false;
-    // 允许读取数据
-    std::atomic_bool allowRead = false;
+    // 需要停止
+    std::atomic_bool stopReq = false;
     // 需要暂停
-    std::atomic_bool needPaused = false;
-    // 暂停标志
-    //    std::atomic_bool pauseFlag = false;
+    std::atomic_bool pauseReq = false;
+
     // 为使线程暂停所用的锁和条件变量
     QMutex _pauseMutex;
     QWaitCondition pauseCond;
@@ -137,8 +157,16 @@ private:
     //ffmpeg
     AVFormatContext *pFormatCtx = nullptr;
     int	videoIdx = -1, audioIdx = -1;
-
+    //倍速
+    //    float speed = 1.0;
+    QString path = "";
     //    uint8_t *out_buffer = nullptr;
+    // seek
+    int seekReq = 0;
+    int seekPos = 0;
+    int seekRel = 0;
+    //    QMutex seekMutex;
+
 };
 
 
