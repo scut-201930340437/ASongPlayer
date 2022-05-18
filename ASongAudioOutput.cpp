@@ -1,16 +1,8 @@
-<<<<<<< HEAD
-﻿#include "ASongAudioOutput.h"
-#include "ASongAudio.h"
-#include "DataSink.h"
 
-
-=======
 ﻿//#include "ASongFFmpeg.h"
 #include "ASongAudioOutput.h"
 #include "ASongAudio.h"
 #include "DataSink.h"
-
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 Q_GLOBAL_STATIC(ASongAudioOutput, asongAudioOutput)
 
 //QAtomicPointer<ASongAudioOutput> ASongAudioOutput::_instance = nullptr;
@@ -34,22 +26,11 @@ void ASongAudioOutput::initAudioPara(const int _channels, const int _sample_rate
     channels = _channels;
     sample_rate = _sample_rate;
     channel_layout = _channel_layout;
-<<<<<<< HEAD
-    sample_fmt = _sample_fmt;
-}
-
-// 初始化音频设备参数
-void ASongAudioOutput::initAndStartDevice(QObject *par)
-{
-    // 先关闭当前音频播放
-    //    closeDevice();
-=======
     in_sample_fmt = _sample_fmt;
 }
 
 void ASongAudioOutput::createMediaDevice(QObject *par)
 {
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
     mediaDevice = new QMediaDevices(par);
 }
 
@@ -57,17 +38,6 @@ void ASongAudioOutput::createMediaDevice(QObject *par)
 void ASongAudioOutput::initSwr()
 {
     // 音频重采样
-<<<<<<< HEAD
-    //    pCodecCtx = pFormatCtx->streams[audioIdx]->codec;
-    pSwrCtx = swr_alloc();
-    // 设置重采样参数
-    swr_alloc_set_opts(pSwrCtx,
-                       channel_layout, AV_SAMPLE_FMT_S16, sample_rate,
-                       channel_layout, sample_fmt, sample_rate,
-                       0, nullptr);
-    // 初始化
-    swr_init(pSwrCtx);
-=======
     pSwrCtx = swr_alloc();
     // 设置重采样参数
     swr_alloc_set_opts(pSwrCtx,
@@ -80,7 +50,6 @@ void ASongAudioOutput::initSwr()
     //    sonicInit();
     //    sonicSetSpeed(2.0);
     //    sonicSetVolume(ASongAudio::getInstance()->getVolume());
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 }
 
 // 重采样
@@ -88,22 +57,6 @@ int ASongAudioOutput::swrToPCM(uint8_t *outBuffer, AVFrame *frame)
 {
     if(!frame || !outBuffer)
     {
-<<<<<<< HEAD
-        return 0;
-    }
-    int len = swr_convert(pSwrCtx, &outBuffer, sample_rate,
-                          (const uint8_t**)frame->data, frame->nb_samples);
-    if(len <= 0)
-    {
-        return 0;
-    }
-    return av_samples_get_buffer_size(nullptr, channels,
-                                      frame->nb_samples, AV_SAMPLE_FMT_S16,
-                                      0);
-}
-
-void ASongAudioOutput::closeDevice()
-=======
         return -1;
     }
     int len = swr_convert(pSwrCtx, &outBuffer, sample_rate,
@@ -159,7 +112,6 @@ int ASongAudioOutput::changeSpeed(uint8_t *outBuffer, AVFrame *frame)
 }
 
 void ASongAudioOutput::closeAudioOuput()
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 {
     if(nullptr != audioOutput)
     {
@@ -171,8 +123,6 @@ void ASongAudioOutput::closeAudioOuput()
         audioIO->close();
         audioIO = nullptr;
     }
-<<<<<<< HEAD
-=======
     //    if (nullptr != sonicStream)
     //    {
     //        sonicDestroyStream(sonicStream);
@@ -183,7 +133,6 @@ void ASongAudioOutput::closeAudioOuput()
         soundtouch_destroyInstance(soundTouch);
         soundTouch = nullptr;
     }
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 }
 
 int ASongAudioOutput::getUsedSize()
@@ -204,11 +153,6 @@ void ASongAudioOutput::setVolume(const qreal curVolume)
     }
 }
 
-<<<<<<< HEAD
-void ASongAudioOutput::start(Priority pri)
-{
-    allowPlay = true;
-=======
 void ASongAudioOutput::setSpeed(float _speed)
 {
     if(_speed <= 0)
@@ -251,7 +195,6 @@ void ASongAudioOutput::start(Priority pri)
     setSpeed(speed);
     // 设置质量
     //    sonicSetQuality(sonicStream, 0);
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
     QThread::start(pri);
 }
 
@@ -259,46 +202,26 @@ void ASongAudioOutput::stop()
 {
     if(QThread::isRunning())
     {
-<<<<<<< HEAD
-        allowPlay = false;
-        needPaused = false;
-        //                pauseFlag = false;
-=======
         stopReq = true;
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
         pauseCond.wakeAll();
         QThread::quit();
         QThread::wait();
     }
-<<<<<<< HEAD
-=======
     //    QMutexLocker locker(&DataSink::getInstance()->aFrameListMutex);
     //    stopFlag = true;
     //    DataSink::getInstance()->wakeAudioWithFraCond();
     //    locker.unlock();
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
     // 关闭重采样上下文
     if(nullptr != pSwrCtx)
     {
         swr_free(&pSwrCtx);
         pSwrCtx = nullptr;
     }
-<<<<<<< HEAD
-=======
     //    qDebug() << "122";
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 }
 
 void ASongAudioOutput::pause()
 {
-<<<<<<< HEAD
-    if(QThread::isRunning())
-    {
-        QMutexLocker locker(&_pauseMutex);
-        needPaused = true;
-        pauseCond.wait(&_pauseMutex);
-    }
-=======
     QMutexLocker locker(&_pauseMutex);
     if(!pauseFlag && QThread::isRunning())
     {
@@ -307,25 +230,16 @@ void ASongAudioOutput::pause()
         locker.relock();
     }
     //    qDebug() << "1";
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 }
 
 void ASongAudioOutput::resume()
 {
-<<<<<<< HEAD
-    if(QThread::isRunning())
-    {
-        needPaused = false;
-        //        pauseFlag = false;
-        pauseCond.wakeAll();
-=======
     QMutexLocker locker(&_pauseMutex);
     if(pauseFlag && QThread::isRunning())
     {
         pauseReq = false;
         pauseCond.wakeAll();
         pauseCond.wait(&_pauseMutex);
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
     }
 }
 
@@ -342,83 +256,6 @@ void ASongAudioOutput::run()
     audioIO = audioOutput->start();
     //    qDebug() << "audio output thread start";
     //    qDebug() << "";
-<<<<<<< HEAD
-    while(allowPlay)
-    {
-        AVFrame *frame = DataSink::getInstance()->takeNextFrame(0);
-        if(nullptr != frame)
-        {
-            // 如果是planar（每个声道数据单独存放），一定要重采样，因为PCM是packed（每个声道数据交错存放）
-            if(av_sample_fmt_is_planar(sample_fmt) == 1)
-            {
-                uint8_t *outBuffer = (uint8_t*)av_malloc(maxFrameSize * 2);
-                //            while(!frame_list.empty())
-                //            {
-                //            frame = frame_list.takeFirst();
-                int out_size = swrToPCM(outBuffer, frame);
-                //            qDebug() << out_size;
-                //            qDebug() << audioOutput->bytesFree();
-                // 计算该帧时长
-                double duration = 1.0 * out_size / (sample_rate * 4);
-                if(audioOutput->bytesFree() < out_size)
-                {
-                    msleep(ceil(1000.0 * duration));
-                }
-                while(audioOutput->bytesFree() < out_size)
-                {
-                    msleep(2);
-                }
-                // 更新时钟
-                ASongAudio::getInstance()->setAudioClock(frame, duration);
-                // 写入设备
-                audioIO->write((char*)outBuffer, out_size);
-                //            }
-                // 释放
-                av_frame_free(&frame);
-                av_free(outBuffer);
-            }
-            // 否则直接写入设备缓存
-            else
-            {
-                //            while(!frame_list.empty())
-                //            {
-                //            frame = frame_list.takeFirst();
-                int out_size = av_samples_get_buffer_size(nullptr, channels,
-                               frame->nb_samples, AV_SAMPLE_FMT_S16,
-                               0);
-                // 计算该帧时长
-                double duration = 1.0 * out_size / (sample_rate * 4);
-                if(audioOutput->bytesFree() < out_size)
-                {
-                    msleep(ceil(1000.0 * duration));
-                }
-                while(audioOutput->bytesFree() < out_size)
-                {
-                    msleep(2);
-                }
-                // 更新时钟
-                ASongAudio::getInstance()->setAudioClock(frame, duration);
-                // 写入设备
-                audioIO->write((char*)frame->data, out_size);
-                //            av_frame_unref(frame);
-                av_frame_free(&frame);
-                //            }
-            }
-        }
-        else
-        {
-            // 解码线程结束且拿不到frame，说明此时音频播放结束
-            if(ASongAudio::getInstance()->isFinished())
-            {
-                allowPlay = false;
-                emit playFinish();
-            }
-        }
-        if(needPaused)
-        {
-            QMutexLocker locker(&_pauseMutex);
-            //            pauseFlag = true;
-=======
     for(;;)
     {
         if(stopReq)
@@ -561,15 +398,11 @@ void ASongAudioOutput::process()
             emit playFinish();
         }
     }
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 }
 
 //bool ASongAudioOutput::isPaused()
 //{
-<<<<<<< HEAD
-=======
 //    QMutexLocker locker(&_pauseMutex);
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 //    if(pauseFlag)
 //    {
 //        return true;

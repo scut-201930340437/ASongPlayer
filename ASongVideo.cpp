@@ -29,15 +29,6 @@ void ASongVideo::setMetaData(AVCodecContext *_pCodecCtx, const int _videoIdx, co
     videoIdx = _videoIdx;
     tb = av_q2d(timeBase);
     lastFrameDelay = tb;
-<<<<<<< HEAD
-    hasCover = _hasCover;
-}
-
-void ASongVideo::setNeededVideoCode()
-{
-    neededVideoCode = true;
-}
-=======
     AV_SYNC_THRESHOLD_MAX = 1.5 * tb;
     hasCover = _hasCover;
 }
@@ -46,7 +37,6 @@ void ASongVideo::setNeededVideoCode()
 //{
 //    neededVideoCode = true;
 //}
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 
 double ASongVideo::getPts(AVFrame *frame)
 {
@@ -62,10 +52,6 @@ double ASongVideo::getPts(AVFrame *frame)
 // 修正pts
 void ASongVideo::caliBratePts(AVFrame *frame, double &pts)
 {
-<<<<<<< HEAD
-    double frameDelay;
-=======
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
     // 如果通过frame->best_effort_timestamp获取到了最合适的clock，更新videoClock
     if(pts != 0.0)
     {
@@ -76,11 +62,7 @@ void ASongVideo::caliBratePts(AVFrame *frame, double &pts)
     {
         pts = videoClock;
     }
-<<<<<<< HEAD
-    frameDelay = tb;
-=======
     double frameDelay = tb;
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
     // extra_delay = repeat_pict / (2*fps)
     // frameDelay = 1/fps+extra_delay
     frameDelay *= (1.0 + 0.5 * frame->repeat_pict);
@@ -101,22 +83,6 @@ double ASongVideo::synVideo(const double pts)
     // 更新参数
     lastFramePts = pts;
     lastFrameDelay = delay;
-<<<<<<< HEAD
-    // 获取音频时钟
-    double audioClock = ASongAudio::getInstance()->getAudioClock();
-    // 计算视频帧pts和音频时钟的差
-    double diff = pts - audioClock;
-    // 计算最小刷新时间
-    double minFlushT = fmax(delay, synLowerBound);
-    // 没有超过非同步阈值则可以同步
-    if(fabs(diff) < noSynUpperBound)
-    {
-        // 视频慢于音频的时间超过最小刷新时间，降低延迟
-        if(diff <= -minFlushT)
-        {
-            delay = 0.0;
-            //            qDebug() << 0;
-=======
     // 计算同步阈值
     double syn_threshold = FFMAX(AV_SYNC_THRESHOLD_MIN / ASongFFmpeg::getInstance()->getSpeed(),
                                  FFMIN(AV_SYNC_THRESHOLD_MAX / ASongFFmpeg::getInstance()->getSpeed(), delay));
@@ -130,27 +96,10 @@ double ASongVideo::synVideo(const double pts)
         if(diff <= -syn_threshold)
         {
             delay = FFMAX(0.0, delay + diff);
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
         }
         else
         {
             // 视频快于音频的时间超过最小刷新时间，增加延迟
-<<<<<<< HEAD
-            if(diff >= minFlushT)
-            {
-                delay *= 2.0;
-                //                qDebug() << 1;
-            }
-        }
-    }
-    frameTime += delay;
-    // 真正延时时间
-    //    qDebug() << tmp;
-    double actualDelay = fmax(frameTime - av_gettime() / 1000000.0, synLowerBound);
-    //    qDebug() << actualDelay;
-    //        actualDelay = fmax(actualDelay, 0.010);
-    return actualDelay;
-=======
             if(diff >= syn_threshold)
             {
                 if(delay > AV_SYNC_FRAMEDUP_THRESHOLD)
@@ -175,7 +124,6 @@ double ASongVideo::synVideo(const double pts)
     }
     // 真正延时时间
     //    double actualDelay = fmax(frameTimer - av_gettime_relative() / 1000000.0, synLowerBound);
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 }
 
 //void ASongVideo::resetWH(const int _out_width, const int _out_height)
@@ -187,17 +135,11 @@ double ASongVideo::synVideo(const double pts)
 /*thread*/
 void ASongVideo::start(Priority pri)
 {
-<<<<<<< HEAD
-    allowRunVideo = true;
-    neededVideoCode = true;
-    frameTime = av_gettime() / 1000000.0;
-=======
     stopReq = false;
     stopFlag = false;
     pauseReq = false;
     pauseFlag = false;
     frameTimer = av_gettime_relative() / 1000000.0;
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
     QThread::start(pri);
 }
 
@@ -206,19 +148,11 @@ void ASongVideo::stop()
     // 先结束视频解码线程
     if(QThread::isRunning())
     {
-<<<<<<< HEAD
-        allowRunVideo = false;
-        needPaused = false;
-        //        pauseFlag = false;
-        // 解码线程可能因为未渲染的frame队列过长而阻塞，先唤醒
-        DataSink::getInstance()->wakeVideoWithFraCond();
-=======
         stopReq = true;
         //        needPaused = false;
         //        pauseFlag = false;
         // 解码线程可能因为未渲染的frame队列过长而阻塞，先唤醒
         //        DataSink::getInstance()->wakeVideoWithFraCond();
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
         // 可能处于暂停中，先唤醒
         pauseCond.wakeAll();
         QThread::quit();
@@ -231,13 +165,8 @@ void ASongVideo::stop()
         pCodecCtx = nullptr;
     }
     videoClock = 0.0;
-<<<<<<< HEAD
-    // frameTime
-    frameTime = 0.0;
-=======
     // frameTimer
     frameTimer = 0.0;
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
     // 上一帧pts
     lastFramePts = 0.0;
     // 上一帧delay
@@ -246,39 +175,6 @@ void ASongVideo::stop()
     videoIdx = -1;
     // 源视频流的宽高
     //    srcWidth = 0, srcHeight = 0;
-<<<<<<< HEAD
-}
-
-void ASongVideo::pause()
-{
-    if(QThread::isRunning())
-    {
-        QMutexLocker locker(&_pauseMutex);
-        needPaused = true;
-        // 解码线程可能因为未渲染的frame队列过长而阻塞，先唤醒
-        DataSink::getInstance()->wakeVideoWithFraCond();
-        pauseCond.wait(&_pauseMutex);
-    }
-}
-
-void ASongVideo::resume()
-{
-    frameTime = av_gettime() / 1000000.0; // 更新起始时间基准
-    if(QThread::isRunning())
-    {
-        needPaused = false;
-        //        pauseFlag = false;
-        pauseCond.wakeAll();
-    }
-}
-
-// 进度跳转前的解码器缓存清理
-void ASongVideo::flushBeforeSeek()
-{
-    if(nullptr != pCodecCtx)
-    {
-        avcodec_flush_buffers(pCodecCtx);
-=======
     //    qDebug() << 3;
 }
 
@@ -331,7 +227,6 @@ void ASongVideo::resumeThread()
     else if(QThread::isFinished())
     {
         start();
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
     }
 }
 
@@ -340,105 +235,6 @@ void ASongVideo::run()
     //    SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)ApplicationCrashHandler);//注冊异常捕获函数
     AVPacket *packet = nullptr;
     std::atomic_bool coverAlready = false;
-<<<<<<< HEAD
-    while(allowRunVideo && neededVideoCode)
-    {
-        // 可能阻塞
-        DataSink::getInstance()->allowAppendVFrame();
-        // 可能阻塞
-        packet = DataSink::getInstance()->takeNextPacket(1);
-        if(nullptr != packet)
-        {
-            // 解码
-            int ret = avcodec_send_packet(pCodecCtx, packet);
-            // avcodec_send_packet成功
-            if(ret == 0)
-            {
-                //                while(1)
-                //                {
-                AVFrame *frame = av_frame_alloc();
-                ret = avcodec_receive_frame(pCodecCtx, frame);
-                if(ret == 0)
-                {
-                    frame->opaque = (double*)new double(getPts(frame));
-                    DataSink::getInstance()->appendFrameList(1, frame);
-                    // 如果是带音频的封面，该线程只做一次循环
-                    if(hasCover)
-                    {
-                        coverAlready = true;
-                    }
-                }
-                else
-                {
-                    if(ret == AVERROR_EOF)
-                    {
-                        // 复位解码器
-                        avcodec_flush_buffers(pCodecCtx);
-                    }
-                    av_frame_free(&frame);
-                }
-            }
-            else
-            {
-                // 如果是AVERROR(EAGAIN)，需要先调用avcodec_receive_frame将frame读取出来
-                if(ret == AVERROR(EAGAIN))
-                {
-                    while(1)
-                    {
-                        AVFrame *frame = av_frame_alloc();
-                        ret = avcodec_receive_frame(pCodecCtx, frame);
-                        if(ret == AVERROR_EOF)
-                        {
-                            av_frame_free(&frame);
-                            // 复位解码器
-                            avcodec_flush_buffers(pCodecCtx);
-                            break;
-                        }
-                        frame->opaque = (double*)new double(getPts(frame));
-                        DataSink::getInstance()->appendFrameList(1, frame);
-                    }
-                    // 然后再调用avcodec_send_packet
-                    ret = avcodec_send_packet(pCodecCtx, packet);
-                    if(ret == 0)
-                    {
-                        AVFrame *frame = av_frame_alloc();
-                        ret = avcodec_receive_frame(pCodecCtx, frame);
-                        if(ret == 0)
-                        {
-                            frame->opaque = (double*)new double(getPts(frame));
-                            DataSink::getInstance()->appendFrameList(1, frame);
-                        }
-                        else
-                        {
-                            if(ret == AVERROR_EOF)
-                            {
-                                // 复位解码器
-                                avcodec_flush_buffers(pCodecCtx);
-                            }
-                            av_frame_free(&frame);
-                        }
-                    }
-                }
-            }
-            // 释放
-            av_packet_free(&packet);
-            //        }
-            if(coverAlready)
-            {
-                allowRunVideo = false;
-                break;
-            }
-        }
-        else
-        {
-            allowRunVideo = false;
-            neededVideoCode = false;
-        }
-        if(needPaused)
-        {
-            QMutexLocker locker(&_pauseMutex);
-            //            pauseFlag = true;
-=======
     for(;;)
     {
         if(stopReq)
@@ -575,7 +371,6 @@ void ASongVideo::run()
     }
     //    allowRunVideo = false;
     //    needPaused = false;
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 }
 
 //bool ASongVideo::isPaused()
@@ -589,8 +384,6 @@ void ASongVideo::run()
 //        return false;
 //    }
 //}
-<<<<<<< HEAD
-=======
 
 // 进度跳转前的解码器缓存清理
 void ASongVideo::flushBeforeSeek()
@@ -600,4 +393,3 @@ void ASongVideo::flushBeforeSeek()
         avcodec_flush_buffers(pCodecCtx);
     }
 }
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f

@@ -25,11 +25,7 @@ void PlayTable::init()
 
 }
 
-<<<<<<< HEAD
 void PlayTable::setTable(QList<QString> infoList)
-=======
-void PlayTable::setTable(QFileInfoList infoList)
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 {
     //顺序播放列表
     orderInfoList=infoList;
@@ -38,13 +34,8 @@ void PlayTable::setTable(QFileInfoList infoList)
     this->setRowCount(numFile);
     for(qint16 i=0;i<numFile;i++)
     {
-<<<<<<< HEAD
         this->setItem(i,0,new QTableWidgetItem(getFileNameFromPath(infoList[i])));
         this->setItem(i,1,new QTableWidgetItem(infoList[i]));
-=======
-        this->setItem(i,0,new QTableWidgetItem(infoList[i].fileName()));
-        this->setItem(i,1,new QTableWidgetItem(infoList[i].absoluteFilePath()));
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
     }
 
     //生成随机列表
@@ -63,11 +54,7 @@ void PlayTable::generateRandomList()
     QVector<int> origin_pos(numFile);
     for(qint16 i=0;i<numFile;i++)
     {
-<<<<<<< HEAD
         randomList.append(orderInfoList[i]);
-=======
-        randomList.append(orderInfoList[i].absoluteFilePath());
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
         origin_pos[i]=i;
     }
     quint32 seed = quint32(QDateTime::currentDateTime().toSecsSinceEpoch());
@@ -101,11 +88,7 @@ QString PlayTable::getPath(qint16 row)
 {
     if(!this->item(row,1))
         return "";
-<<<<<<< HEAD
     return this->orderInfoList[row];
-=======
-    return this->orderInfoList[row].absoluteFilePath();
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 }
 
 QString PlayTable::getPrevFile()
@@ -119,11 +102,7 @@ QString PlayTable::getPrevFile()
     else
     {
         playPos=(playPos-1+n)%n;
-<<<<<<< HEAD
         return orderInfoList[playPos];
-=======
-        return orderInfoList[playPos].absoluteFilePath();
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
     }
 }
 
@@ -138,11 +117,7 @@ QString PlayTable::getNextFile()
     else
     {
         playPos=(playPos+1)%n;
-<<<<<<< HEAD
         return orderInfoList[playPos];
-=======
-        return orderInfoList[playPos].absoluteFilePath();
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
     }
 }
 
@@ -168,11 +143,7 @@ void PlayTable::showMessage()
     int rowIndex = this->currentRow();
     if (rowIndex != -1)
     {
-<<<<<<< HEAD
         QString path=orderInfoList[rowIndex];
-=======
-        QString path=orderInfoList[rowIndex].absoluteFilePath();
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
         MediaMetaData * mediaMetaData=ASongFFmpeg::getInstance()->openMediaInfo(path);
         MyMessageWidget * myMessageWidget = new MyMessageWidget(mediaMetaData);
         myMessageWidget->show();
@@ -192,12 +163,9 @@ void PlayTable::deleteFile()
     }
 }
 
-<<<<<<< HEAD
 QString PlayTable::getFileNameFromPath(QString path)
 {
     return path.section('/', -1, -1);
 }
 
-=======
->>>>>>> 817b993240347ab0a2c666567cd5b09a48d19c4f
 
