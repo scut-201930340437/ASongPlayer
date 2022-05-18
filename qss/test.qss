@@ -1,0 +1,32 @@
+
+/*控制栏按钮*/
+#next_button{
+    image: url(:/img/next.png);
+}
+#next_button::hover{
+    image: url(:/img/next2.png);
+}
+#last_button{
+    image: url(:/img/last.png);
+}
+#last_button::hover{
+    image: url(:/img/last2.png);
+}
+#stop_button{
+    image: url(:/img/stop.png);
+}
+#stop_button::hover{
+    image: url(:/img/stop2.png);
+}
+#fullScreen_button{
+    image: url(:/img/fullScreen.png);
+}
+#fullScreen_button::hover{
+    image: url(:/img/fullScreen2.png);
+}
+#playmode_button{
+   image: url(:/img/loop.png);
+}
+#playmode_button::hover{
+   image: url(:/img/loop2.png);
+}
