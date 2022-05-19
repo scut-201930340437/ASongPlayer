@@ -128,14 +128,22 @@ qint16 PlayTable::getNumFiles()
 
 void PlayTable::showHighLight()
 {
+    qint16 curPos=-1;
     if(playMode==2)
     {
-        this->selectRow(random_order[randomPos]);
+        curPos=random_order[randomPos];
     }
     else
     {
-        this->selectRow(playPos);
+        curPos=playPos;
     }
+    this->selectRow(curPos);
+    for(qint16 i=0;i<=2;i++)
+    {
+        qDebug()<<this->itemAt(i,curPos)->text();
+        this->itemAt(curPos,i)->setBackground(QBrush(Qt::GlobalColor::blue));
+    }
+
 }
 
 void PlayTable::showMessage()
