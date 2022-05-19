@@ -75,7 +75,7 @@ MyMessageWidget::MyMessageWidget(MediaMetaData *mediaMetaData,QWidget *parent)
             QTreeWidgetItem *item2 = new QTreeWidgetItem(QStringList()<<"视频码率"<<QString::number(_kbps)+" kbps");
             double _fps=(mediaMetaData->vMetaDatas+i)->frame_rate>0?(mediaMetaData->vMetaDatas+i)->frame_rate:0;
             QTreeWidgetItem *item3 = new QTreeWidgetItem(QStringList()<<"视频帧率"<<QString::number(_fps)+" fps");
-            QTreeWidgetItem *item4 = new QTreeWidgetItem(QStringList()<<"视频帧率"<<QString::number((mediaMetaData->vMetaDatas+i)->width)+"*"+QString::number(mediaMetaData->vMetaDatas->height));
+            QTreeWidgetItem *item4 = new QTreeWidgetItem(QStringList()<<"分辨率"<<QString::number((mediaMetaData->vMetaDatas+i)->width)+"*"+QString::number(mediaMetaData->vMetaDatas->height));
             viedoItem->addChildren({item1,item2,item3,item4});
     }
     for(int i=0;i<mediaMetaData->nb_astreams;i++)

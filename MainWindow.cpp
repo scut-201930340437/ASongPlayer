@@ -302,7 +302,7 @@ void MainWindow::setListFromFilePath()
     else
     {
         QFileInfoList _list = Dir.entryInfoList(QDir::Files);
-        QFileInfoList neededList;
+        QList<QString> neededList;
         qint16 count_row = 0;
         foreach (QFileInfo file, _list)                  			//遍历只加载音视频文件到文件列表
         {
@@ -312,7 +312,7 @@ void MainWindow::setListFromFilePath()
                 {
                     ui->play_table->playPos = count_row;
                 }
-                neededList.append(file);
+                neededList.append(file.absoluteFilePath());
                 count_row++;
             }
         }
@@ -369,11 +369,13 @@ void MainWindow::dropEvent(QDropEvent *e)
 void MainWindow::saveFilePath()
 {
     //存储播放路径
-    QSettings *iniWriter = new QSettings(SavePath, QSettings::IniFormat);
+    QSettings *iniWriter=new QSettings(SavePath,QSettings::IniFormat);
     if(iniWriter)
     {
-        iniWriter->setValue(SavePath, filePath);
+        iniWriter->setValue(curPathKey,filePath);
+        iniWriter->setValue(pathListKey,ui->play_table->orderInfoList);
     }
+
     delete iniWriter;
 }
 
@@ -389,17 +391,16 @@ void MainWindow::readFilePath()
             filePath = "";
             return;
         }
-        QFileInfoList *fileInfoList = new QFileInfoList(iniReader->value("fileInfoList").value<QFileInfoList>());
-        if(fileInfoList->empty())
+        QList<QString> filePathList=iniReader->value(pathListKey).value<QList<QString>>();
+        if(filePathList.empty())
         {
             //通过filePath设置播放列表
             setListFromFilePath();
         }
         else
         {
-            ui->play_table->setTable(*fileInfoList);
+            ui->play_table->setTable(filePathList);
         }
-        delete fileInfoList;
     }
 }
 

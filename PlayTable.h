@@ -22,8 +22,10 @@ public:
     qint16 numFile=0;
     QMap<int,int> order_random;
     QMap<int,int> random_order;
+    QList<QString> orderInfoList;
+    QList<QString> randomList;
     void init();
-    void setTable(QFileInfoList infoList);
+    void setTable(QList<QString> infoList);
     bool isNeededFile(QFileInfo file);
     QString getPath(qint16 row);
     QString getNextFile();
@@ -32,10 +34,9 @@ public:
     qint16 playMode=1;
     qint16 getNumFiles();
     void showHighLight();
+    QString getFileNameFromPath(QString path);
 
 private:
-    QFileInfoList orderInfoList;
-    QList<QString> randomList;
     QVector<QString> neededFile={"mp3","mp4","flv","avi","mkv"};
     void generateRandomList();
 

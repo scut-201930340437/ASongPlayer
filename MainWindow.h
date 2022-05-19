@@ -116,6 +116,8 @@ private:
     QString filePath;
     //存储播放路径的文件的路径
     QString SavePath = "filePath.ini";
+    QString curPathKey="curFilePath";
+    QString pathListKey="filePathList";
 
     void setListFromFilePath();
     void dragEnterEvent(QDragEnterEvent *e);

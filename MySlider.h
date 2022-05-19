@@ -30,6 +30,7 @@ public:
 private:
     //预览窗口
     QWidget *preview = nullptr;
+    QLabel *label;
     //停留2秒就可以显示
     int sustain;
     int stay = 10;

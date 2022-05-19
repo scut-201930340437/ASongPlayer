@@ -25,7 +25,7 @@ void PlayTable::init()
 
 }
 
-void PlayTable::setTable(QFileInfoList infoList)
+void PlayTable::setTable(QList<QString> infoList)
 {
     //顺序播放列表
     orderInfoList=infoList;
@@ -34,8 +34,8 @@ void PlayTable::setTable(QFileInfoList infoList)
     this->setRowCount(numFile);
     for(qint16 i=0;i<numFile;i++)
     {
-        this->setItem(i,0,new QTableWidgetItem(infoList[i].fileName()));
-        this->setItem(i,1,new QTableWidgetItem(infoList[i].absoluteFilePath()));
+        this->setItem(i,0,new QTableWidgetItem(getFileNameFromPath(infoList[i])));
+        this->setItem(i,1,new QTableWidgetItem(infoList[i]));
     }
 
     //生成随机列表
@@ -54,7 +54,7 @@ void PlayTable::generateRandomList()
     QVector<int> origin_pos(numFile);
     for(qint16 i=0;i<numFile;i++)
     {
-        randomList.append(orderInfoList[i].absoluteFilePath());
+        randomList.append(orderInfoList[i]);
         origin_pos[i]=i;
     }
     quint32 seed = quint32(QDateTime::currentDateTime().toSecsSinceEpoch());
@@ -88,7 +88,7 @@ QString PlayTable::getPath(qint16 row)
 {
     if(!this->item(row,1))
         return "";
-    return this->orderInfoList[row].absoluteFilePath();
+    return this->orderInfoList[row];
 }
 
 QString PlayTable::getPrevFile()
@@ -102,7 +102,7 @@ QString PlayTable::getPrevFile()
     else
     {
         playPos=(playPos-1+n)%n;
-        return orderInfoList[playPos].absoluteFilePath();
+        return orderInfoList[playPos];
     }
 }
 
@@ -117,7 +117,7 @@ QString PlayTable::getNextFile()
     else
     {
         playPos=(playPos+1)%n;
-        return orderInfoList[playPos].absoluteFilePath();
+        return orderInfoList[playPos];
     }
 }
 
@@ -143,7 +143,7 @@ void PlayTable::showMessage()
     int rowIndex = this->currentRow();
     if (rowIndex != -1)
     {
-        QString path=orderInfoList[rowIndex].absoluteFilePath();
+        QString path=orderInfoList[rowIndex];
         MediaMetaData * mediaMetaData=ASongFFmpeg::getInstance()->openMediaInfo(path);
         MyMessageWidget * myMessageWidget = new MyMessageWidget(mediaMetaData);
         myMessageWidget->show();
@@ -161,6 +161,11 @@ void PlayTable::deleteFile()
         random_order.remove(order_random[rowIndex]);
         order_random.remove(rowIndex);
     }
+}
+
+QString PlayTable::getFileNameFromPath(QString path)
+{
+    return path.section('/', -1, -1);
 }
 
 
