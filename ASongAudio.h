@@ -104,7 +104,7 @@ private:
     // 音频解码器上下文
     AVCodecContext *pCodecCtx = nullptr;
     // 音量
-    qreal curVolume = 1.0;
+    qreal curVolume = 0.3;
     // 音量转换系数
     const qreal volTranRate = 100.0;
 };

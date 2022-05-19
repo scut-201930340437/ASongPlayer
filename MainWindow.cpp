@@ -384,7 +384,7 @@ void MainWindow::readFilePath()
     QSettings *iniReader = new QSettings(SavePath, QSettings::IniFormat);
     if(iniReader)
     {
-        filePath = iniReader->value(SavePath).toString();
+        filePath = iniReader->value(curPathKey).toString();
         QDir dir(filePath);
         if(!dir.exists(filePath))
         {
@@ -964,8 +964,6 @@ void MainWindow::on_multiple_button_clicked()
 void MainWindow::setMutipleSpeed(QAbstractButton *button)
 {
     // 当前点击的按钮
-    qDebug() << QString("Clicked Button : %1").arg(button->text());
-    qDebug() << button->objectName();
     ASongFFmpeg::getInstance()->setSpeed(atof(button->objectName().toStdString().c_str()));
     ui->multiple_button->setText(button->objectName());
     //ToBeDone
