@@ -62,19 +62,10 @@ qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
-win32{
-    contains(QT_ARCH,i386){
-        message("32-bit")
-        INCLUDEPATH += $$PWD/lib/win32/third-party/include \
-                       $$PWD/src
-        LIBS += -L$$PWD/lib/win32/third-party/lib -lavcodec -lavdevice -lavfilter -lavformat -lavutil -lswresample -lswscale -lSDL2 -lSDL2main -lSoundTouchDll_x64
-    }else{
-        message("64-bit")
-        INCLUDEPATH += $$PWD/lib/win64/third-party/include \
-                       $$PWD/src
-        LIBS += -L$$PWD/lib/win64/third-party/lib -lavcodec -lavdevice -lavfilter -lavformat -lavutil -lswresample -lswscale -lSDL2 -lSDL2main -lSoundTouchDll_x64
-    }
-}
+
+INCLUDEPATH += $$PWD/lib/win64/third-party/include
+LIBS += -L$$PWD/lib/win64/third-party/lib -lavcodec -lavdevice -lavfilter -lavformat -lavutil -lswresample -lswscale -lSDL2 -lSDL2main -lSoundTouchDll_x64
+LIBS += -L$$PWD/lib/win64/third-party/bin
 
 RESOURCES += \
     src.qrc
