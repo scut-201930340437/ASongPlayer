@@ -10,6 +10,10 @@ void VideoPreview::start(QString path, int videoIndex, Priority prio){
     if(isRunning())return;
     this->path = path;
     this->vidx = videoIndex;
+    thread_fail = false;
+    abort_req = false;
+    preview_req = false;
+    posSec = -1;
     QThread::start(prio);
 }
 
@@ -23,26 +27,10 @@ void VideoPreview::stop(){
     preview_img = QImage();
 }
 
-void VideoPreview::pause(){
-    this->preview_req = false;
-}
-
-void VideoPreview::resume(){
-    this->preview_req = true;
-    if(continue_preview_thread){
-        SDL_CondSignal(continue_preview_thread);
-    }
-}
-
 void VideoPreview::run(){
 
-    thread_fail = false;
-    abort_req = false;
-    preview_req = false;
-    posSec = -1;
-
     int64_t lastPosSec = -1;
-    int nb_bytes, y_size, ret;
+    int nb_bytes, y_size;
     const AVPixelFormat pixelfmt = AV_PIX_FMT_RGB32;
     AVFormatContext *pfctx = NULL;
 
@@ -175,16 +163,14 @@ void VideoPreview::run(){
             break;
         }
 
-        if(!preview_req){
-            SDL_LockMutex(mutex);
-            SDL_CondWait(continue_preview_thread, mutex);
-            SDL_UnlockMutex(mutex);
-        }
+        SDL_LockMutex(mutex);
+        SDL_CondWaitTimeout(continue_preview_thread, mutex, 20);
+        SDL_UnlockMutex(mutex);
 
         if(lastPosSec != posSec){//位置发生变化，进行seek操作，更新缩略图
             lastPosSec = posSec;
             //seek操作
-            ret = av_seek_frame(pfctx, -1, lastPosSec * AV_TIME_BASE, AVSEEK_FLAG_BACKWARD);
+            av_seek_frame(pfctx, -1, lastPosSec * AV_TIME_BASE, AVSEEK_FLAG_BACKWARD);
 
             //存一帧图片
             while(av_read_frame(pfctx, pkt) >= 0){

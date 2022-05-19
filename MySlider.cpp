@@ -76,14 +76,12 @@ void MySlider::mouseMoveEvent(QMouseEvent *event)
 
 void MySlider::enterEvent(QEnterEvent *){
     sustain = 0;
-    VideoPreview::getInstance()->resume();
 }
 
 void MySlider::leaveEvent(QEvent *)
 {
     if(preview!=nullptr)
         preview->hide();
-    VideoPreview::getInstance()->pause();
 }
 
 void MySlider::setZeroValue(){

@@ -18,8 +18,6 @@ public:
     void start(QString path, int videoIndex, Priority = InheritPriority);//开启线程
     void stop();//停止线程
 
-    void resume();//继续线程，鼠标进入进度条时调用
-    void pause(); //阻塞线程，鼠标离开进度条时调用
     QImage getPreviewImg(); //获取预览图
     void setPosSec(int64_t posSec); //设置预览位置，单位为秒
 
