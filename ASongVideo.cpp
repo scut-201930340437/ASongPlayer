@@ -260,6 +260,13 @@ void ASongVideo::run()
             packet = DataSink::getInstance()->takeNextPacket(1);
             if(nullptr != packet)
             {
+                // flushpkt
+                if(packet == ASongFFmpeg::getInstance()->flushPacket)
+                {
+                    // 有seek操作
+                    avcodec_flush_buffers(pCodecCtx);
+                    continue;
+                }
                 // 解码
                 int ret = avcodec_send_packet(pCodecCtx, packet);
                 // avcodec_send_packet成功
@@ -271,8 +278,22 @@ void ASongVideo::run()
                     ret = avcodec_receive_frame(pCodecCtx, frame);
                     if(ret == 0)
                     {
-                        //                    qDebug() << "decode";
                         frame->opaque = (double*)new double(getPts(frame));
+                        // 扔掉小于seek的目标pts的帧
+                        if(ASongFFmpeg::getInstance()->seekVideo)
+                        {
+                            if(videoClock < ASongFFmpeg::getInstance()->seekTime)
+                            {
+                                av_packet_free(&packet);
+                                av_frame_free(&frame);
+                                continue;
+                            }
+                            else
+                            {
+                                ASongFFmpeg::getInstance()->seekVideo = false;
+                            }
+                        }
+                        //
                         DataSink::getInstance()->appendFrameList(1, frame);
                         // 如果是带音频的封面，该线程只做一次循环
                         if(hasCover)
@@ -307,6 +328,20 @@ void ASongVideo::run()
                                 break;
                             }
                             frame->opaque = (double*)new double(getPts(frame));
+                            // 扔掉小于seek的目标pts的帧
+                            if(ASongFFmpeg::getInstance()->seekVideo)
+                            {
+                                if(videoClock < ASongFFmpeg::getInstance()->seekTime)
+                                {
+                                    av_frame_free(&frame);
+                                    continue;
+                                }
+                                else
+                                {
+                                    ASongFFmpeg::getInstance()->seekVideo = false;
+                                }
+                            }
+                            //
                             DataSink::getInstance()->appendFrameList(1, frame);
                         }
                         // 然后再调用avcodec_send_packet
@@ -318,6 +353,21 @@ void ASongVideo::run()
                             if(ret == 0)
                             {
                                 frame->opaque = (double*)new double(getPts(frame));
+                                // 扔掉小于seek的目标pts的帧
+                                if(ASongFFmpeg::getInstance()->seekVideo)
+                                {
+                                    if(videoClock < ASongFFmpeg::getInstance()->seekTime)
+                                    {
+                                        av_packet_free(&packet);
+                                        av_frame_free(&frame);
+                                        continue;
+                                    }
+                                    else
+                                    {
+                                        ASongFFmpeg::getInstance()->seekVideo = false;
+                                    }
+                                }
+                                //
                                 DataSink::getInstance()->appendFrameList(1, frame);
                             }
                             else
@@ -358,30 +408,7 @@ void ASongVideo::run()
         }
         else
         {
-            msleep(5);
+            msleep(60);
         }
-    }
-    //    allowRunVideo = false;
-    //    needPaused = false;
-}
-
-//bool ASongVideo::isPaused()
-//{
-//    if(pauseFlag)
-//    {
-//        return true;
-//    }
-//    else
-//    {
-//        return false;
-//    }
-//}
-
-// 进度跳转前的解码器缓存清理
-void ASongVideo::flushBeforeSeek()
-{
-    if(nullptr != pCodecCtx)
-    {
-        avcodec_flush_buffers(pCodecCtx);
     }
 }

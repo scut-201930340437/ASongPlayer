@@ -49,7 +49,10 @@ public:
     //    void wakeAudioWithPackCond();
     //    void wakeVideoWithPackCond();
 
-    void clearList();
+    void clearAPacketList();
+    void clearVPacketList();
+    void clearAFrameList();
+    void clearVFrameList();
 
     //    bool packListIsEmpty(int type);
 

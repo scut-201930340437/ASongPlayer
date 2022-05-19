@@ -3,7 +3,6 @@
 
 #include <atomic>
 #include <QThread>
-//#include "MyThread.h"
 #include <QMutex>
 #include <QWaitCondition>
 
@@ -59,6 +58,8 @@ public:
     //    bool isPaused();
     void setVolume(const qreal curVolume);
 
+    int getCurFrameNumber();
+
 
     // 暂停标志
     std::atomic_bool pauseFlag = false;
@@ -109,6 +110,9 @@ private:
     QMediaDevices *mediaDevice = nullptr;
     QIODevice *audioIO = nullptr;
     QAudioSink *audioOutput = nullptr;
+
+    //
+    int curPictureNumber = -1;
 
 signals:
     void playFinish();

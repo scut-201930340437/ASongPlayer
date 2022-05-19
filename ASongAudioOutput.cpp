@@ -1,4 +1,4 @@
-﻿//#include "ASongFFmpeg.h"
+﻿#include "ASongFFmpeg.h"
 #include "ASongAudioOutput.h"
 #include "ASongAudio.h"
 #include "DataSink.h"
@@ -217,7 +217,6 @@ void ASongAudioOutput::stop()
         swr_free(&pSwrCtx);
         pSwrCtx = nullptr;
     }
-    //    qDebug() << "122";
 }
 
 void ASongAudioOutput::pause()
@@ -229,7 +228,6 @@ void ASongAudioOutput::pause()
         pauseCond.wait(&_pauseMutex);
         locker.relock();
     }
-    //    qDebug() << "1";
 }
 
 void ASongAudioOutput::resume()
@@ -292,6 +290,7 @@ void ASongAudioOutput::process()
     AVFrame *frame = DataSink::getInstance()->takeNextFrame(0);
     if(nullptr != frame)
     {
+        curPictureNumber = frame->display_picture_number;
         // 如果是planar（每个声道数据单独存放），一定要重采样，因为PCM是packed（每个声道数据交错存放）
         if(av_sample_fmt_is_planar(in_sample_fmt) == 1)
         {
@@ -319,7 +318,7 @@ void ASongAudioOutput::process()
                 return;
             }
             // 计算该帧时长
-            double duration = 1.0 * out_size / (sample_rate * 4);
+            double duration = 1.0 * out_size / (sample_rate * 2 * channels);
             if(audioOutput->bytesFree() < out_size)
             {
                 msleep(1000.0 * duration + 0.5);
@@ -390,6 +389,11 @@ void ASongAudioOutput::process()
     }
 }
 
+
+int ASongAudioOutput::getCurFrameNumber()
+{
+    return curPictureNumber;
+}
 //bool ASongAudioOutput::isPaused()
 //{
 //    QMutexLocker locker(&_pauseMutex);

@@ -115,10 +115,6 @@ void SDLPaint::setMetaData(const int width, const int height, const int _frameRa
 //    }
 //}
 
-//void SDLPaint::createTimer()
-//{
-//}
-
 // 转换为YUV图像并进行同步
 void SDLPaint::getFrameYUV()
 {
@@ -133,17 +129,6 @@ void SDLPaint::getFrameYUV()
             if(ASongAudioOutput::getInstance()->stopFlag)
             {
                 stop();
-                // 释放preFrame
-                if(nullptr != pre_out_buffer)
-                {
-                    av_free(pre_out_buffer);
-                    pre_out_buffer = nullptr;
-                }
-                if(nullptr != preFrame)
-                {
-                    av_frame_free(&preFrame);
-                    preFrame = nullptr;
-                }
                 //
             }
             // 播放未结束但是拿不到frame，渲染上一帧
@@ -157,6 +142,11 @@ void SDLPaint::getFrameYUV()
         }
         else
         {
+            curPts = frame->pts;
+            if(basePts == 0)
+            {
+                basePts = curPts;
+            }
             // 同步
             double actualDelay = ASongVideo::getInstance()->synVideo(*((double*)frame->opaque));
             // 倍速>=8，丢帧
@@ -265,6 +255,17 @@ void SDLPaint::stop()
         sws_freeContext(pSwsCtx);
         pSwsCtx = nullptr;
     }
+    // 释放preFrame
+    if(nullptr != pre_out_buffer)
+    {
+        av_free(pre_out_buffer);
+        pre_out_buffer = nullptr;
+    }
+    if(nullptr != preFrame)
+    {
+        av_frame_free(&preFrame);
+        preFrame = nullptr;
+    }
     if(nullptr != sdlTimer)
     {
         delete sdlTimer;
@@ -299,6 +300,14 @@ void SDLPaint::stopTimer()
     }
 }
 
+int SDLPaint::getCurFrameNumber()
+{
+    if(basePts == 0)
+    {
+        return 0;
+    }
+    return curPts / basePts;
+}
 //void SDLPaint::paintNextFrame()
 //{
 //    //    QTimer::singleShot()

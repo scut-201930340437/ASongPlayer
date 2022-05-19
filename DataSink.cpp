@@ -62,7 +62,7 @@ AVPacket* DataSink::takeNextPacket(int type)
         //        {
         //            return nullptr;
         //        }
-        QMutexLocker aPacketListLocker(&aPacketListMutex);
+        QMutexLocker locker(&aPacketListMutex);
         if(aPacketList.isEmpty())
         {
             return nullptr;
@@ -74,7 +74,7 @@ AVPacket* DataSink::takeNextPacket(int type)
     }
     else
     {
-        QMutexLocker vPacketListLocker(&vPacketListMutex);
+        QMutexLocker locker(&vPacketListMutex);
         if(vPacketList.isEmpty())
         {
             return nullptr;
@@ -208,53 +208,10 @@ qsizetype DataSink::packetListSize(int type)
     }
 }
 
-// 通过frame条件变量唤醒
-//void DataSink::wakeAudioWithFraCond()
-//{
-//    audioFraCond->wakeAll();
-//}
-
-//void DataSink::wakeVideoWithFraCond()
-//{
-//    videoFraCond->wakeAll();
-//}
-
-// 通过packet条件变量唤醒
-//void DataSink::wakeAudioWithPackCond()
-//{
-//    audioPackCond->wakeOne();
-//}
-
-//void DataSink::wakeVideoWithPackCond()
-//{
-//    videoPackCond->wakeOne();
-//}
-
-void DataSink::clearList()
+void DataSink::clearAPacketList()
 {
-    AVFrame *frame = nullptr;
-    // 将资源信号量重置为0
-    //    audioPackSem->acquire(audioPackSem->available());
-    //    videoPackSem->acquire(videoPackSem->available());
-    //    audioFraSem->acquire(audioFraSem->available());
-    // 清理队列
-    while(!aFrameList.isEmpty())
-    {
-        //        audioFraSem->acquire();
-        frame = aFrameList.takeFirst();
-        av_frame_free(&frame);
-    }
-    aFrameList.clear();
-    //
-    while(!vFrameList.isEmpty())
-    {
-        frame = vFrameList.takeFirst();
-        av_frame_free(&frame);
-    }
-    vFrameList.clear();
-    frame = nullptr;
-    //
     AVPacket *packet = nullptr;
+    //    QMutexLocker locker(&aPacketListMutex);
     while(!aPacketList.isEmpty())
     {
         //        audioSem->acquire();
@@ -262,15 +219,44 @@ void DataSink::clearList()
         av_packet_free(&packet);
     }
     aPacketList.clear();
+    // 将空位信号量置为队列最大长度
+    //    audioFraEmpSem->release(maxFrameListLength - audioFraEmpSem->available());
+    //    videoFraEmpSem->release(maxFrameListLength - videoFraEmpSem->available());
+}
+
+void DataSink::clearVPacketList()
+{
+    AVPacket *packet = nullptr;
+    //    QMutexLocker locker(&vPacketListMutex);
     while(!vPacketList.isEmpty())
     {
-        //        videoSem->acquire();
         packet = vPacketList.takeFirst();
         av_packet_free(&packet);
     }
     vPacketList.clear();
-    packet = nullptr;
-    // 将空位信号量置为队列最大长度
-    //    audioFraEmpSem->release(maxFrameListLength - audioFraEmpSem->available());
-    //    videoFraEmpSem->release(maxFrameListLength - videoFraEmpSem->available());
+}
+
+void DataSink::clearAFrameList()
+{
+    AVFrame *frame = nullptr;
+    // 清理队列
+    //    QMutexLocker locker(&aFrameListMutex);
+    while(!aFrameList.isEmpty())
+    {
+        frame = aFrameList.takeFirst();
+        av_frame_free(&frame);
+    }
+    aFrameList.clear();
+}
+
+void DataSink::clearVFrameList()
+{
+    AVFrame *frame = nullptr;
+    //    QMutexLocker locker(&vFrameListMutex);
+    while(!vFrameList.isEmpty())
+    {
+        frame = vFrameList.takeFirst();
+        av_frame_free(&frame);
+    }
+    vFrameList.clear();
 }

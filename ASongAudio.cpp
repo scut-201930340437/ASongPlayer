@@ -199,8 +199,25 @@ void ASongAudio::run()
             packet = DataSink::getInstance()->takeNextPacket(0);
             if(nullptr != packet)
             {
-                // 设置时钟
-                //            setAudioClock(packet);
+                // flushpkt
+                if(packet == ASongFFmpeg::getInstance()->flushPacket)
+                {
+                    avcodec_flush_buffers(pCodecCtx);
+                    continue;
+                }
+                // 扔掉小于seek的目标pts的帧
+                if(ASongFFmpeg::getInstance()->seekAudio)
+                {
+                    if(packet->pts * av_q2d(tb) < ASongFFmpeg::getInstance()->seekTime)
+                    {
+                        av_packet_free(&packet);
+                        continue;
+                    }
+                    else
+                    {
+                        ASongFFmpeg::getInstance()->seekAudio = false;
+                    }
+                }
                 int ret = avcodec_send_packet(pCodecCtx, packet);
                 // avcodec_send_packet成功
                 if(ret == 0)
@@ -211,7 +228,6 @@ void ASongAudio::run()
                         ret = avcodec_receive_frame(pCodecCtx, frame);
                         if(ret == 0)
                         {
-                            //                    qDebug() << "---";
                             DataSink::getInstance()->appendFrameList(0, frame);
                         }
                         else
@@ -224,7 +240,6 @@ void ASongAudio::run()
                             av_frame_free(&frame);
                             break;
                         }
-                        //            qDebug() << "decode";
                     }
                 }
                 else
@@ -232,6 +247,7 @@ void ASongAudio::run()
                     // 如果是AVERROR(EAGAIN)，需要先调用avcodec_receive_frame将frame读取出来
                     if(ret == AVERROR(EAGAIN))
                     {
+                        qDebug() << "eagain";
                         while(1)
                         {
                             AVFrame *frame = av_frame_alloc();
@@ -293,7 +309,7 @@ void ASongAudio::run()
         }
         else
         {
-            msleep(5);
+            msleep(30);
         }
         //        qDebug() << "1";
         //        qDebug() << "end";

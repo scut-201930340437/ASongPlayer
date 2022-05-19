@@ -63,14 +63,12 @@ class ASongFFmpeg: public QThread
 {
     Q_OBJECT
 public:
-
+    ASongFFmpeg();
+    ~ASongFFmpeg();
     // 播放状态锁
     static QMutex _mediaStatusMutex;
-    // hasPacket_mutex
-    //    static QMutex _hasPacketMutex;
     static ASongFFmpeg* getInstance();
     //    static int sfp_signal_thread(void* opaque);
-
 
     // 加载文件信息，获取媒体元数据
     MediaMetaData* openMediaInfo(QString path, AVFormatContext* pFmtCtx = nullptr);
@@ -78,12 +76,6 @@ public:
     int load(QString path);
     // 读取一个packet
     AVPacket* readFrame();
-    //    AVFrame* decode(AVPacket *packet);
-    //    void decode__(AVPacket *packet, QList<AVFrame*>&frame_list);
-    //    double getPts(AVFrame *frame, int streamIdx);
-
-    // 初始化参数
-    //    void initPara();
     /* 获取成员变量*/
     int getMediaType();
     int getMediaStatus();
@@ -98,30 +90,27 @@ public:
     void start(Priority = InheritPriority);
     int stop();
     int pause();
-
     int resume();
     int seek(int64_t posSec);
-
-    //
-    //    bool isPaused();
-
-    // 逐帧
-    void step_to_next_frame();
+    // 进度微调
+    int step_to_dst_frame(int step);
     // 设置倍速
     void setSpeed(float _speed);
-    // 设置播放器状态
-    //    void setMediaStatus(int status);
     // 隐藏光标
     void hideCursor();
     // 显示光标
     void showCursor();
 
-    // 暂停标志
-    //    std::atomic_bool pauseFlag = false;
+    //flush_pkt
+    AVPacket *flushPacket;
     QMutex stopMutex;
     // 停止标志
     std::atomic_bool stopFlag = true;
     std::atomic_bool pauseFlag = false;
+    // 有seek请求
+    bool seekAudio = false;
+    bool seekVideo = false;
+    double seekTime = 0.0;
 
 private:
     // thread
@@ -131,12 +120,6 @@ private:
     // 跳转
     void handleSeek();
 
-
-    // 单一实例
-    // static QAtomicPointer<ASongFFmpeg>_instance;
-    // static QMutex _mutex;
-    // sdlPainter
-    //    SDLPaint *painter = nullptr;
     // 播放状态: -1 - 没有文件  0-停止  1-播放   2-暂停
     std::atomic_int curMediaStatus = -1;
 
@@ -158,12 +141,17 @@ private:
     int	videoIdx = -1, audioIdx = -1;
     //倍速
     //    float speed = 1.0;
-    QString path = "";
+    //    QString path = "";
     //    uint8_t *out_buffer = nullptr;
     // seek
-    int seekReq = 0;
-    int seekPos = 0;
-    int seekRel = 0;
+    //    QMutex seekMutex;
+    bool seekReq = false;
+    int64_t seekPos = 0;
+    int64_t seekRel = 0;
+    int64_t seekMin = INT64_MIN;
+    int64_t seekMax = INT64_MAX;
+    int seekFlag = -1;
+
     //    QMutex seekMutex;
 
 };

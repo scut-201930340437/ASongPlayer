@@ -44,10 +44,6 @@ public:
     void resume();
     // 获取线程是否暂停
     //    bool isPaused();
-
-    void flushBeforeSeek();
-
-    //    QList<AVFrame*>frame_list;
     std::atomic_bool stopFlag = false;
     // 暂停标志
     std::atomic_bool pauseFlag = false;
