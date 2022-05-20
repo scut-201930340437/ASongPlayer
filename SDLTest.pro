@@ -31,6 +31,7 @@ SOURCES += \
     MainWindow.cpp \
     MessageTitleBar.cpp \
     MyMessageWidget.cpp \
+    MyPlayWidget.cpp \
     MySlider.cpp \
     MyTitleBar.cpp \
     PlayTable.cpp \
@@ -47,6 +48,7 @@ HEADERS += \
     MainWindow.h \
     MessageTitleBar.h \
     MyMessageWidget.h \
+    MyPlayWidget.h \
     MySlider.h \
     MyTitleBar.h \
     PlayTable.h \

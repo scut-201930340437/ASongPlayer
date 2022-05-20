@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>883</width>
-    <height>622</height>
+    <width>910</width>
+    <height>623</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -216,7 +216,7 @@
         <number>0</number>
        </property>
        <item>
-        <widget class="QWidget" name="play_widget" native="true">
+        <widget class="MyPlayWidget" name="play_widget" native="true">
          <property name="sizePolicy">
           <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
            <horstretch>0</horstretch>
@@ -813,6 +813,12 @@
    <class>VolumeSlider</class>
    <extends>QSlider</extends>
    <header>VolumeSlider.h</header>
+  </customwidget>
+  <customwidget>
+   <class>MyPlayWidget</class>
+   <extends>QWidget</extends>
+   <header>myplaywidget.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>
