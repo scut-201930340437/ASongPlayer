@@ -566,18 +566,19 @@ void ASongFFmpeg::handleSeek()
     ASongAudio::getInstance()->pauseThread();
     ASongVideo::getInstance()->pauseThread();
     // 清理packet队列
+    DataSink::getInstance()->clearList();
     if(audioIdx >= 0)
     {
         // 清理packet
-        DataSink::getInstance()->clearAPacketList();
-        DataSink::getInstance()->clearAFrameList();
+        //        DataSink::getInstance()->clearAPacketList();
+        //        DataSink::getInstance()->clearAFrameList();
         DataSink::getInstance()->appendPacketList(0, flushPacket);
     }
     if(videoIdx >= 0)
     {
         // 清理packet
-        DataSink::getInstance()->clearVPacketList();
-        DataSink::getInstance()->clearVFrameList();
+        //        DataSink::getInstance()->clearVPacketList();
+        //        DataSink::getInstance()->clearVFrameList();
         // 放入flushpkt
         DataSink::getInstance()->appendPacketList(1, flushPacket);
     }
@@ -590,13 +591,12 @@ void ASongFFmpeg::handleSeek()
     }
     // seek后，重置req和flag
     seekReq = false;
-    seekFlag = -1;
     // 设置seektime用于解码线程丢掉过时的packet
     seekTime = seekPos / 1000000.0;
     //    locker.unlock();
     //
     seekAudio = true;
-    if(videoIdx >= 0 && nullptr == mediaMetaData->vMetaDatas[videoIdx].cover)
+    if(videoIdx >= 0)
     {
         seekVideo = true;
     }
@@ -606,11 +606,31 @@ void ASongFFmpeg::handleSeek()
     {
         ASongVideo::getInstance()->resumeThread();
     }
-    resume();
+    if(seekFlag == AVSEEK_FLAG_BACKWARD)
+    {
+        resume();
+    }
+    else
+    {
+        // 等待帧解码并放入队列
+        DataSink::getInstance()->frameListIsEmpty(0);
+        // 播放一帧音频
+        ASongAudioOutput::getInstance()->process();
+        // 等待帧解码并放入队列
+        DataSink::getInstance()->frameListIsEmpty(1);
+        // 渲染一帧
+        SDLPaint::getInstance()->getFrameYUV();
+        // 设置sdl暂停态
+        SDLPaint::getInstance()->pause();
+        // 重启定时器使sdl不断渲染上一帧
+        SDLPaint::getInstance()->restartTimer();
+    }
+    seekFlag = -1;
 }
 
 int ASongFFmpeg::seek(int64_t posSec)
 {
+    qDebug() << posSec;
     if(nullptr == pFormatCtx || curMediaStatus <= 0)
     {
         return -1;
@@ -638,17 +658,21 @@ int ASongFFmpeg::step_to_dst_frame(int step)
     {
         return -1;
     }
-    curMediaStatus = 2;
+    //    curMediaStatus = 2;
     // 暂停音频播放线程
-    ASongAudioOutput::getInstance()->pause();
-    // 停止渲染定时器
-    SDLPaint::getInstance()->stopTimer();
-    // 设置非暂停态
-    SDLPaint::getInstance()->resume();
+    //    ASongAudioOutput::getInstance()->pause();
+    //    // 停止渲染定时器
+    //    SDLPaint::getInstance()->stopTimer();
+    //    // 设置sdl非暂停态
+    //    SDLPaint::getInstance()->resume();
+    // 阻塞解复用线程
+    pauseThread();
     // 设置seek请求
     if(videoIdx >= 0 && nullptr == mediaMetaData->vMetaDatas[videoIdx].cover)
     {
-        seekPos = SDLPaint::getInstance()->getCurFrameNumber() + step ;
+        seekPos = FFMIN( FFMAX( (SDLPaint::getInstance()->curPts + step * SDLPaint::getInstance()->basePts)
+                                * av_q2d(pFormatCtx->streams[mediaMetaData->vMetaDatas[videoIdx].idx]->time_base) * AV_TIME_BASE, 0),
+                         pFormatCtx->duration);
     }
     else
     {
@@ -666,16 +690,20 @@ int ASongFFmpeg::step_to_dst_frame(int step)
         seekMin = INT64_MIN;
         seekMax = seekPos;
     }
-    seekFlag = AVSEEK_FLAG_FRAME | AVSEEK_FLAG_ANY;
+    //    seekFlag = AVSEEK_FLAG_FRAME | AVSEEK_FLAG_ANY;
+    seekFlag = AVSEEK_FLAG_BACKWARD;
     seekReq = true;
-    // 播放一帧音频
-    ASongAudioOutput::getInstance()->process();
-    // 渲染一帧
-    SDLPaint::getInstance()->getFrameYUV();
-    // 设置暂停态
-    SDLPaint::getInstance()->pause();
-    // 重启定时器使sdl不断渲染上一帧
-    SDLPaint::getInstance()->restartTimer();
+    // 唤醒解复用线程
+    resumeThread();
+    //    // 播放一帧音频
+    //    ASongAudioOutput::getInstance()->process();
+    //    // 渲染一帧
+    //    SDLPaint::getInstance()->getFrameYUV();
+    //    // 设置暂停态
+    //    SDLPaint::getInstance()->pause();
+    //    // 重启定时器使sdl不断渲染上一帧
+    //    SDLPaint::getInstance()->restartTimer();
+    return 0;
 }
 // 设置速率
 void ASongFFmpeg::setSpeed(float _speed)

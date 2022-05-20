@@ -51,6 +51,9 @@ public:
     // 是否停止
     //    std::atomic_bool stopFlag = false;
     int getCurFrameNumber();
+    //
+    int64_t basePts = 0;
+    int64_t curPts = -1;
 private:
     //    SDLPaint() = default;
     //    int got_picture = 0;
@@ -86,9 +89,7 @@ private:
     // 帧之间的延时
     int preDelay = 0;
 
-    //
-    int64_t basePts = 0;
-    int64_t curPts = -1;
+
 };
 
 #endif // SDLPAINT_H

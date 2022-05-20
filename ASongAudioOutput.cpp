@@ -172,7 +172,11 @@ void ASongAudioOutput::setSpeed(float _speed)
         soundtouch_setTempo(soundTouch, _speed);
     }
     speed = _speed;
-    resume();
+    // 暂停态下设置倍速不播放，播放态下设置倍速才重新播放
+    if(ASongFFmpeg::getInstance()->curMediaStatus == 1)
+    {
+        resume();
+    }
 }
 
 float ASongAudioOutput::getSpeed()

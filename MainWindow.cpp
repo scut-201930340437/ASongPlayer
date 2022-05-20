@@ -19,7 +19,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     //    asongFFmpeg = new ASongFFmpeg(ui->screen_widget);
     //定时器
-    myTimer->setInterval(100); //0.1秒
+    myTimer->setInterval(500); //0.1秒
     connect(myTimer, SIGNAL(timeout()), this, SLOT(handleTimeout()));
     myTimer->start();
     //鼠标移动相关
@@ -95,11 +95,11 @@ void MainWindow::on_play_button_clicked()
                 }
                 ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId());
                 ui->play_button->setStyleSheet("#play_button{\
-               image: url(:/img/pause.png);\
-           }\
-           #play_button::hover{\
-               image: url(:/img/pause2.png);\
-           }");
+   image: url(:/img/pause.png);\
+   }\
+   #play_button::hover{\
+   image: url(:/img/pause2.png);\
+   }");
                 ui->play_table->showHighLight();
                 break;
             }
@@ -107,11 +107,11 @@ void MainWindow::on_play_button_clicked()
             {
                 openFile();
                 ui->play_button->setStyleSheet("#play_button{\
-               image: url(:/img/pause.png);\
-           }\
-           #play_button::hover{\
-               image: url(:/img/pause2.png);\
-           }");
+   image: url(:/img/pause.png);\
+   }\
+   #play_button::hover{\
+   image: url(:/img/pause2.png);\
+   }");
                 break;
             }
         }
@@ -128,22 +128,22 @@ void MainWindow::on_play_button_clicked()
         {
             ASongFFmpeg::getInstance()->resume();
             ui->play_button->setStyleSheet("#play_button{\
-           image: url(:/img/pause.png);\
-       }\
-       #play_button::hover{\
-           image: url(:/img/pause2.png);\
-       }");
+   image: url(:/img/pause.png);\
+   }\
+   #play_button::hover{\
+   image: url(:/img/pause2.png);\
+   }");
             break;
         }
         case 0:
         {
             ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId());
             ui->play_button->setStyleSheet("#play_button{\
-           image: url(:/img/play.png);\
-       }\
-       #play_button::hover{\
-           image: url(:/img/play2.png);\
-       }");
+   image: url(:/img/play.png);\
+   }\
+   #play_button::hover{\
+   image: url(:/img/play2.png);\
+   }");
             break;
         }
     }
@@ -369,13 +369,12 @@ void MainWindow::dropEvent(QDropEvent *e)
 void MainWindow::saveFilePath()
 {
     //存储播放路径
-    QSettings *iniWriter=new QSettings(SavePath,QSettings::IniFormat);
+    QSettings *iniWriter = new QSettings(SavePath, QSettings::IniFormat);
     if(iniWriter)
     {
-        iniWriter->setValue(curPathKey,filePath);
-        iniWriter->setValue(pathListKey,ui->play_table->orderInfoList);
+        iniWriter->setValue(curPathKey, filePath);
+        iniWriter->setValue(pathListKey, ui->play_table->orderInfoList);
     }
-
     delete iniWriter;
 }
 
@@ -391,7 +390,7 @@ void MainWindow::readFilePath()
             filePath = "";
             return;
         }
-        QList<QString> filePathList=iniReader->value(pathListKey).value<QList<QString>>();
+        QList<QString> filePathList = iniReader->value(pathListKey).value<QList<QString>>();
         if(filePathList.empty())
         {
             //通过filePath设置播放列表
@@ -732,10 +731,10 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
             //        seek_mutex.unlock();
             //seek完后一定转入播放状态，所以按钮为”暂停“
             ui->play_button->setStyleSheet("#play_button{\
-       image: url(:/img/pause.png);\
+   image: url(:/img/pause.png);\
    }\
    #play_button::hover{\
-       image: url(:/img/pause2.png);\
+   image: url(:/img/pause2.png);\
    }");
         }
         break;
@@ -753,10 +752,10 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
             //        seek_mutex.unlock();
             //seek完后一定转入播放状态，所以按钮为”暂停“
             ui->play_button->setStyleSheet("#play_button{\
-       image: url(:/img/pause.png);\
+   image: url(:/img/pause.png);\
    }\
    #play_button::hover{\
-       image: url(:/img/pause2.png);\
+   image: url(:/img/pause2.png);\
    }");
         }
         break;
