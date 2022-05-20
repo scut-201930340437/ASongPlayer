@@ -996,10 +996,18 @@ void MainWindow::setMutipleSpeed(QAbstractButton *button)
 void MainWindow::deleteFile()
 {
     qint16 n = ui->play_table->numFile;
-    if(n == 0)
+    if(n ==0)
     {
         return;
     }
+    if( n==1 )
+    {
+        ui->play_table->clear();
+        on_stop_button_clicked();
+        return;
+    }
+
+    //如果是当前播放，切换filename,保证filename 正确
     if(ui->play_table->currentRow()==ui->play_table->playPos)
     {
         QString path = ui->play_table->getNextFile();
@@ -1007,6 +1015,7 @@ void MainWindow::deleteFile()
         {
             filePath = path;
         }
+        on_stop_button_clicked();
     }
     ui->play_table->deleteFile();
 }
