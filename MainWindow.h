@@ -102,6 +102,10 @@ private slots:
     void setMutipleSpeed(QAbstractButton *button);
 
     void deleteFile();
+    void on_forward_button_clicked();
+
+    void on_backward_button_clicked();
+
 private:
     //锁
     QMutex seek_mutex;

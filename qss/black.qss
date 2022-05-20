@@ -1,19 +1,19 @@
-/*优雅的黑�?*/
+/*优雅的黑色*/
 
-/*一些测�?*/
+/*一些测试*/
 /*
 #play_button{
     image: url(:/img/play.png);
 }*/
 
-/*给标题栏下，显示窗口上加一个边�?*/
+/*给标题栏下，显示窗口上加一个边框*/
 #show_widget{
     border-style: solid;
     border-top-color: #c5bdba;
     border-width: 1px;
 }
 
-/*标题栏按�?*/
+/*标题栏按钮*/
 #more_button{
     image: url(:/img/more.png);
 }
@@ -39,7 +39,7 @@
     image: url(:/img/minimize2.png);
 }
 
-/*控制栏按�?*/
+/*控制栏按钮*/
 #play_button{
     image: url(:/img/play.png);
 }
@@ -90,14 +90,20 @@
     image: url(:/img/multiple2.png);
     color:#e6e6e6;
 }
+#forward_button{
+    image: url(:/img/forward.png);
+}
+#backward_button{
+    image: url(:/img/backward.png);
+}
 
-/*播放窗口默认�?*/
+/*播放窗口默认色*/
 #play_widget{
     background-color:#3a3f41;
     border-radius:5px;
 }
 
-/*软件视窗主色�?*/
+/*软件视窗主色调*/
 #MainWindow {
         background-color:#000000;
         border-radius:5px;
@@ -254,7 +260,7 @@ QMenu::item {
         background-color:#000000;
 }
 
-/*进度条和音量�?*/
+/*进度条和音量条*/
 QSlider::groove:horizontal {
         height: 5px;
         background: #e67e22;
@@ -296,7 +302,7 @@ QTableWidget{
     color:white;
     border-radius: 7px;
 }
-/*设置表头属�?*/
+/*设置表头属性*/
 QHeaderView::section
 {
     background-color:#44413f;
@@ -324,7 +330,7 @@ QTableCornerButton::section
 QTableWidget::item::selected
 {
     color:black;
-    background #B2B2FF;
+    background:lightBlue;
 }
 
 /*滑块*/
