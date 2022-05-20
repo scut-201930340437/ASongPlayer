@@ -100,7 +100,7 @@ void MainWindow::on_play_button_clicked()
            #play_button::hover{\
                image: url(:/img/pause2.png);\
            }");
-                ui->play_table->showHighLight();
+
                 break;
             }
             else
@@ -316,12 +316,13 @@ void MainWindow::setListFromFilePath()
                 count_row++;
             }
         }
-        ui->play_table->setTable(neededList);
+        ui->play_table->setTable(neededList,filePath);
     }
 }
 
 void MainWindow::onPlayTableCellDoubleClicked(int row, int column)
 {
+    ui->play_table->showHighLight(ui->play_table->playPos,row);
     QString path = this->ui->play_table->getPath(row);
     if(path == "")
     {
@@ -399,7 +400,7 @@ void MainWindow::readFilePath()
         }
         else
         {
-            ui->play_table->setTable(filePathList);
+            ui->play_table->setTable(filePathList,filePath);
         }
     }
 }
@@ -563,7 +564,6 @@ void MainWindow::on_last_button_clicked()
         ASongFFmpeg::getInstance()->stop();
         ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId());
         saveFilePath();
-        ui->play_table->showHighLight();
     }
 }
 
@@ -583,7 +583,6 @@ void MainWindow::on_next_button_clicked()
         ASongFFmpeg::getInstance()->stop();
         ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId());
         saveFilePath();
-        ui->play_table->showHighLight();
     }
 }
 
@@ -820,7 +819,7 @@ void MainWindow::on_play_table_customContextMenuRequested(const QPoint &pos)
     pMenu->addAction(dlt);
     /* 连接槽函数 */
     connect(mes, SIGNAL(triggered()), ui->play_table, SLOT(showMessage()));
-    connect(dlt, SIGNAL(triggered()), ui->play_table, SLOT(deleteFile()));  //直接触发窗口的close函数
+    connect(dlt, SIGNAL(triggered()), this, SLOT(deleteFile()));  //直接触发窗口的close函数
     /* 在鼠标右键处显示菜单 */
     pMenu->exec(cursor().pos());
     /* 释放内存 */
@@ -967,4 +966,22 @@ void MainWindow::setMutipleSpeed(QAbstractButton *button)
     ASongFFmpeg::getInstance()->setSpeed(atof(button->objectName().toStdString().c_str()));
     ui->multiple_button->setText(button->objectName());
     //ToBeDone
+}
+
+void MainWindow::deleteFile()
+{
+    qint16 n = ui->play_table->numFile;
+    if(n == 0)
+    {
+        return;
+    }
+    if(ui->play_table->currentRow()==ui->play_table->playPos)
+    {
+        QString path = ui->play_table->getNextFile();
+        if(checkIfExist(path))
+        {
+            filePath = path;
+        }
+    }
+    ui->play_table->deleteFile();
 }

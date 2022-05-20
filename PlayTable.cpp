@@ -16,16 +16,15 @@ void PlayTable::init()
     this->setSelectionMode(QAbstractItemView::SingleSelection);  //设置为只能选中单个目标
     this->resize(390,480);
     this->setColumnCount(2);
-    //设置标题
-    QStringList header;
-    header<<"name"<<"duration";
-    this->setHorizontalHeaderLabels(header);
+
     this->setContextMenuPolicy(Qt::CustomContextMenu);
     this->horizontalHeader()->setVisible(false);
-
+    this->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+    this->setShowGrid(false);
+    this->setStyleSheet("selection-background-color:lightblue;"); //设置选中背景色
 }
 
-void PlayTable::setTable(QList<QString> infoList)
+void PlayTable::setTable(QList<QString> infoList,QString filePath)
 {
     //顺序播放列表
     orderInfoList=infoList;
@@ -40,7 +39,15 @@ void PlayTable::setTable(QList<QString> infoList)
 
     //生成随机列表
     generateRandomList();
-
+    for(int i=0;i<orderInfoList.size();i++)
+    {
+        if(orderInfoList[i]==filePath)
+        {
+            playPos=i;
+            showHighLight(0,playPos);
+        }
+    }
+    randomPos=order_random[playPos];
 }
 
 void PlayTable::generateRandomList()
@@ -94,31 +101,42 @@ QString PlayTable::getPath(qint16 row)
 QString PlayTable::getPrevFile()
 {
     qint16 n=orderInfoList.size();
+    qint16 pre=-1;
     if(playMode==2)
     {
+        pre=random_order[randomPos];
         randomPos=(randomPos-1+n)%n;
-        return randomList[randomPos];
+        playPos=random_order[randomPos];
     }
     else
     {
+        pre=playPos;
         playPos=(playPos-1+n)%n;
-        return orderInfoList[playPos];
+        randomPos=order_random[playPos];
     }
+    this->showHighLight(pre,playPos);
+    return orderInfoList[playPos];
 }
 
 QString PlayTable::getNextFile()
 {
     qint16 n=orderInfoList.size();
+    qint16 pre=-1;
     if(playMode==2)
     {
+        pre=random_order[randomPos];
         randomPos=(randomPos+1)%n;
-        return randomList[randomPos];
+        playPos=random_order[randomPos];
     }
     else
     {
+        pre=playPos;
         playPos=(playPos+1)%n;
-        return orderInfoList[playPos];
+        randomPos=order_random[playPos];
+
     }
+    this->showHighLight(pre,playPos);
+    return orderInfoList[playPos];
 }
 
 qint16 PlayTable::getNumFiles()
@@ -126,22 +144,12 @@ qint16 PlayTable::getNumFiles()
     return orderInfoList.size();
 }
 
-void PlayTable::showHighLight()
+void PlayTable::showHighLight(qint16 pre,qint16 cur)
 {
-    qint16 curPos=-1;
-    if(playMode==2)
+    for(int i=0;i<2;i++)
     {
-        curPos=random_order[randomPos];
-    }
-    else
-    {
-        curPos=playPos;
-    }
-    this->selectRow(curPos);
-    for(qint16 i=0;i<=2;i++)
-    {
-        qDebug()<<this->itemAt(i,curPos)->text();
-        this->itemAt(curPos,i)->setBackground(QBrush(Qt::GlobalColor::blue));
+        this->item(pre,i)->setBackground(QBrush(this->backgroundColor));
+        this->item(cur,i)->setBackground(QBrush(this->onPlayingColor));
     }
 
 }
@@ -168,6 +176,7 @@ void PlayTable::deleteFile()
         randomList.removeAt(order_random[rowIndex]);
         random_order.remove(order_random[rowIndex]);
         order_random.remove(rowIndex);
+
     }
 }
 
