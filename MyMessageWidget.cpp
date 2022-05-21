@@ -15,7 +15,7 @@ MyMessageWidget::MyMessageWidget(QWidget *parent)
     this->resize(200,120);
     this->setWindowTitle("information");
     QLabel *label = new QLabel(this);
-    label->resize(180,80);
+    label->resize(180,70);
     label->move(10,this->height()/3);
     label->setText("音视频文件不存在");
 }
