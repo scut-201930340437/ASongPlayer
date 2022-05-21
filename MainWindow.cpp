@@ -431,7 +431,7 @@ void MainWindow::handleTimeout()
     //鼠标隐藏计时
     if(QCursor().pos() == old_mouse_value)
     {
-        sustain = sustain + 1 <= 3000/myTimerTime ? sustain + 1 : 3000/myTimerTime;
+        sustain = sustain + 1 <= cursorTime/myTimerTime ? sustain + 1 : cursorTime/myTimerTime;
     }
     else
     {
@@ -441,15 +441,14 @@ void MainWindow::handleTimeout()
     //鼠标隐藏实现
     if(ui->play_widget->width() == ui->centralwidget->width())
     {
-        qDebug()<<sustain;
-        if(sustain == 3000/myTimerTime)
+        if(sustain == cursorTime/myTimerTime)
         {
             this->setCursor(QCursor(Qt::BlankCursor));
             ASongFFmpeg::getInstance()->hideCursor();
             //顺便隐藏这个控制栏
             ui->control_widget->hide();
             //顺便隐藏倍速窗口（如果有）
-            if(multipleWidget->isVisible())
+            if(multipleWidget !=nullptr && multipleWidget->isVisible())
             {
                 multipleWidget->hide();
             }

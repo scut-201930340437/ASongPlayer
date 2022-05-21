@@ -33,7 +33,7 @@ private:
     QLabel *label;
     //停留2秒就可以显示
     int sustain;
-    int stay = 4;
+    int stay = 1;
 };
 
 #endif // MYSLIDER_H

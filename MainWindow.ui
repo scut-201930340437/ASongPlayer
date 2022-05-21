@@ -345,6 +345,9 @@
               <height>0</height>
              </size>
             </property>
+            <property name="cursor">
+             <cursorShape>PointingHandCursor</cursorShape>
+            </property>
             <property name="mouseTracking">
              <bool>true</bool>
             </property>
@@ -718,6 +721,9 @@
           </item>
           <item>
            <widget class="QPushButton" name="wave_button">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="sizePolicy">
              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
               <horstretch>0</horstretch>

@@ -114,6 +114,8 @@ private slots:
 private:
     //定时器时间 ms
     int myTimerTime = 500;
+    //鼠标隐藏时间
+    int cursorTime = 3000;
     //锁
     QMutex seek_mutex;
     QMutex play_mutex;

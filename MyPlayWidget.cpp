@@ -7,7 +7,7 @@ extern QTimer* myTimer;
 MyPlayWidget::MyPlayWidget(QWidget *parent)
     : QWidget{parent}
 {
-    batten_num = 115;
+    batten_num = 100;
     max_height = this->size().height() / 2;
     interval = 1.0 * this->size().width() / (3 * batten_num + 1);
     batten_width = interval * 2;
@@ -16,7 +16,7 @@ MyPlayWidget::MyPlayWidget(QWidget *parent)
     for(int i = 0; i < batten_num; ++i)
     {
         batten_height[i] = max_height;
-        batten_height2[i] = max_height / 2;
+        batten_height2[i] = max_height;
     }
     batten_contain = 1;
     mul = 1;
@@ -87,23 +87,28 @@ void MyPlayWidget::waveDraw(const char *outBuffer,int sample_nb)
     interval = 1.0 * this->size().width() / (3 * batten_num + 1);
     batten_width = interval * 2;
     //数据大小更新
-    int i = 0,j = 0;
-    while(i < batten_num && j < batten_num)
+    if(sample_nb < batten_num)
+        batten_num = sample_nb;
+    batten_contain = sample_nb / batten_num;
+    int i = 0,j = 0,sum = 0;
+    qDebug()<<batten_contain<<sample_nb;
+    while(sum < batten_num)
     {
         if(((short*)outBuffer)[i+j] > 0)
         {
             max_num = max_num > ((short*)outBuffer)[i+j] ? max_num : ((short*)outBuffer)[i+j];
             mul = 1.0 * max_height / max_num;
             batten_height[i] = ((short*)outBuffer)[i+j] * mul;
-            ++i;
+            i += batten_contain;
         }
         else
         {
             max_num = max_num > -((short*)outBuffer)[i+j] ? max_num : -((short*)outBuffer)[i+j];
             mul = 1.0 * max_height / max_num;
             batten_height2[j] = -((short*)outBuffer)[i+j] * mul;
-            ++j;
+            j += batten_contain;
         }
+        sum++;
     }
 //    qDebug()<<i<<j<<this->size().height();
     //绘图更新
