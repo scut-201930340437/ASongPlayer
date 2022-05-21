@@ -27,7 +27,7 @@ public:
     // 初始化sdl
     int init(void *winID);
 
-    void setMetaData(const int width, const int height, const int _frameRate, const enum AVPixelFormat _pix_fmt);
+    void setMetaData(const int width, const int height, const int _frameRate, const enum AVPixelFormat _pix_fmt, const AVRational time_base);
     // 根据输出窗口重设sdl的参数
     //    void setDstWH(const int screenWidth, const int screenHeight);
     //    void createTimer();
@@ -73,6 +73,7 @@ private:
     // thread
     //    SDL_Thread *tid;
     // ffmpeg
+    AVRational tb;
     SwsContext *pSwsCtx = nullptr;
     // 上一帧，用于暂停时不停渲染上一帧
     AVFrame *preFrame = nullptr;

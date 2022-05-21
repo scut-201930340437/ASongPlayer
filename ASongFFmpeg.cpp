@@ -286,7 +286,7 @@ int ASongFFmpeg::load(QString path)
         SDLPaint::getInstance()->setMetaData(mediaMetaData->vMetaDatas[videoIdx].width,
                                              mediaMetaData->vMetaDatas[videoIdx].height,
                                              mediaMetaData->vMetaDatas[videoIdx].frame_rate,
-                                             pVCodecCtx->pix_fmt);
+                                             pVCodecCtx->pix_fmt, pFormatCtx->streams[mediaMetaData->vMetaDatas[videoIdx].idx]->time_base);
     }
     pACodec = pVCodec = nullptr;
     return 0;
@@ -561,11 +561,14 @@ void ASongFFmpeg::run()
 void ASongFFmpeg::handleSeek()
 {
     // 停止音频播放和视频渲染
-    pause();
+    if(!stepSeek)
+    {
+        pause();
+    }
     // 阻塞解码线程
     ASongAudio::getInstance()->pauseThread();
     ASongVideo::getInstance()->pauseThread();
-    // 清理packet队列
+    // 清理队列
     DataSink::getInstance()->clearList();
     if(audioIdx >= 0)
     {
@@ -596,35 +599,21 @@ void ASongFFmpeg::handleSeek()
     //    locker.unlock();
     //
     seekAudio = true;
-    if(videoIdx >= 0)
+    if(videoIdx >= 0 && nullptr == mediaMetaData->vMetaDatas[videoIdx].cover)
     {
         seekVideo = true;
     }
-    // 重启
+    // 重启解码线程
     ASongAudio::getInstance()->resumeThread();
-    if(videoIdx >= 0)
+    if(videoIdx >= 0 && nullptr == mediaMetaData->vMetaDatas[videoIdx].cover)
     {
         ASongVideo::getInstance()->resumeThread();
     }
-    if(seekFlag == AVSEEK_FLAG_BACKWARD)
+    if(!stepSeek)
     {
         resume();
     }
-    else
-    {
-        // 等待帧解码并放入队列
-        DataSink::getInstance()->frameListIsEmpty(0);
-        // 播放一帧音频
-        ASongAudioOutput::getInstance()->process();
-        // 等待帧解码并放入队列
-        DataSink::getInstance()->frameListIsEmpty(1);
-        // 渲染一帧
-        SDLPaint::getInstance()->getFrameYUV();
-        // 设置sdl暂停态
-        SDLPaint::getInstance()->pause();
-        // 重启定时器使sdl不断渲染上一帧
-        SDLPaint::getInstance()->restartTimer();
-    }
+    stepSeek = false;
     seekFlag = -1;
 }
 
@@ -644,6 +633,7 @@ int ASongFFmpeg::seek(int64_t posSec)
     seekMin = seekRel > 0 ? seekPos - seekRel + 2 : INT64_MIN;
     seekMax = seekRel < 0 ? seekPos - seekRel - 2 : INT64_MAX;
     seekFlag = AVSEEK_FLAG_BACKWARD;
+    stepSeek = false;
     seekReq = true;
     //    locker.unlock();
     // 唤醒解复用线程
@@ -658,13 +648,13 @@ int ASongFFmpeg::step_to_dst_frame(int step)
     {
         return -1;
     }
-    //    curMediaStatus = 2;
+    curMediaStatus = 2;
     // 暂停音频播放线程
-    //    ASongAudioOutput::getInstance()->pause();
-    //    // 停止渲染定时器
-    //    SDLPaint::getInstance()->stopTimer();
-    //    // 设置sdl非暂停态
-    //    SDLPaint::getInstance()->resume();
+    ASongAudioOutput::getInstance()->pause();
+    // 停止渲染定时器
+    SDLPaint::getInstance()->stopTimer();
+    // 设置sdl非暂停态
+    SDLPaint::getInstance()->resume();
     // 阻塞解复用线程
     pauseThread();
     // 设置seek请求
@@ -692,17 +682,29 @@ int ASongFFmpeg::step_to_dst_frame(int step)
     }
     //    seekFlag = AVSEEK_FLAG_FRAME | AVSEEK_FLAG_ANY;
     seekFlag = AVSEEK_FLAG_BACKWARD;
+    stepSeek = true;
     seekReq = true;
     // 唤醒解复用线程
     resumeThread();
-    //    // 播放一帧音频
-    //    ASongAudioOutput::getInstance()->process();
-    //    // 渲染一帧
-    //    SDLPaint::getInstance()->getFrameYUV();
-    //    // 设置暂停态
-    //    SDLPaint::getInstance()->pause();
-    //    // 重启定时器使sdl不断渲染上一帧
-    //    SDLPaint::getInstance()->restartTimer();
+    // 等待帧解码并放入队列
+    DataSink::getInstance()->frameListIsEmpty(0);
+    // 播放一帧音频
+    ASongAudioOutput::getInstance()->process();
+    //        qDebug() << "step";
+    if(videoIdx >= 0 && nullptr == mediaMetaData->vMetaDatas[videoIdx].cover)
+    {
+        // 等待帧解码并放入队列
+        DataSink::getInstance()->frameListIsEmpty(1);
+        // 渲染一帧，丢弃不是目标位置的帧
+        while(seekVideo)
+        {
+            SDLPaint::getInstance()->getFrameYUV();
+        }
+        // 设置sdl暂停态
+        SDLPaint::getInstance()->pause();
+        // 重启定时器使sdl不断渲染上一帧
+        SDLPaint::getInstance()->restartTimer();
+    }
     return 0;
 }
 // 设置速率

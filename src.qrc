@@ -48,5 +48,7 @@
         <file>img/multiple2.png</file>
         <file>img/fullScreenCancel.png</file>
         <file>img/fullScreenCancel2.png</file>
+        <file>img/backward.png</file>
+        <file>img/forward.png</file>
     </qresource>
 </RCC>

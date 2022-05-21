@@ -154,6 +154,7 @@ private:
     int64_t seekRel = 0;
     int64_t seekMin = INT64_MIN;
     int64_t seekMax = INT64_MAX;
+    bool stepSeek = false;
     int seekFlag = -1;
 
     //    QMutex seekMutex;

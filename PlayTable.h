@@ -25,7 +25,7 @@ public:
     QList<QString> orderInfoList;
     QList<QString> randomList;
     void init();
-    void setTable(QList<QString> infoList);
+    void setTable(QList<QString> infoList,QString filePath);
     bool isNeededFile(QFileInfo file);
     QString getPath(qint16 row);
     QString getNextFile();
@@ -33,16 +33,19 @@ public:
     //播放模式 0 只播当前 1 顺序 2 随机 3 单个循环
     qint16 playMode=1;
     qint16 getNumFiles();
-    void showHighLight();
+    void showHighLight(qint16 pre,qint16 cur);
     QString getFileNameFromPath(QString path);
+    void deleteFile();
 
 private:
     QVector<QString> neededFile={"mp3","mp4","flv","avi","mkv"};
     void generateRandomList();
+    QColor backgroundColor=QColor(68, 65, 63);
+    QColor selectColor=QColor(158, 158, 252);
+    QColor onPlayingColor=QColor(224, 224, 226);
 
 private slots:
     void showMessage();
-    void deleteFile();
 };
 
 #endif // PLAYTABLE_H

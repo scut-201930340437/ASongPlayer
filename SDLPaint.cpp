@@ -88,7 +88,7 @@ int SDLPaint::init(void *winID)
     return 0;
 }
 
-void SDLPaint::setMetaData(const int width, const int height, const int _frameRate, const enum AVPixelFormat _pix_fmt)
+void SDLPaint::setMetaData(const int width, const int height, const int _frameRate, const enum AVPixelFormat _pix_fmt, const AVRational time_base)
 {
     // 设置参数
     srcWidth = width;
@@ -96,6 +96,7 @@ void SDLPaint::setMetaData(const int width, const int height, const int _frameRa
     //    srcRate = (float)srcWidth / srcHeight;
     frameRate = _frameRate;
     pix_fmt = _pix_fmt;
+    tb = time_base;
 }
 
 //void SDLPaint::setDstWH(const int screenWidth, const int screenHeight)
@@ -142,6 +143,20 @@ void SDLPaint::getFrameYUV()
         }
         else
         {
+            // 扔掉小于seek的目标pts的帧
+            if(ASongFFmpeg::getInstance()->seekVideo)
+            {
+                if(frame->pts * av_q2d(tb) < ASongFFmpeg::getInstance()->seekTime)
+                {
+                    av_frame_free(&frame);
+                    return;
+                }
+                else
+                {
+                    ASongFFmpeg::getInstance()->seekVideo = false;
+                }
+            }
+            //
             curPts = frame->pts;
             if(basePts == 0)
             {

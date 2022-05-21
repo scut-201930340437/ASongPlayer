@@ -100,7 +100,6 @@ void MainWindow::on_play_button_clicked()
    #play_button::hover{\
    image: url(:/img/pause2.png);\
    }");
-                ui->play_table->showHighLight();
                 break;
             }
             else
@@ -316,12 +315,13 @@ void MainWindow::setListFromFilePath()
                 count_row++;
             }
         }
-        ui->play_table->setTable(neededList);
+        ui->play_table->setTable(neededList, filePath);
     }
 }
 
 void MainWindow::onPlayTableCellDoubleClicked(int row, int column)
 {
+    ui->play_table->showHighLight(ui->play_table->playPos, row);
     QString path = this->ui->play_table->getPath(row);
     if(path == "")
     {
@@ -398,7 +398,7 @@ void MainWindow::readFilePath()
         }
         else
         {
-            ui->play_table->setTable(filePathList);
+            ui->play_table->setTable(filePathList, filePath);
         }
     }
 }
@@ -445,6 +445,11 @@ void MainWindow::handleTimeout()
             ASongFFmpeg::getInstance()->hideCursor();
             //顺便隐藏这个控制栏
             ui->control_widget->hide();
+            //顺便隐藏倍速窗口（如果有）
+            if(multipleWidget->isVisible())
+            {
+                multipleWidget->hide();
+            }
         }
         else
         {
@@ -562,7 +567,6 @@ void MainWindow::on_last_button_clicked()
         ASongFFmpeg::getInstance()->stop();
         ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId());
         saveFilePath();
-        ui->play_table->showHighLight();
     }
 }
 
@@ -582,7 +586,6 @@ void MainWindow::on_next_button_clicked()
         ASongFFmpeg::getInstance()->stop();
         ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId());
         saveFilePath();
-        ui->play_table->showHighLight();
     }
 }
 
@@ -628,7 +631,7 @@ void MainWindow::on_play_widget_customContextMenuRequested(const QPoint &/*pos*/
     cmenu->resize(100, 100);
     //定义菜单项
     QAction *openFIle = new QAction(tr("打开文件"), this);
-    QMenu *playMode = new QMenu(tr("模式"), this);
+    QMenu *playMode = new QMenu(tr("播放模式 (C)"), this);
     //四种播放模式
     QAction *mode0 = new QAction(tr("单次播放"), this);
     QAction *mode1 = new QAction(tr("顺序播放"), this);
@@ -636,11 +639,13 @@ void MainWindow::on_play_widget_customContextMenuRequested(const QPoint &/*pos*/
     QAction *mode3 = new QAction(tr("单曲循环"), this);
     QAction *play = new QAction(tr(ASongFFmpeg::getInstance()->getMediaStatus() == 1 ? "暂停" : "播放"), this);
     //    QAction *play = new QAction(tr(ui->play_button->text().toStdString().c_str()), this);
-    QAction *last = new QAction(tr("上一个"), this);
-    QAction *next = new QAction(tr("下一个"), this);
-    QAction *stop = new QAction(tr("停止"), this);
-    QAction *muteOrUnmute = new QAction(tr(ui->volume_ctrl->value() == 0 ? "解除静音" : "静音"), this);
-    QAction *fullScreen = new QAction(tr(ui->play_widget->size() == this->size() ? "退出全屏" : "全屏"), this);
+    QAction *last = new QAction(tr("上一个 (Ctrl+←)"), this);
+    QAction *next = new QAction(tr("下一个 (Ctrl+→)"), this);
+    QAction *backward1 = new QAction(tr("上一帧 (A)"), this);
+    QAction *forward1 = new QAction(tr("下一帧(D)"), this);
+    QAction *stop = new QAction(tr("停止 (S)"), this);
+    QAction *muteOrUnmute = new QAction(tr(ui->volume_ctrl->value() == 0 ? "解除静音 (M)" : "静音 (M)"), this);
+    QAction *fullScreen = new QAction(tr(ui->play_widget->size() == this->size() ? "退出全屏 (Ctrl+F)" : "全屏 (Ctrl+F)"), this);
     //添加菜单项
     cmenu->addAction(openFIle);
     cmenu->addMenu(playMode);
@@ -651,6 +656,8 @@ void MainWindow::on_play_widget_customContextMenuRequested(const QPoint &/*pos*/
     cmenu->addAction(play);
     cmenu->addAction(last);
     cmenu->addAction(next);
+    cmenu->addAction(backward1);
+    cmenu->addAction(forward1);
     cmenu->addAction(stop);
     cmenu->addAction(muteOrUnmute);
     cmenu->addAction(fullScreen);
@@ -680,6 +687,8 @@ void MainWindow::on_play_widget_customContextMenuRequested(const QPoint &/*pos*/
     connect(play, SIGNAL(triggered(bool)), this, SLOT(on_play_button_clicked()));
     connect(last, SIGNAL(triggered(bool)), this, SLOT(on_last_button_clicked()));
     connect(next, SIGNAL(triggered(bool)), this, SLOT(on_next_button_clicked()));
+    connect(backward1, SIGNAL(triggered(bool)), this, SLOT(on_backward_button_clicked()));
+    connect(forward1, SIGNAL(triggered(bool)), this, SLOT(on_forward_button_clicked()));
     connect(stop, SIGNAL(triggered(bool)), this, SLOT(on_stop_button_clicked()));
     connect(muteOrUnmute, SIGNAL(triggered(bool)), this, SLOT(on_mute_button_clicked()));
     connect(fullScreen, SIGNAL(triggered(bool)), this, SLOT(on_fullScreen_button_clicked()));
@@ -708,6 +717,21 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     //单键
     switch (event->key())
     {
+        case Qt::Key_S:
+            on_stop_button_clicked();
+            break;
+        case Qt::Key_A:
+            on_backward_button_clicked();
+            break;
+        case Qt::Key_D:
+            on_forward_button_clicked();
+            break;
+        case Qt::Key_C:
+            on_playmode_button_clicked();
+            break;
+        case Qt::Key_M:
+            on_mute_button_clicked();
+            break;
         case Qt::Key_Space:
             on_play_button_clicked();
             break;
@@ -819,7 +843,7 @@ void MainWindow::on_play_table_customContextMenuRequested(const QPoint &pos)
     pMenu->addAction(dlt);
     /* 连接槽函数 */
     connect(mes, SIGNAL(triggered()), ui->play_table, SLOT(showMessage()));
-    connect(dlt, SIGNAL(triggered()), ui->play_table, SLOT(deleteFile()));  //直接触发窗口的close函数
+    connect(dlt, SIGNAL(triggered()), this, SLOT(deleteFile()));  //直接触发窗口的close函数
     /* 在鼠标右键处显示菜单 */
     pMenu->exec(cursor().pos());
     /* 释放内存 */
@@ -941,6 +965,8 @@ void MainWindow::on_multiple_button_clicked()
     for (int i = 0; i < 6; ++i)
     {
         QRadioButton *pButton = new QRadioButton(multipleWidget);
+        //焦点取消
+        pButton->setFocusPolicy(Qt::NoFocus);
         // 设置文本
         pButton->setText(QString::fromUtf8("%1 倍速").arg(vector[i]));
         //取个名字
@@ -967,3 +993,35 @@ void MainWindow::setMutipleSpeed(QAbstractButton *button)
     ui->multiple_button->setText(button->objectName());
     //ToBeDone
 }
+
+void MainWindow::deleteFile()
+{
+    qint16 n = ui->play_table->numFile;
+    if(n == 0)
+    {
+        return;
+    }
+    if(ui->play_table->currentRow() == ui->play_table->playPos)
+    {
+        QString path = ui->play_table->getNextFile();
+        if(checkIfExist(path))
+        {
+            filePath = path;
+        }
+    }
+    ui->play_table->deleteFile();
+}
+
+void MainWindow::on_forward_button_clicked()
+{
+    ASongFFmpeg::getInstance()->step_to_dst_frame(1);
+    //    qDebug() << "下一帧";
+}
+
+
+void MainWindow::on_backward_button_clicked()
+{
+    ASongFFmpeg::getInstance()->step_to_dst_frame(-1);
+    //    qDebug() << "上一帧";
+}
+

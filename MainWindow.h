@@ -100,6 +100,12 @@ private slots:
     void setPlayMode(qint16 mode_index);
     //设置倍速
     void setMutipleSpeed(QAbstractButton *button);
+
+    void deleteFile();
+    void on_forward_button_clicked();
+
+    void on_backward_button_clicked();
+
 private:
     //锁
     QMutex seek_mutex;

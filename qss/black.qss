@@ -90,6 +90,12 @@
     image: url(:/img/multiple2.png);
     color:#e6e6e6;
 }
+#forward_button{
+    image: url(:/img/forward.png);
+}
+#backward_button{
+    image: url(:/img/backward.png);
+}
 
 /*播放窗口默认色*/
 #play_widget{
@@ -324,7 +330,7 @@ QTableCornerButton::section
 QTableWidget::item::selected
 {
     color:black;
-    background:#EFF4FF;
+    background:lightBlue;
 }
 
 /*滑块*/
