@@ -172,7 +172,11 @@ void ASongAudioOutput::setSpeed(float _speed)
         soundtouch_setTempo(soundTouch, _speed);
     }
     speed = _speed;
-    resume();
+    // 暂停态下设置倍速不播放，播放态下设置倍速才重新播放
+    if(ASongFFmpeg::getInstance()->curMediaStatus == 1)
+    {
+        resume();
+    }
 }
 
 float ASongAudioOutput::getSpeed()
@@ -329,6 +333,10 @@ void ASongAudioOutput::process()
             }
             // 更新时钟
             ASongAudio::getInstance()->setAudioClock(frame, duration);
+            // 交给前端绘制波形图
+            char *dataBuffer = (char *)malloc(out_size);
+            memcpy((void*)dataBuffer, (const void*)outBuffer, out_size);
+            emit playAudio((const char*)dataBuffer, out_size / (2 * channels));
             // 写入设备
             audioIO->write((const char*)outBuffer, out_size);
             //            }
@@ -373,6 +381,10 @@ void ASongAudioOutput::process()
             }
             // 更新时钟
             ASongAudio::getInstance()->setAudioClock(frame, duration);
+            // 交给前端绘制波形图
+            char *dataBuffer = (char *)malloc(out_size);
+            memcpy((void*)dataBuffer, (const void*)frame->data, out_size);
+            emit playAudio((const char*)dataBuffer, out_size / (2 * channels));
             // 写入设备
             audioIO->write((const char*)frame->data, out_size);
             av_frame_free(&frame);

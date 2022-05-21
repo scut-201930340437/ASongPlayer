@@ -199,6 +199,7 @@ void ASongAudio::run()
             packet = DataSink::getInstance()->takeNextPacket(0);
             if(nullptr != packet)
             {
+                //                qDebug() << "audiothread:get";
                 // flushpkt
                 if(packet == ASongFFmpeg::getInstance()->flushPacket)
                 {
@@ -294,6 +295,7 @@ void ASongAudio::run()
             }
             else
             {
+                //                qDebug() << "audiothread:noget";
                 QMutexLocker locker(&ASongFFmpeg::getInstance()->stopMutex);
                 if(ASongFFmpeg::getInstance()->stopFlag)
                 {

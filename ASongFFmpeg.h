@@ -101,6 +101,9 @@ public:
     // 显示光标
     void showCursor();
 
+    // 播放状态: -1 - 没有文件  0-停止  1-播放   2-暂停
+    std::atomic_int curMediaStatus = -1;
+
     //flush_pkt
     AVPacket *flushPacket;
     QMutex stopMutex;
@@ -112,6 +115,9 @@ public:
     bool seekVideo = false;
     double seekTime = 0.0;
 
+    // 逐帧所用的条件变量
+    QWaitCondition aFrameCond;
+    QWaitCondition vFrameCond;
 private:
     // thread
     void run() override;
@@ -120,8 +126,6 @@ private:
     // 跳转
     void handleSeek();
 
-    // 播放状态: -1 - 没有文件  0-停止  1-播放   2-暂停
-    std::atomic_int curMediaStatus = -1;
 
     // metaData
     //MediaMetaDate mediaMetaData;
@@ -150,6 +154,7 @@ private:
     int64_t seekRel = 0;
     int64_t seekMin = INT64_MIN;
     int64_t seekMax = INT64_MAX;
+    bool stepSeek = false;
     int seekFlag = -1;
 
     //    QMutex seekMutex;

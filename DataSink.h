@@ -18,7 +18,6 @@ class DataSink
 public:
 
     DataSink();
-    ~DataSink();
     static DataSink* getInstance();
 
     static const qsizetype maxAPacketListLength = 100;
@@ -54,7 +53,13 @@ public:
     void clearAFrameList();
     void clearVFrameList();
 
-    //    bool packListIsEmpty(int type);
+    void clearList();
+
+    void frameListIsEmpty(int type);
+
+
+
+
 
     //    *audioFraEmpSem = nullptr, *videoFraEmpSem = nullptr;
     //    *videoFraSem = nullptr;
@@ -80,17 +85,15 @@ private:
     // frameList是共享资源，需要加锁
     QMutex aFrameListMutex;
     QMutex vFrameListMutex;
-
     // 信号量
     //    QSemaphore *audioPackSem = nullptr, *videoPackSem = nullptr;
     //    *audioFraSem = nullptr;
     // 条件变量
-    //    QWaitCondition *audioPackCond = nullptr, *videoPackCond = nullptr, *audioFraCond = nullptr, *videoFraCond = nullptr;
+    //    QWaitCondition *audioPackCond = nullptr, *videoPackCond = nullptr;
+    QWaitCondition *audioFraCond = nullptr, *videoFraCond = nullptr;
     // 条件变量对应的锁
     //    QMutex audioPackCond_mutex, videoPackCond_mutex;
     //    QMutex audioFraCond_mutex, videoFraCond_mutex;
-
-
 };
 
 #endif // DATASINK_H

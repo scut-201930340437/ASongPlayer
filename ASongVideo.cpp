@@ -177,20 +177,6 @@ void ASongVideo::stop()
     //    qDebug() << 3;
 }
 
-//void ASongVideo::pause()
-//{
-//    QMutexLocker locker(&_pauseMutex);
-//    if(!pauseFlag && QThread::isRunning())
-//    {
-//        needPaused = true;
-//        // 解码线程可能因为未渲染的frame队列过长而阻塞，先唤醒
-//        DataSink::getInstance()->wakeVideoWithFraCond();
-//        pauseCond.wait(&_pauseMutex);
-//        locker.relock();
-//    }
-//    qDebug() << 3;
-//}
-
 void ASongVideo::resume()
 {
     frameTimer = av_gettime_relative() / 1000000.0; // 更新起始时间基准
@@ -280,19 +266,19 @@ void ASongVideo::run()
                     {
                         frame->opaque = (double*)new double(getPts(frame));
                         // 扔掉小于seek的目标pts的帧
-                        if(ASongFFmpeg::getInstance()->seekVideo)
-                        {
-                            if(videoClock < ASongFFmpeg::getInstance()->seekTime)
-                            {
-                                av_packet_free(&packet);
-                                av_frame_free(&frame);
-                                continue;
-                            }
-                            else
-                            {
-                                ASongFFmpeg::getInstance()->seekVideo = false;
-                            }
-                        }
+                        //                        if(ASongFFmpeg::getInstance()->seekVideo)
+                        //                        {
+                        //                            if(videoClock < ASongFFmpeg::getInstance()->seekTime)
+                        //                            {
+                        //                                av_packet_free(&packet);
+                        //                                av_frame_free(&frame);
+                        //                                continue;
+                        //                            }
+                        //                            else
+                        //                            {
+                        //                                ASongFFmpeg::getInstance()->seekVideo = false;
+                        //                            }
+                        //                        }
                         //
                         DataSink::getInstance()->appendFrameList(1, frame);
                         // 如果是带音频的封面，该线程只做一次循环
@@ -329,18 +315,18 @@ void ASongVideo::run()
                             }
                             frame->opaque = (double*)new double(getPts(frame));
                             // 扔掉小于seek的目标pts的帧
-                            if(ASongFFmpeg::getInstance()->seekVideo)
-                            {
-                                if(videoClock < ASongFFmpeg::getInstance()->seekTime)
-                                {
-                                    av_frame_free(&frame);
-                                    continue;
-                                }
-                                else
-                                {
-                                    ASongFFmpeg::getInstance()->seekVideo = false;
-                                }
-                            }
+                            //                            if(ASongFFmpeg::getInstance()->seekVideo)
+                            //                            {
+                            //                                if(videoClock < ASongFFmpeg::getInstance()->seekTime)
+                            //                                {
+                            //                                    av_frame_free(&frame);
+                            //                                    continue;
+                            //                                }
+                            //                                else
+                            //                                {
+                            //                                    ASongFFmpeg::getInstance()->seekVideo = false;
+                            //                                }
+                            //                            }
                             //
                             DataSink::getInstance()->appendFrameList(1, frame);
                         }
@@ -354,19 +340,19 @@ void ASongVideo::run()
                             {
                                 frame->opaque = (double*)new double(getPts(frame));
                                 // 扔掉小于seek的目标pts的帧
-                                if(ASongFFmpeg::getInstance()->seekVideo)
-                                {
-                                    if(videoClock < ASongFFmpeg::getInstance()->seekTime)
-                                    {
-                                        av_packet_free(&packet);
-                                        av_frame_free(&frame);
-                                        continue;
-                                    }
-                                    else
-                                    {
-                                        ASongFFmpeg::getInstance()->seekVideo = false;
-                                    }
-                                }
+                                //                                if(ASongFFmpeg::getInstance()->seekVideo)
+                                //                                {
+                                //                                    if(videoClock < ASongFFmpeg::getInstance()->seekTime)
+                                //                                    {
+                                //                                        av_packet_free(&packet);
+                                //                                        av_frame_free(&frame);
+                                //                                        continue;
+                                //                                    }
+                                //                                    else
+                                //                                    {
+                                //                                        ASongFFmpeg::getInstance()->seekVideo = false;
+                                //                                    }
+                                //                                }
                                 //
                                 DataSink::getInstance()->appendFrameList(1, frame);
                             }

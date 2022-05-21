@@ -27,7 +27,7 @@ public:
     // 初始化sdl
     int init(void *winID);
 
-    void setMetaData(const int width, const int height, const int _frameRate, const enum AVPixelFormat _pix_fmt);
+    void setMetaData(const int width, const int height, const int _frameRate, const enum AVPixelFormat _pix_fmt, const AVRational time_base);
     // 根据输出窗口重设sdl的参数
     //    void setDstWH(const int screenWidth, const int screenHeight);
     //    void createTimer();
@@ -51,6 +51,9 @@ public:
     // 是否停止
     //    std::atomic_bool stopFlag = false;
     int getCurFrameNumber();
+    //
+    int64_t basePts = 0;
+    int64_t curPts = -1;
 private:
     //    SDLPaint() = default;
     //    int got_picture = 0;
@@ -70,6 +73,7 @@ private:
     // thread
     //    SDL_Thread *tid;
     // ffmpeg
+    double tb;
     SwsContext *pSwsCtx = nullptr;
     // 上一帧，用于暂停时不停渲染上一帧
     AVFrame *preFrame = nullptr;
@@ -86,9 +90,7 @@ private:
     // 帧之间的延时
     int preDelay = 0;
 
-    //
-    int64_t basePts = 0;
-    int64_t curPts = -1;
+
 };
 
 #endif // SDLPAINT_H

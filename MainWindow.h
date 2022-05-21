@@ -17,6 +17,7 @@
 #include <QButtonGroup>
 #include <QSettings>
 #include <QString>
+#include <QPainter>
 
 
 
