@@ -50,10 +50,11 @@ public:
     //    int getFrameRate();
     // 是否停止
     //    std::atomic_bool stopFlag = false;
-    int getCurFrameNumber();
+    //    int getCurFrameNumber();
     //
-    int64_t basePts = 0;
-    int64_t curPts = -1;
+    double basePts = 0;
+    double curPts = -1;
+    double frameDelay = 0.0;
 private:
     //    SDLPaint() = default;
     //    int got_picture = 0;

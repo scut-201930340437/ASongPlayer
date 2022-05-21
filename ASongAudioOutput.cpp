@@ -239,7 +239,10 @@ void ASongAudioOutput::resume()
     QMutexLocker locker(&_pauseMutex);
     if(pauseFlag && QThread::isRunning())
     {
-        pauseReq = false;
+        if(!ASongFFmpeg::getInstance()->stepSeek)
+        {
+            pauseReq = false;
+        }
         pauseCond.wakeAll();
         pauseCond.wait(&_pauseMutex);
     }
@@ -401,21 +404,8 @@ void ASongAudioOutput::process()
     }
 }
 
-
 int ASongAudioOutput::getCurFrameNumber()
 {
     return curPictureNumber;
 }
-//bool ASongAudioOutput::isPaused()
-//{
-//    QMutexLocker locker(&_pauseMutex);
-//    if(pauseFlag)
-//    {
-//        return true;
-//    }
-//    else
-//    {
-//        return false;
-//    }
-//}
 

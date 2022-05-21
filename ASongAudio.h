@@ -39,7 +39,7 @@ public:
     void initParaAndSwr();
 
     // 初始化元数据，从ffmpeg的load中读取
-    void setMetaData(AVFormatContext *_pFormatCtx, AVCodecContext *_pCodecCtx, int _audioIdx);
+    void setMetaData(AVFormatContext * _pFormatCtx, AVCodecContext * _pCodecCtx, const int _audioIdx);
     // 设置音频时钟
     void setAudioClock(AVFrame *frame, const double duration);
     // 设置需要解码
@@ -95,7 +95,7 @@ private:
     // 时钟，音频为准
     double audioClock = 0.0;
     // 时基
-    AVRational tb;
+    double tb;
 
     // stream_index
     int audioIdx = -1;

@@ -47,6 +47,7 @@ public:
     std::atomic_bool stopFlag = false;
     // 暂停标志
     std::atomic_bool pauseFlag = false;
+
 private:
     //    ASongVideo() = default;
 

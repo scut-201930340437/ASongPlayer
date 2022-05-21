@@ -111,6 +111,7 @@ public:
     std::atomic_bool stopFlag = true;
     std::atomic_bool pauseFlag = false;
     // 有seek请求
+    bool stepSeek = false;
     bool seekAudio = false;
     bool seekVideo = false;
     double seekTime = 0.0;
@@ -143,10 +144,6 @@ private:
     //ffmpeg
     AVFormatContext *pFormatCtx = nullptr;
     int	videoIdx = -1, audioIdx = -1;
-    //倍速
-    //    float speed = 1.0;
-    //    QString path = "";
-    //    uint8_t *out_buffer = nullptr;
     // seek
     //    QMutex seekMutex;
     bool seekReq = false;
@@ -154,11 +151,8 @@ private:
     int64_t seekRel = 0;
     int64_t seekMin = INT64_MIN;
     int64_t seekMax = INT64_MAX;
-    bool stepSeek = false;
+
     int seekFlag = -1;
-
-    //    QMutex seekMutex;
-
 };
 
 

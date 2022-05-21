@@ -144,11 +144,10 @@ void SDLPaint::getFrameYUV()
         else
         {
             // 扔掉小于seek的目标pts的帧
-            if(ASongFFmpeg::getInstance()->seekVideo)
+            if(ASongFFmpeg::getInstance()->stepSeek && ASongFFmpeg::getInstance()->seekVideo)
             {
                 if(frame->pts * tb < ASongFFmpeg::getInstance()->seekTime)
                 {
-                    qDebug() << "release";
                     av_frame_free(&frame);
                     return;
                 }
@@ -158,7 +157,12 @@ void SDLPaint::getFrameYUV()
                 }
             }
             //
-            curPts = frame->pts;
+            //            curPts = *((double*)frame->opaque);
+            //            frameDelay = tb;
+            //            frameDelay *= (1.0 + 0.5 * frame->repeat_pict);
+            //            curPts = frame->best_effort_timestamp;
+            //            qDebug() << curPts;
+            curPts = frame->pts * tb;
             if(basePts == 0)
             {
                 basePts = curPts;
@@ -316,14 +320,14 @@ void SDLPaint::stopTimer()
     }
 }
 
-int SDLPaint::getCurFrameNumber()
-{
-    if(basePts == 0)
-    {
-        return 0;
-    }
-    return curPts / basePts;
-}
+//int SDLPaint::getCurFrameNumber()
+//{
+//    if(basePts == 0)
+//    {
+//        return 0;
+//    }
+//    return curPts / basePts;
+//}
 //void SDLPaint::paintNextFrame()
 //{
 //    //    QTimer::singleShot()
