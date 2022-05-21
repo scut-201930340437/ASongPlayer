@@ -26,6 +26,8 @@ void PlayTable::init()
 
 void PlayTable::setTable(QList<QString> infoList,QString filePath)
 {
+    order_random.resize(infoList.size());
+    random_order.resize(infoList.size());
     //顺序播放列表
     orderInfoList=infoList;
     this->clearContents();
@@ -53,16 +55,13 @@ void PlayTable::setTable(QList<QString> infoList,QString filePath)
 void PlayTable::generateRandomList()
 {
     randomList.clear();
-    random_order.clear();
-    order_random.clear();
-
     //根据orderInfoLst生成RandomList
     numFile=orderInfoList.size();
-    QVector<int> origin_pos(numFile);
+    //记录原来的位置
     for(qint16 i=0;i<numFile;i++)
     {
         randomList.append(orderInfoList[i]);
-        origin_pos[i]=i;
+        random_order[i]=i;
     }
     quint32 seed = quint32(QDateTime::currentDateTime().toSecsSinceEpoch());
     QRandomGenerator generator(seed);
@@ -71,12 +70,11 @@ void PlayTable::generateRandomList()
         int rand = generator.bounded(i, numFile);
 
         qSwap(randomList[i],randomList[rand]);
-        qSwap(origin_pos[i],origin_pos[rand]);
+        qSwap(random_order[i],random_order[rand]);
     }
     for(qint16 i=0;i<numFile;i++)
     {
-        random_order[i]=origin_pos[i];
-        order_random[origin_pos[i]]=i;
+        order_random[random_order[i]]=i;
     }
 }
 
@@ -168,16 +166,34 @@ void PlayTable::showMessage()
 }
 void PlayTable::deleteFile()
 {
-    int rowIndex = this->currentRow();
-    if (rowIndex != -1)
-    {
-        this->removeRow(rowIndex);
-        orderInfoList.removeAt(rowIndex);
-        randomList.removeAt(order_random[rowIndex]);
-        random_order.remove(order_random[rowIndex]);
-        order_random.remove(rowIndex);
-
+    //保证playPos和randomPos，还有两种映射的正确
+    int orderDltRowIndex = this->currentRow();
+    int randomDltRowIndex = order_random[orderDltRowIndex];
+    if (orderDltRowIndex != -1)
+    {   //删除顺序列表，随机列表，两个哈希的相应映射对
+        this->removeRow(orderDltRowIndex);
+        orderInfoList.removeAt(orderDltRowIndex);
+        randomList.removeAt(randomDltRowIndex);
+        order_random.removeAt(orderDltRowIndex);
+        random_order.removeAt(randomDltRowIndex);
+        //修正哈希映射
+        for(int i=0;i<orderInfoList.size();i++)
+        {
+            if(random_order[i]>=orderDltRowIndex)
+                random_order[i]--;
+        }
+        for(int i=0;i<orderInfoList.size();i++)
+        {
+            if(order_random[i]>=randomDltRowIndex)
+                order_random[i]--;
+        }
     }
+
+    if(playPos>orderDltRowIndex)
+    {
+        playPos--;
+    }
+    randomPos=order_random[playPos];
 }
 
 QString PlayTable::getFileNameFromPath(QString path)

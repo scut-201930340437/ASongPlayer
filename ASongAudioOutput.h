@@ -116,6 +116,7 @@ private:
 
 signals:
     void playFinish();
+    void playAudio(const char *outBuffer, int sample_nb);
 };
 
 #endif // ASONGAUDIOOUTPUT_H

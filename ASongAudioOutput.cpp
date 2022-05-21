@@ -333,6 +333,8 @@ void ASongAudioOutput::process()
             }
             // 更新时钟
             ASongAudio::getInstance()->setAudioClock(frame, duration);
+            // 交给前端绘制波形图
+            emit playAudio((const char*)outBuffer, out_size / (2 * channels));
             // 写入设备
             audioIO->write((const char*)outBuffer, out_size);
             //            }
@@ -377,6 +379,8 @@ void ASongAudioOutput::process()
             }
             // 更新时钟
             ASongAudio::getInstance()->setAudioClock(frame, duration);
+            // 交给前端绘制波形图
+            emit playAudio((const char*)frame->data, out_size / (2 * channels));
             // 写入设备
             audioIO->write((const char*)frame->data, out_size);
             av_frame_free(&frame);

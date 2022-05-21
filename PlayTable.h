@@ -20,8 +20,10 @@ public:
     qint16 playPos;
     qint16 randomPos;
     qint16 numFile=0;
-    QMap<int,int> order_random;
-    QMap<int,int> random_order;
+    //key为顺序列表的下标，value为随机列表的下标
+    QList<qint16> order_random;
+    //同理
+    QList<qint16> random_order;
     QList<QString> orderInfoList;
     QList<QString> randomList;
     void init();
