@@ -40,7 +40,6 @@ MyMessageWidget::MyMessageWidget(MediaMetaData *mediaMetaData,QWidget *parent)
     {
         QString filename = ":/img/defaultCover.jpg";
         QImage image(filename);
-        qDebug()<<image;
         label->setPixmap(QPixmap::fromImage(image));
     }
 

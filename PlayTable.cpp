@@ -1,6 +1,8 @@
 #include "PlayTable.h"
 #include "MyMessageWidget.h"
 
+MyMessageWidget * test;
+
 PlayTable::PlayTable(QWidget *parent)
     : QTableWidget(parent)
 {
@@ -161,6 +163,7 @@ void PlayTable::showMessage()
         MediaMetaData * mediaMetaData=ASongFFmpeg::getInstance()->openMediaInfo(path);
         MyMessageWidget * myMessageWidget = new MyMessageWidget(mediaMetaData);
         myMessageWidget->show();
+        test=myMessageWidget;
 
     }
 }
@@ -194,6 +197,7 @@ void PlayTable::deleteFile()
         playPos--;
     }
     randomPos=order_random[playPos];
+    test->show();
 }
 
 QString PlayTable::getFileNameFromPath(QString path)

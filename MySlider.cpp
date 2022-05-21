@@ -64,7 +64,10 @@ void MySlider::mouseMoveEvent(QMouseEvent *event)
             label->setPixmap(QPixmap::fromImage(img));//在label显示图片
             //位置偏差
             QPoint *p = new QPoint(event->pos().x() - 0.5*preview->size().width(),-1*preview->size().height());
-            preview->move(this->parentWidget()->parentWidget()->pos() + this->parentWidget()->pos() + this->pos() + *p);
+            if(this->parentWidget()->parentWidget()->pos().x() + this->parentWidget()->pos().x() + this->pos().x()+ event->pos().x() - 0.5*preview->size().width()>0)
+            {
+                preview->move(this->parentWidget()->parentWidget()->pos() + this->parentWidget()->pos() + this->pos() + *p);
+            }
             preview->setStyleSheet("background:white");
             preview->show();
         }
