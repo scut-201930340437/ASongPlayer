@@ -19,6 +19,8 @@
 #include <QString>
 #include <QPainter>
 
+#include "MyPlayWidget.h"
+
 
 
 QT_BEGIN_NAMESPACE
@@ -107,6 +109,8 @@ private slots:
 
     void on_backward_button_clicked();
 
+    void on_wave_button_clicked();
+
 private:
     //锁
     QMutex seek_mutex;
@@ -118,6 +122,8 @@ private:
     //倍速窗口
     QWidget *multipleWidget;
     QButtonGroup *m_pButtonGroup;
+    //波形图窗口
+    MyPlayWidget *waveWidget;
 
     Ui::MainWindow *ui;
     QString filePath;

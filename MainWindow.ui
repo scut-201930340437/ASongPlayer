@@ -216,7 +216,7 @@
         <number>0</number>
        </property>
        <item>
-        <widget class="MyPlayWidget" name="play_widget" native="true">
+        <widget class="QWidget" name="play_widget" native="true">
          <property name="sizePolicy">
           <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
            <horstretch>0</horstretch>
@@ -717,6 +717,31 @@
            </widget>
           </item>
           <item>
+           <widget class="QPushButton" name="wave_button">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>40</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>40</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>波</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <spacer name="c2">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -813,12 +838,6 @@
    <class>VolumeSlider</class>
    <extends>QSlider</extends>
    <header>VolumeSlider.h</header>
-  </customwidget>
-  <customwidget>
-   <class>MyPlayWidget</class>
-   <extends>QWidget</extends>
-   <header>myplaywidget.h</header>
-   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>

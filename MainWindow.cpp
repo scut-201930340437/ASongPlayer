@@ -27,6 +27,8 @@ MainWindow::MainWindow(QWidget *parent)
     sustain = 0;
     //倍速窗口
     multipleWidget = nullptr;
+    //波形图窗口
+    waveWidget = nullptr;
     //倍速按钮组
     m_pButtonGroup = nullptr;
     connect(this->ui->play_table, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(onPlayTableCellDoubleClicked(int, int)));
@@ -1031,5 +1033,21 @@ void MainWindow::on_backward_button_clicked()
 {
     ASongFFmpeg::getInstance()->step_to_dst_frame(-1);
     //    qDebug() << "上一帧";
+}
+
+
+void MainWindow::on_wave_button_clicked()
+{
+    //关闭或重新打开
+    if(waveWidget != nullptr)
+    {
+        waveWidget->isVisible() ? waveWidget->hide() : waveWidget->show();
+        qDebug()<<1;
+        return;
+    }
+    //第一次生成
+    waveWidget = new MyPlayWidget();
+    waveWidget->resize(300, 600);
+    waveWidget->show();
 }
 

@@ -22,13 +22,15 @@ public:
     QTime randtime;
     explicit MyPlayWidget(QWidget *parent = nullptr);
 
-    void test();
 
 protected:
     void paintEvent(QPaintEvent *);
     void mouseMoveEvent(QMouseEvent *event);
 
 signals:
+
+private slots:
+    void waveDraw(const char *outBuffer,int sample_nb);
 
 };
 
