@@ -19,7 +19,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     //    asongFFmpeg = new ASongFFmpeg(ui->screen_widget);
     //定时器
-    myTimer->setInterval(500); //0.1秒
+    myTimer->setInterval(myTimerTime); //0.5秒
     connect(myTimer, SIGNAL(timeout()), this, SLOT(handleTimeout()));
     myTimer->start();
     //鼠标移动相关
@@ -27,6 +27,8 @@ MainWindow::MainWindow(QWidget *parent)
     sustain = 0;
     //倍速窗口
     multipleWidget = nullptr;
+    //波形图窗口
+    waveWidget = nullptr;
     //倍速按钮组
     m_pButtonGroup = nullptr;
     connect(this->ui->play_table, SIGNAL(cellDoubleClicked(int, int)), this, SLOT(onPlayTableCellDoubleClicked(int, int)));
@@ -429,7 +431,7 @@ void MainWindow::handleTimeout()
     //鼠标隐藏计时
     if(QCursor().pos() == old_mouse_value)
     {
-        sustain = sustain + 1 <= 30 ? sustain + 1 : 30;
+        sustain = sustain + 1 <= 3000/myTimerTime ? sustain + 1 : 3000/myTimerTime;
     }
     else
     {
@@ -439,7 +441,8 @@ void MainWindow::handleTimeout()
     //鼠标隐藏实现
     if(ui->play_widget->width() == ui->centralwidget->width())
     {
-        if(sustain == 30)
+        qDebug()<<sustain;
+        if(sustain == 3000/myTimerTime)
         {
             this->setCursor(QCursor(Qt::BlankCursor));
             ASongFFmpeg::getInstance()->hideCursor();
@@ -630,7 +633,7 @@ void MainWindow::on_play_widget_customContextMenuRequested(const QPoint &/*pos*/
     QMenu *cmenu = new QMenu(ui->title_widget);
     cmenu->resize(100, 100);
     //定义菜单项
-    QAction *openFIle = new QAction(tr("打开文件"), this);
+    QAction *openFIle = new QAction(tr("打开文件 (Ctrl+I)"), this);
     QMenu *playMode = new QMenu(tr("播放模式 (C)"), this);
     //四种播放模式
     QAction *mode0 = new QAction(tr("单次播放"), this);
@@ -710,6 +713,9 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
                 break;
             case Qt::Key_F:
                 on_fullScreen_button_clicked();
+                break;
+            case Qt::Key_I:
+                openFile();
                 break;
         }
         return;
@@ -1031,5 +1037,21 @@ void MainWindow::on_backward_button_clicked()
 {
     ASongFFmpeg::getInstance()->step_to_dst_frame(-1);
     //    qDebug() << "上一帧";
+}
+
+
+void MainWindow::on_wave_button_clicked()
+{
+    //关闭或重新打开
+    if(waveWidget != nullptr)
+    {
+        waveWidget->isVisible() ? waveWidget->hide() : waveWidget->show();
+        return;
+    }
+    //第一次生成
+    waveWidget = new MyPlayWidget();
+    waveWidget->resize(300, 600);
+    waveWidget->setFocusPolicy(Qt::NoFocus);
+    waveWidget->show();
 }
 

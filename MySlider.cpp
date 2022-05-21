@@ -13,7 +13,7 @@ MySlider::MySlider(QWidget *parent):QSlider (parent)
          sustain = sustain+1<stay?sustain+1:stay;
      });
      preview = new QWidget(this->parentWidget()->parentWidget()->parentWidget());//排到曾祖父那边了
-     preview->resize(100,100);
+     preview->resize(165,120);
      label=new QLabel(preview);
      label->resize(preview->size());
      preview->hide();
@@ -60,12 +60,20 @@ void MySlider::mouseMoveEvent(QMouseEvent *event)
         QImage img = VideoPreview::getInstance()->getPreviewImg();
         if(!img.isNull())
         {
-            img=img.scaled(preview->size());
-            label->setPixmap(QPixmap::fromImage(img));//在label显示图片
+            QPixmap pixmap = QPixmap::fromImage(img);
+            pixmap = pixmap.scaled(preview->width(), preview->height(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+            label->setPixmap(pixmap);//在label显示图片
             //位置偏差
             QPoint *p = new QPoint(event->pos().x() - 0.5*preview->size().width(),-1*preview->size().height());
-            preview->move(this->parentWidget()->parentWidget()->pos() + this->parentWidget()->pos() + this->pos() + *p);
-            preview->setStyleSheet("background:white");
+            if(this->parentWidget()->parentWidget()->pos().x() + this->parentWidget()->pos().x() + this->pos().x()+ event->pos().x() - 0.5*preview->size().width()>0)
+            {
+                preview->move(this->parentWidget()->parentWidget()->pos() + this->parentWidget()->pos() + this->pos() + *p);
+            }
+            else
+            {
+                preview->move(0,(this->parentWidget()->parentWidget()->pos() + this->parentWidget()->pos() + this->pos() + *p).y());
+            }
+            preview->setStyleSheet("background:black");
             preview->show();
         }
 
