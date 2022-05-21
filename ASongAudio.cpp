@@ -33,12 +33,12 @@ void ASongAudio::initParaAndSwr()
 }
 
 /*设置成员变量*/
-void ASongAudio::setMetaData(AVFormatContext * _pFormatCtx, AVCodecContext * _pCodecCtx, int _audioIdx)
+void ASongAudio::setMetaData(AVFormatContext * _pFormatCtx, AVCodecContext * _pCodecCtx, const int _audioIdx)
 {
     pFormatCtx = _pFormatCtx;
     pCodecCtx = _pCodecCtx;
     audioIdx = _audioIdx;
-    tb = pFormatCtx->streams[audioIdx]->time_base;
+    tb = av_q2d(pFormatCtx->streams[audioIdx]->time_base);
 }
 // 设置时钟---------------------
 //void ASongAudio::setAudioClock(AVPacket *packet)
@@ -55,12 +55,12 @@ void ASongAudio::setAudioClock(AVFrame * frame, const double duration)
 {
     if(frame->pts != AV_NOPTS_VALUE)
     {
-        audioClock = frame->pts * av_q2d(tb);
+        audioClock = frame->pts * tb;
     }
     // 一个packet可能包含多个frame，可能导致packet->pts<真正播放的pts
     // 因此需要加上该packet的数据能够播放多长时间
     //    audioClock += packet->duration * av_q2d(tb);
-    audioClock += duration;
+    audioClock += (duration * ASongFFmpeg::getInstance()->getSpeed());
 }
 //void ASongAudio::setNeededAudioCode()
 //{
@@ -207,18 +207,19 @@ void ASongAudio::run()
                     continue;
                 }
                 // 扔掉小于seek的目标pts的帧
-                if(ASongFFmpeg::getInstance()->seekAudio)
-                {
-                    if(packet->pts * av_q2d(tb) < ASongFFmpeg::getInstance()->seekTime)
-                    {
-                        av_packet_free(&packet);
-                        continue;
-                    }
-                    else
-                    {
-                        ASongFFmpeg::getInstance()->seekAudio = false;
-                    }
-                }
+                //                if(ASongFFmpeg::getInstance()->seekAudio)
+                //                {
+                //                    if(packet->pts * tb < ASongFFmpeg::getInstance()->seekTime)
+                //                    {
+                //                        av_packet_free(&packet);
+                //                        continue;
+                //                    }
+                //                    else
+                //                    {
+                //                        ASongFFmpeg::getInstance()->seekAudio = false;
+                //                    }
+                //                }
+                //
                 int ret = avcodec_send_packet(pCodecCtx, packet);
                 // avcodec_send_packet成功
                 if(ret == 0)
@@ -321,19 +322,6 @@ void ASongAudio::run()
     //    allowRunAudio = false;
     //    needPaused = false;
 }
-
-//bool ASongAudio::isPaused()
-//{
-//    if(pauseFlag)
-//    {
-//        return true;
-//    }
-//    else
-//    {
-//        return false;
-//    }
-//}
-
 
 void ASongAudio::setVolume(int volume)
 {

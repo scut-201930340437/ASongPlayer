@@ -377,7 +377,6 @@ void ASongFFmpeg::start(Priority pri)
 {
     stopReq = false;
     pauseReq = false;
-    //    needPaused = false;
     pauseFlag = false;
     stopFlag = false;
     QThread::start(pri);
@@ -463,7 +462,10 @@ int ASongFFmpeg::resume()
     if(videoIdx >= 0)
     {
         // 重设video frameTimer
-        ASongVideo::getInstance()->resume();
+        if(nullptr == mediaMetaData->vMetaDatas[videoIdx].cover)
+        {
+            ASongVideo::getInstance()->resume();
+        }
         SDLPaint::getInstance()->resume();
     }
     return 0;
@@ -577,7 +579,7 @@ void ASongFFmpeg::handleSeek()
         //        DataSink::getInstance()->clearAFrameList();
         DataSink::getInstance()->appendPacketList(0, flushPacket);
     }
-    if(videoIdx >= 0)
+    if(videoIdx >= 0 && nullptr == mediaMetaData->vMetaDatas[videoIdx].cover)
     {
         // 清理packet
         //        DataSink::getInstance()->clearVPacketList();
@@ -594,7 +596,7 @@ void ASongFFmpeg::handleSeek()
     }
     // seek后，重置req和flag
     seekReq = false;
-    // 设置seektime用于解码线程丢掉过时的packet
+    // 设置seektime用于丢掉过时的packet
     seekTime = seekPos / 1000000.0;
     //    locker.unlock();
     //
@@ -619,7 +621,7 @@ void ASongFFmpeg::handleSeek()
 
 int ASongFFmpeg::seek(int64_t posSec)
 {
-    qDebug() << posSec;
+    // qDebug() << posSec;
     if(nullptr == pFormatCtx || curMediaStatus <= 0)
     {
         return -1;
@@ -660,9 +662,10 @@ int ASongFFmpeg::step_to_dst_frame(int step)
     // 设置seek请求
     if(videoIdx >= 0 && nullptr == mediaMetaData->vMetaDatas[videoIdx].cover)
     {
-        seekPos = FFMIN( FFMAX( (SDLPaint::getInstance()->curPts + step * SDLPaint::getInstance()->basePts)
-                                * av_q2d(pFormatCtx->streams[mediaMetaData->vMetaDatas[videoIdx].idx]->time_base) * AV_TIME_BASE, 0),
-                         pFormatCtx->duration);
+        double curPts = SDLPaint::getInstance()->curPts;
+        double basePts = SDLPaint::getInstance()->basePts;
+        seekPos = FFMIN( FFMAX( (curPts + step * basePts) * AV_TIME_BASE, 0), pFormatCtx->duration);
+        //        qDebug() << seekPos;
     }
     else
     {
@@ -689,8 +692,7 @@ int ASongFFmpeg::step_to_dst_frame(int step)
     // 等待帧解码并放入队列
     DataSink::getInstance()->frameListIsEmpty(0);
     // 播放一帧音频
-    ASongAudioOutput::getInstance()->process();
-    //        qDebug() << "step";
+    ASongAudioOutput::getInstance()->resume();
     if(videoIdx >= 0 && nullptr == mediaMetaData->vMetaDatas[videoIdx].cover)
     {
         // 等待帧解码并放入队列
