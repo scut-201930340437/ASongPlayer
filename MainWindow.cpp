@@ -1042,12 +1042,12 @@ void MainWindow::on_wave_button_clicked()
     if(waveWidget != nullptr)
     {
         waveWidget->isVisible() ? waveWidget->hide() : waveWidget->show();
-        qDebug()<<1;
         return;
     }
     //第一次生成
     waveWidget = new MyPlayWidget();
     waveWidget->resize(300, 600);
+    waveWidget->setFocusPolicy(Qt::NoFocus);
     waveWidget->show();
 }
 
