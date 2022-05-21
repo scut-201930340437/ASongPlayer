@@ -15,6 +15,7 @@ MyMessageWidget::MyMessageWidget(QWidget *parent)
     this->resize(200,120);
     this->setWindowTitle("information");
     QLabel *label = new QLabel(this);
+    label->resize(180,80);
     label->move(10,this->height()/3);
     label->setText("音视频文件不存在");
 }
@@ -34,6 +35,13 @@ MyMessageWidget::MyMessageWidget(MediaMetaData *mediaMetaData,QWidget *parent)
     if(mediaMetaData->vMetaDatas!=nullptr && mediaMetaData->vMetaDatas->cover!=nullptr)
     {
         label->setPixmap(QPixmap::fromImage(*mediaMetaData->vMetaDatas->cover));//在label显示图片
+    }
+    else
+    {
+        QString filename = ":/img/defaultCover.jpg";
+        QImage image(filename);
+        qDebug()<<image;
+        label->setPixmap(QPixmap::fromImage(image));
     }
 
     //文件名

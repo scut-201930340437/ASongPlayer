@@ -50,5 +50,6 @@
         <file>img/fullScreenCancel2.png</file>
         <file>img/backward.png</file>
         <file>img/forward.png</file>
+        <file>img/defaultCover.jpg</file>
     </qresource>
 </RCC>
