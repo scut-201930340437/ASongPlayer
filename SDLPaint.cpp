@@ -96,7 +96,7 @@ void SDLPaint::setMetaData(const int width, const int height, const int _frameRa
     //    srcRate = (float)srcWidth / srcHeight;
     frameRate = _frameRate;
     pix_fmt = _pix_fmt;
-    tb = time_base;
+    tb = av_q2d(time_base);
 }
 
 //void SDLPaint::setDstWH(const int screenWidth, const int screenHeight)
@@ -146,8 +146,9 @@ void SDLPaint::getFrameYUV()
             // 扔掉小于seek的目标pts的帧
             if(ASongFFmpeg::getInstance()->seekVideo)
             {
-                if(frame->pts * av_q2d(tb) < ASongFFmpeg::getInstance()->seekTime)
+                if(frame->pts * tb < ASongFFmpeg::getInstance()->seekTime)
                 {
+                    qDebug() << "release";
                     av_frame_free(&frame);
                     return;
                 }

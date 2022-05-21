@@ -73,7 +73,7 @@ private:
     // thread
     //    SDL_Thread *tid;
     // ffmpeg
-    AVRational tb;
+    double tb;
     SwsContext *pSwsCtx = nullptr;
     // 上一帧，用于暂停时不停渲染上一帧
     AVFrame *preFrame = nullptr;
