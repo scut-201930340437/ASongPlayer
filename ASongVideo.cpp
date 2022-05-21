@@ -177,20 +177,6 @@ void ASongVideo::stop()
     //    qDebug() << 3;
 }
 
-//void ASongVideo::pause()
-//{
-//    QMutexLocker locker(&_pauseMutex);
-//    if(!pauseFlag && QThread::isRunning())
-//    {
-//        needPaused = true;
-//        // 解码线程可能因为未渲染的frame队列过长而阻塞，先唤醒
-//        DataSink::getInstance()->wakeVideoWithFraCond();
-//        pauseCond.wait(&_pauseMutex);
-//        locker.relock();
-//    }
-//    qDebug() << 3;
-//}
-
 void ASongVideo::resume()
 {
     frameTimer = av_gettime_relative() / 1000000.0; // 更新起始时间基准
