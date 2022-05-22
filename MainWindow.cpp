@@ -138,6 +138,11 @@ void MainWindow::on_play_button_clicked()
         }
         case 0:
         {
+            if(filePath=="")
+            {
+                openFile();
+                break;
+            }
             ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId());
             ui->play_button->setStyleSheet("#play_button{\
    image: url(:/img/play.png);\
@@ -283,7 +288,6 @@ void MainWindow::openFile()
         ASongFFmpeg::getInstance()->stop();
         ASongFFmpeg::getInstance()->play(this, path, (void*)ui->play_widget->winId());
         setListFromFilePath();
-        saveFilePath();
     }
     else
     {
@@ -333,7 +337,6 @@ void MainWindow::onPlayTableCellDoubleClicked(int row, int column)
     if(checkIfExist(path))
     {
         filePath = path;
-        saveFilePath();
         ASongFFmpeg::getInstance()->stop();
         ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId());
         this->ui->play_table->playPos = row; //确认可以播放，记录播放位置
@@ -357,10 +360,9 @@ void MainWindow::dropEvent(QDropEvent *e)
     if(this->ui->play_table->isNeededFile(_fileInfo))
     {
         filePath = urls.first().toLocalFile();
-        setListFromFilePath();
+        ui->play_table->addFilePath(filePath);
         ASongFFmpeg::getInstance()->stop();
         ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId());
-        saveFilePath();
     }
     else
     {
@@ -397,6 +399,7 @@ void MainWindow::readFilePath()
         {
             //通过filePath设置播放列表
             setListFromFilePath();
+            qDebug()<<"播放路径读取成功，播放路径读取失败";
         }
         else
         {
@@ -568,7 +571,6 @@ void MainWindow::on_last_button_clicked()
         filePath = path;
         ASongFFmpeg::getInstance()->stop();
         ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId());
-        saveFilePath();
     }
 }
 
@@ -587,7 +589,6 @@ void MainWindow::on_next_button_clicked()
         filePath = path;
         ASongFFmpeg::getInstance()->stop();
         ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId());
-        saveFilePath();
     }
 }
 
@@ -632,7 +633,7 @@ void MainWindow::on_play_widget_customContextMenuRequested(const QPoint &/*pos*/
     QMenu *cmenu = new QMenu(ui->title_widget);
     cmenu->resize(100, 100);
     //定义菜单项
-    QAction *openFIle = new QAction(tr("打开文件 (Ctrl+I)"), this);
+    QAction *openFIle = new QAction(tr("打开文件夹 (Ctrl+I)"), this);
     QMenu *playMode = new QMenu(tr("播放模式 (C)"), this);
     //四种播放模式
     QAction *mode0 = new QAction(tr("单次播放"), this);
@@ -1001,7 +1002,7 @@ void MainWindow::setMutipleSpeed(QAbstractButton *button)
 
 void MainWindow::deleteFile()
 {
-    qint16 n = ui->play_table->numFile;
+    qint16 n = ui->play_table->orderInfoList.size();
     if(n == 0)
     {
         return;
@@ -1009,7 +1010,9 @@ void MainWindow::deleteFile()
     if( n == 1 )
     {
         ui->play_table->clear();
+        ui->play_table->setRowCount(0);
         on_stop_button_clicked();
+        filePath="";
         return;
     }
     //如果是当前播放，切换filename,保证filename 正确
@@ -1052,5 +1055,11 @@ void MainWindow::on_wave_button_clicked()
     waveWidget->resize(300, 600);
     waveWidget->setFocusPolicy(Qt::NoFocus);
     waveWidget->show();
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    saveFilePath();
+    event->accept();
 }
 

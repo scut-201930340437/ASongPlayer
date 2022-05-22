@@ -105,6 +105,7 @@ private slots:
     void setMutipleSpeed(QAbstractButton *button);
 
     void deleteFile();
+
     void on_forward_button_clicked();
 
     void on_backward_button_clicked();
@@ -146,7 +147,7 @@ private:
     //平时的键盘事件
     void keyPressEvent(QKeyEvent *event);
     void keyReleaseEvent(QKeyEvent *event);
-
+    void closeEvent(QCloseEvent *event);
 
 };
 #endif // MAINWINDOW_H

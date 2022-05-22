@@ -43,6 +43,7 @@ public:
     QString getFileNameFromPath(QString path);
     void deleteFile();
     void doMouseTrackTip(QModelIndex index);
+    void addFilePath(QString filepath);
 
 private:
     QVector<QString> neededFile={"mp3","mp4","flv","avi","mkv"};

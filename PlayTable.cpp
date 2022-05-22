@@ -44,8 +44,6 @@ void PlayTable::setTable(QList<QString> infoList,QString filePath)
 //        this->setItem(i,1,new QTableWidgetItem(infoList[i]));
     }
 
-    //生成随机列表
-    generateRandomList();
     for(int i=0;i<orderInfoList.size();i++)
     {
         if(orderInfoList[i]==filePath)
@@ -54,6 +52,8 @@ void PlayTable::setTable(QList<QString> infoList,QString filePath)
             showHighLight(0,playPos);
         }
     }
+    //生成随机列表
+    generateRandomList();
     randomPos=order_random[playPos];
 }
 
@@ -62,6 +62,8 @@ void PlayTable::generateRandomList()
     randomList.clear();
     //根据orderInfoLst生成RandomList
     numFile=orderInfoList.size();
+//    order_random.resize(numFile);
+//    random_order.resize(numFile);
     //记录原来的位置
     for(qint16 i=0;i<numFile;i++)
     {
@@ -81,6 +83,7 @@ void PlayTable::generateRandomList()
     {
         order_random[random_order[i]]=i;
     }
+    randomPos=order_random[playPos];
 }
 
 bool PlayTable::isNeededFile(QFileInfo file)
@@ -211,4 +214,13 @@ void PlayTable::doMouseTrackTip(QModelIndex index)
     QToolTip::showText(QCursor::pos(), orderInfoList[index.row()]);
 }
 
-
+void PlayTable::addFilePath(QString filepath)
+{
+    for(QString str:orderInfoList)
+    {
+        if(str==filepath)
+            return;
+    }
+    orderInfoList.append(filepath);
+    setTable(orderInfoList,filepath);
+}
