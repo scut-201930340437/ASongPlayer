@@ -12,14 +12,13 @@ ASongVideo* ASongVideo::getInstance()
 }
 
 // 初始化参数
-void ASongVideo::setMetaData(AVCodecContext *_pCodecCtx, const int _videoIdx, const AVRational timeBase, bool _hasCover)
+void ASongVideo::setMetaData(AVCodecContext *_pCodecCtx, const int _videoIdx, const AVRational timeBase)
 {
     pCodecCtx = _pCodecCtx;
     videoIdx = _videoIdx;
     tb = av_q2d(timeBase);
     lastFrameDelay = tb;
     AV_SYNC_THRESHOLD_MAX = 1.5 * tb;
-    hasCover = _hasCover;
 }
 
 
@@ -216,8 +215,6 @@ void ASongVideo::run()
                 // avcodec_send_packet成功
                 if(ret == 0)
                 {
-                    //                while(1)
-                    //                {
                     AVFrame *frame = av_frame_alloc();
                     ret = avcodec_receive_frame(pCodecCtx, frame);
                     if(ret == 0)
@@ -225,7 +222,7 @@ void ASongVideo::run()
                         frame->opaque = (double*)new double(getPts(frame));
                         DataSink::getInstance()->appendFrameList(1, frame);
                         // 如果是带音频的封面，该线程只做一次循环
-                        if(hasCover)
+                        if(ASongFFmpeg::getInstance()->hasCover)
                         {
                             coverAlready = true;
                         }

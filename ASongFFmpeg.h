@@ -62,8 +62,7 @@ struct MediaMetaData
 class ASongFFmpeg: public QThread
 {
     Q_OBJECT
-public:
-    ASongFFmpeg();
+public: ASongFFmpeg();
     ~ASongFFmpeg();
     static ASongFFmpeg* getInstance();
 
@@ -103,6 +102,7 @@ public:
 
     // metaData
     MediaMetaData *mediaMetaData = nullptr;
+    bool hasCover = false;
 
     int	videoIdx = -1, audioIdx = -1;
 
@@ -131,8 +131,6 @@ private:
     void resumeThread();
     // 跳转
     void handleSeek();
-
-    bool hasCover = false;
     // 需要停止
     std::atomic_bool stopReq = false;
     // 需要暂停

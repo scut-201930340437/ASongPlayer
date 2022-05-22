@@ -192,8 +192,8 @@ void SDLPaint::getFrameYUV()
             // 适应窗口--end
             // 同步
             double actualDelay = ASongVideo::getInstance()->synVideo(*((double*)frame->opaque));
-            // 倍速>=8，丢帧
-            if(ASongFFmpeg::getInstance()->getSpeed() >= 7.9999 && actualDelay <= 0.0001)
+            // 倍速>=8，丢帧（仅对视频）
+            if(!ASongFFmpeg::getInstance()->hasCover && ASongFFmpeg::getInstance()->getSpeed() >= 7.9999 && actualDelay <= 0.0001)
             {
                 av_frame_free(&frame);
                 // 对于视频，需要重设延时

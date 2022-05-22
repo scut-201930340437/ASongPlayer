@@ -25,7 +25,7 @@ class ASongVideo: public QThread
 public:
     static ASongVideo* getInstance();
 
-    void setMetaData(AVCodecContext *_pCodecCtx, const int _videoIdx,  const AVRational timeBase, bool _hasCover);
+    void setMetaData(AVCodecContext *_pCodecCtx, const int _videoIdx,  const AVRational timeBase);
     // 获取pts
     double getPts(AVFrame *frame);
     // 同步
@@ -56,8 +56,6 @@ private:
     // 为使线程暂停所用的锁和条件变量
     QMutex _pauseMutex;
     QWaitCondition pauseCond;
-    // 音频有封面
-    bool hasCover = false;
     // videoClock
     double videoClock = 0.0;
     // frameTimer 最后一帧播放时刻

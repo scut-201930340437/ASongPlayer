@@ -258,7 +258,7 @@ int ASongFFmpeg::load(QString path)
     {
         int idx = mediaMetaData->vMetaDatas[videoIdx].idx;
         ASongVideo::getInstance()->setMetaData(pVCodecCtx, idx,
-                                               pFormatCtx->streams[idx]->time_base, hasCover);
+                                               pFormatCtx->streams[idx]->time_base);
         SDLPaint::getInstance()->setMetaData(mediaMetaData->vMetaDatas[videoIdx].width,
                                              mediaMetaData->vMetaDatas[videoIdx].height,
                                              mediaMetaData->vMetaDatas[videoIdx].frame_rate,
