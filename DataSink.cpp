@@ -197,54 +197,54 @@ qsizetype DataSink::packetListSize(int type)
     }
 }
 
-void DataSink::clearAPacketList()
-{
-    AVPacket *packet = nullptr;
-    //    QMutexLocker locker(&aPacketListMutex);
-    while(!aPacketList.isEmpty())
-    {
-        packet = aPacketList.takeFirst();
-        av_packet_free(&packet);
-    }
-    aPacketList.clear();
-}
+//void DataSink::clearAPacketList()
+//{
+//    AVPacket *packet = nullptr;
+//    //    QMutexLocker locker(&aPacketListMutex);
+//    while(!aPacketList.isEmpty())
+//    {
+//        packet = aPacketList.takeFirst();
+//        av_packet_free(&packet);
+//    }
+//    aPacketList.clear();
+//}
 
-void DataSink::clearVPacketList()
-{
-    AVPacket *packet = nullptr;
-    //    QMutexLocker locker(&vPacketListMutex);
-    while(!vPacketList.isEmpty())
-    {
-        packet = vPacketList.takeFirst();
-        av_packet_free(&packet);
-    }
-    vPacketList.clear();
-}
+//void DataSink::clearVPacketList()
+//{
+//    AVPacket *packet = nullptr;
+//    //    QMutexLocker locker(&vPacketListMutex);
+//    while(!vPacketList.isEmpty())
+//    {
+//        packet = vPacketList.takeFirst();
+//        av_packet_free(&packet);
+//    }
+//    vPacketList.clear();
+//}
 
-void DataSink::clearAFrameList()
-{
-    AVFrame *frame = nullptr;
-    // 清理队列
-    //    QMutexLocker locker(&aFrameListMutex);
-    while(!aFrameList.isEmpty())
-    {
-        frame = aFrameList.takeFirst();
-        av_frame_free(&frame);
-    }
-    aFrameList.clear();
-}
+//void DataSink::clearAFrameList()
+//{
+//    AVFrame *frame = nullptr;
+//    // 清理队列
+//    //    QMutexLocker locker(&aFrameListMutex);
+//    while(!aFrameList.isEmpty())
+//    {
+//        frame = aFrameList.takeFirst();
+//        av_frame_free(&frame);
+//    }
+//    aFrameList.clear();
+//}
 
-void DataSink::clearVFrameList()
-{
-    AVFrame *frame = nullptr;
-    //    QMutexLocker locker(&vFrameListMutex);
-    while(!vFrameList.isEmpty())
-    {
-        frame = vFrameList.takeFirst();
-        av_frame_free(&frame);
-    }
-    vFrameList.clear();
-}
+//void DataSink::clearVFrameList()
+//{
+//    AVFrame *frame = nullptr;
+//    //    QMutexLocker locker(&vFrameListMutex);
+//    while(!vFrameList.isEmpty())
+//    {
+//        frame = vFrameList.takeFirst();
+//        av_frame_free(&frame);
+//    }
+//    vFrameList.clear();
+//}
 
 void DataSink::clearList()
 {

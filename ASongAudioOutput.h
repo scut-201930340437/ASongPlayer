@@ -67,7 +67,6 @@ public:
     std::atomic_bool stopFlag = false;
     QMutex stopMutex;
 private:
-    //    ASongAudioOutput() = default;
     // thread 音频解码
     void run() override;
 
@@ -77,11 +76,6 @@ private:
     int changeSpeed(uint8_t *outBuffer, AVFrame *frame);
     // 关闭设备和soundtouch
     void closeAudioOuput();
-
-    // 使用QAtomicPointer，对指针保证与平台无关的原子操作
-    //    static QAtomicPointer<ASongAudioOutput> _instance;
-    //    static ASongAudio *_instance;
-    //    static QMutex _mutex;
 
     // 允许播放标志
     std::atomic_bool stopReq = false;
@@ -100,11 +94,8 @@ private:
     // 重采样上下文
     SwrContext *pSwrCtx = nullptr;
     /*倍速*/
-    // sonicStream
-    //    sonicStream sonicStream;
     HANDLE soundTouch = nullptr;
     float speed = 1.0;
-    //    int speedBufferSize = 0;
 
     // 音频播放设备
     QMediaDevices *mediaDevice = nullptr;

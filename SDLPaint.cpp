@@ -5,17 +5,9 @@
 #include "SDLPaint.h"
 
 Q_GLOBAL_STATIC(SDLPaint, sdlPaint)
-//QAtomicPointer<SDLPaint> SDLPaint::_instance = nullptr;
-//QMutex SDLPaint::_mutex;
 
 SDLPaint::~SDLPaint()
 {
-    //    sws_freeContext(pSwsCtx);
-    //    SDL_DestroyRenderer(sdlRenderer);
-    //    SDL_DestroyTexture(sdlTexture);
-    //    SDL_DestroyWindow(screen);
-    //    SDL_Quit();
-    //
     if(nullptr != sdlTimer)
     {
         sdlTimer->stop();
@@ -25,11 +17,6 @@ SDLPaint::~SDLPaint()
 
 SDLPaint* SDLPaint::getInstance()
 {
-    //    if(_instance.testAndSetOrdered(nullptr, nullptr))
-    //    {
-    //        //        SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)ApplicationCrashHandler);//注冊异常捕获函数
-    //        _instance.testAndSetOrdered(nullptr, new SDLPaint);
-    //    }
     return sdlPaint;
 }
 
@@ -105,7 +92,6 @@ void SDLPaint::setMetaData(const int width, const int height, const int _frameRa
     // 设置参数
     srcWidth = width;
     srcHeight = height;
-    //    srcRate = (float)srcWidth / srcHeight;
     frameRate = _frameRate;
     pix_fmt = _pix_fmt;
     tb = av_q2d(time_base);
@@ -189,12 +175,6 @@ void SDLPaint::getFrameYUV()
                     ASongFFmpeg::getInstance()->seekVideo = false;
                 }
             }
-            //
-            //            curPts = *((double*)frame->opaque);
-            //            frameDelay = tb;
-            //            frameDelay *= (1.0 + 0.5 * frame->repeat_pict);
-            //            curPts = frame->best_effort_timestamp;
-            //            qDebug() << curPts;
             curPts = frame->pts * tb;
             if(basePts == 0)
             {
@@ -215,7 +195,6 @@ void SDLPaint::getFrameYUV()
             // 倍速>=8，丢帧
             if(ASongFFmpeg::getInstance()->getSpeed() >= 7.9999 && actualDelay <= 0.0001)
             {
-                //                qDebug() << "delete";
                 av_frame_free(&frame);
                 // 对于视频，需要重设延时
                 preDelay = 1;
@@ -373,44 +352,3 @@ void SDLPaint::stopTimer()
     }
 }
 
-//int SDLPaint::getCurFrameNumber()
-//{
-//    if(basePts == 0)
-//    {
-//        return 0;
-//    }
-//    return curPts / basePts;
-//}
-//void SDLPaint::paintNextFrame()
-//{
-//    //    QTimer::singleShot()
-//    getFrameYUV();
-//}
-
-//int SDLPaint::sfp_signal_thread(void *opaque)
-//{
-//    double *avg_frame_rate = (double*)opaque;
-//    //    qDebug() << *avg_frame_rate;
-//    //    curMediaStatus = 1;
-//    while (curMediaStatus == 1 || curMediaStatus == 2)
-//    {
-//        SDL_Event event;
-//        if(curMediaStatus == 1)
-//        {
-//            event.type = SFM_REFRESH_EVENT;
-//        }
-//        else
-//        {
-//            event.type = SFM_PAUSE_EVENT;
-//        }
-//        SDL_PushEvent(&event);
-//        // 播放帧率控制，可不可以通过其他方式控制，该方式很难处理不同帧率的视频
-//        SDL_Delay(ceil(600 / (*avg_frame_rate)));
-//    }
-//    curMediaStatus = 0;
-//    //Break
-//    SDL_Event event;
-//    event.type = SFM_BREAK_EVENT;
-//    SDL_PushEvent(&event);
-//    return 0;
-//}

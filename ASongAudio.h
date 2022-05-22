@@ -68,16 +68,8 @@ public:
     //
 
 private:
-    //    ASongAudio() = default;
-
     // thread 音频解码
     void run() override;
-
-    // 使用QAtomicPointer，对指针保证与平台无关的原子操作
-    //    static QAtomicPointer<ASongAudio> _instance;
-    //    static QMutex _mutex;
-    // 当前播放时长
-    //    double curPlayPos = 0.0;
 
     // 允许解码标志
     std::atomic_bool stopReq = false;
@@ -89,8 +81,6 @@ private:
     // 为使线程暂停所用的锁和条件变量
     QMutex _pauseMutex;
     QWaitCondition pauseCond;
-    // 等待线程阻塞的条件变量
-    //    QWaitCondition waitPauseCond;
 
     // 时钟，音频为准
     double audioClock = 0.0;

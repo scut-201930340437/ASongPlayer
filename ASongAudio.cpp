@@ -6,21 +6,9 @@
 
 Q_GLOBAL_STATIC(ASongAudio, asongAudio)
 
-//QAtomicPointer<ASongAudio> ASongAudio::_instance = nullptr;
-//ASongAudio *ASongAudio::_instance = nullptr;
-//QMutex ASongAudio::_mutex;
-
 // 获取单一的实例
 ASongAudio* ASongAudio::getInstance()
 {
-    // QMutexLocker 在构造对象时加锁，在析构时解锁
-    //    QMutexLocker locker(&_mutex);
-    //    if(_instance.testAndSetOrdered(nullptr, nullptr))
-    //    {
-    //        //        SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)ApplicationCrashHandler);//注冊异常捕获函数
-    //        //        qDebug() << "----";
-    //        _instance.testAndSetOrdered(nullptr, new ASongAudio);
-    //    }
     return asongAudio;
 }
 
@@ -40,32 +28,15 @@ void ASongAudio::setMetaData(AVFormatContext * _pFormatCtx, AVCodecContext * _pC
     audioIdx = _audioIdx;
     tb = av_q2d(pFormatCtx->streams[audioIdx]->time_base);
 }
-// 设置时钟---------------------
-//void ASongAudio::setAudioClock(AVPacket *packet)
-//{
-//    if(packet->pts != AV_NOPTS_VALUE)
-//    {
-//        audioClock = packet->pts * av_q2d(tb);
-//    }
-//    // 一个packet可能包含多个frame，可能导致packet->pts<真正播放的pts
-//    // 因此需要加上该packet的数据能够播放多长时间
-//    audioClock += packet->duration * av_q2d(tb);
-//}
+// 设置时钟
 void ASongAudio::setAudioClock(AVFrame * frame, const double duration)
 {
     if(frame->pts != AV_NOPTS_VALUE)
     {
         audioClock = frame->pts * tb;
     }
-    // 一个packet可能包含多个frame，可能导致packet->pts<真正播放的pts
-    // 因此需要加上该packet的数据能够播放多长时间
-    //    audioClock += packet->duration * av_q2d(tb);
     audioClock += (duration * ASongFFmpeg::getInstance()->getSpeed());
 }
-//void ASongAudio::setNeededAudioCode()
-//{
-//    neededAudioCode = true;
-//}
 //获取时钟
 double ASongAudio::getAudioClock()
 {
@@ -79,7 +50,6 @@ void ASongAudio::start(Priority pri)
 {
     stopReq = false;
     pauseReq = false;
-    //    needPaused = false;
     pauseFlag = false;
     stopFlag = false;
     QThread::start(pri);
@@ -91,10 +61,6 @@ void ASongAudio::stop()
     if(QThread::isRunning())
     {
         stopReq = true;
-        //        needPaused = false;
-        //        pauseFlag = false;
-        // 解码线程可能因为未播放frame队列过长而阻塞，先唤醒
-        //        DataSink::getInstance()->wakeAudioWithFraCond();
         // 可能暂停中，先唤醒
         pauseCond.wakeAll();
         QThread::quit();
@@ -109,33 +75,8 @@ void ASongAudio::stop()
     //    qDebug() << 2;
 }
 
-//void ASongAudio::pause()
-//{
-//    // 先阻塞音频播放线程
-//    ASongAudioOutput::getInstance()->pause();
-//    // 再阻塞音频解码线程
-//    QMutexLocker locker(&_pauseMutex);
-//    if(!pauseFlag && QThread::isRunning())
-//    {
-//        needPaused = true;
-//        // 解码线程可能因为未播放frame队列过长而阻塞，先唤醒
-//        DataSink::getInstance()->wakeAudioWithFraCond();
-//        pauseCond.wait(&_pauseMutex);
-//        locker.relock();
-//    }
-//    //    qDebug() << "2";
-//}
-
 void ASongAudio::resume()
 {
-    // 恢复音频解码线程
-    //    QMutexLocker locker(&_pauseMutex);
-    //    if(pauseFlag && QThread::isRunning())
-    //    {
-    //        needPaused = false;
-    //        pauseCond.wakeAll();
-    //        pauseCond.wait(&_pauseMutex);
-    //    }
     if(QThread::isFinished())
     {
         start();
@@ -170,10 +111,7 @@ void ASongAudio::resumeThread()
 
 void ASongAudio::run()
 {
-    //    SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)ApplicationCrashHandler);//注冊异常捕获函数
     AVPacket *packet = nullptr;
-    //    qDebug() << "audio thread start";
-    //    qDebug() << "";
     for(;;)
     {
         if(stopReq)
@@ -292,11 +230,9 @@ void ASongAudio::run()
                 }
                 // 释放
                 av_packet_free(&packet);
-                //        }
             }
             else
             {
-                //                qDebug() << "audiothread:noget";
                 QMutexLocker locker(&ASongFFmpeg::getInstance()->stopMutex);
                 if(ASongFFmpeg::getInstance()->stopFlag)
                 {
@@ -314,13 +250,7 @@ void ASongAudio::run()
         {
             msleep(30);
         }
-        //        qDebug() << "1";
-        //        qDebug() << "end";
     }
-    //    qDebug() << "audio thread end";
-    //    qDebug() << "";
-    //    allowRunAudio = false;
-    //    needPaused = false;
 }
 
 void ASongAudio::setVolume(int volume)

@@ -138,7 +138,7 @@ void MainWindow::on_play_button_clicked()
         }
         case 0:
         {
-            if(filePath=="")
+            if(filePath == "")
             {
                 openFile();
                 break;
@@ -163,7 +163,6 @@ void MainWindow::on_stop_button_clicked()
                                    #play_button::hover{\
                                        image: url(:/img/play2.png);\
                                    }");
-    QMutexLocker locker(&ASongFFmpeg::_mediaStatusMutex);
     if(ASongFFmpeg::getInstance()->getMediaStatus() > 0)
     {
         int ret = ASongFFmpeg::getInstance()->stop();
@@ -249,7 +248,10 @@ void MainWindow::on_minimize_button_clicked()
 void MainWindow::on_maximize_button_clicked()
 {
     this->isMaximized() ? this->showNormal() : this->showMaximized();
-    if(multipleWidget!=nullptr&&multipleWidget->isVisible()) multipleWidget->hide();
+    if(multipleWidget != nullptr && multipleWidget->isVisible())
+    {
+        multipleWidget->hide();
+    }
 }
 
 
@@ -400,7 +402,7 @@ void MainWindow::readFilePath()
         {
             //通过filePath设置播放列表
             setListFromFilePath();
-            qDebug()<<"播放路径读取成功，播放路径读取失败";
+            qDebug() << "播放路径读取成功，播放路径读取失败";
         }
         else
         {
@@ -435,7 +437,7 @@ void MainWindow::handleTimeout()
     //鼠标隐藏计时
     if(QCursor().pos() == old_mouse_value)
     {
-        sustain = sustain + 1 <= cursorTime/myTimerTime ? sustain + 1 : cursorTime/myTimerTime;
+        sustain = sustain + 1 <= cursorTime / myTimerTime ? sustain + 1 : cursorTime / myTimerTime;
     }
     else
     {
@@ -445,14 +447,14 @@ void MainWindow::handleTimeout()
     //鼠标隐藏实现
     if(ui->play_widget->width() == ui->centralwidget->width())
     {
-        if(sustain == cursorTime/myTimerTime)
+        if(sustain == cursorTime / myTimerTime)
         {
             this->setCursor(QCursor(Qt::BlankCursor));
             ASongFFmpeg::getInstance()->hideCursor();
             //顺便隐藏这个控制栏
             ui->control_widget->hide();
             //顺便隐藏倍速窗口（如果有）
-            if(multipleWidget !=nullptr && multipleWidget->isVisible())
+            if(multipleWidget != nullptr && multipleWidget->isVisible())
             {
                 multipleWidget->hide();
             }
@@ -815,7 +817,10 @@ void MainWindow::mouseMoveEvent(QMouseEvent *event)
         {
             ui->control_widget->hide();
             //倍速窗口
-            if(multipleWidget!=nullptr&&multipleWidget->isVisible()) multipleWidget->hide();
+            if(multipleWidget != nullptr && multipleWidget->isVisible())
+            {
+                multipleWidget->hide();
+            }
         }
     }
 }
@@ -950,7 +955,6 @@ void MainWindow::on_multiple_button_clicked()
     {
         QPoint *p = new QPoint(-0.3 * multipleWidget->size().width(), -1 * multipleWidget->size().height());
         multipleWidget->move(ui->control_widget->pos() + ui->control_sub_widget->pos() + ui->multiple_button->pos() + *p);
-
         multipleWidget->isVisible() ? multipleWidget->hide() : multipleWidget->show();
         //遍历
         QList<QAbstractButton*> list = m_pButtonGroup->buttons();
@@ -1041,7 +1045,7 @@ void MainWindow::clearPlayList()
     ui->play_table->clear();
     ui->play_table->setRowCount(0);
     on_stop_button_clicked();
-    filePath="";
+    filePath = "";
 }
 
 void MainWindow::on_forward_button_clicked()
@@ -1069,18 +1073,18 @@ void MainWindow::on_wave_button_clicked()
     //第一次生成
     waveWidget = new MyPlayWidget();
     waveWidget->resize(300, 600);
-    waveWidget->move(this->pos().x(),this->pos().y());
+    waveWidget->move(this->pos().x(), this->pos().y());
     waveWidget->setStyleSheet("background-color:#44413f");
     waveWidget->setFocusPolicy(Qt::NoFocus);
     waveWidget->show();
     //给个按钮
     QPushButton *change_button = new QPushButton(waveWidget);
-    change_button->resize(50,30);
-    change_button->move(0,waveWidget->size().height() - 30 - 5);
+    change_button->resize(50, 30);
+    change_button->move(0, waveWidget->size().height() - 30 - 5);
     change_button->setText("模式");
     change_button->show();
     change_button->setStyleSheet("background:black");
-    connect(change_button,&QPushButton::clicked,waveWidget,&MyPlayWidget::changeWaveMode);
+    connect(change_button, &QPushButton::clicked, waveWidget, &MyPlayWidget::changeWaveMode);
 }
 
 

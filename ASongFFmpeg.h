@@ -62,12 +62,10 @@ struct MediaMetaData
 class ASongFFmpeg: public QThread
 {
     Q_OBJECT
-public: ASongFFmpeg();
+public:
+    ASongFFmpeg();
     ~ASongFFmpeg();
-    // 播放状态锁
-    static QMutex _mediaStatusMutex;
     static ASongFFmpeg* getInstance();
-    //    static int sfp_signal_thread(void* opaque);
 
     // 加载文件信息，获取媒体元数据
     MediaMetaData* openMediaInfo(QString path, AVFormatContext* pFmtCtx = nullptr);
@@ -104,7 +102,6 @@ public: ASongFFmpeg();
     std::atomic_int curMediaStatus = -1;
 
     // metaData
-    //MediaMetaDate mediaMetaData;
     MediaMetaData *mediaMetaData = nullptr;
 
     int	videoIdx = -1, audioIdx = -1;
@@ -145,7 +142,6 @@ private:
     QMutex _pauseMutex;
     QWaitCondition pauseCond;
     // seek
-    //    QMutex seekMutex;
     bool seekReq = false;
     int64_t seekPos = 0;
     int64_t seekRel = 0;

@@ -36,22 +36,13 @@ public:
     bool allowAddVFrame();
 
     void appendFrameList(int type, AVFrame *frame);
-    //    void appendAFrameList(AVFrame *frame);
-
 
     qsizetype packetListSize(int type);
-    //    qsizetype frameListSize(int type);
 
-    //    void wakeAudioWithFraCond();
-    //    void wakeVideoWithFraCond();
-
-    //    void wakeAudioWithPackCond();
-    //    void wakeVideoWithPackCond();
-
-    void clearAPacketList();
-    void clearVPacketList();
-    void clearAFrameList();
-    void clearVFrameList();
+    //    void clearAPacketList();
+    //    void clearVPacketList();
+    //    void clearAFrameList();
+    //    void clearVFrameList();
 
     void clearList();
 

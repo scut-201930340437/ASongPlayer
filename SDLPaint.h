@@ -1,10 +1,6 @@
 ﻿#ifndef SDLPAINT_H
 #define SDLPAINT_H
 
-//#define SFM_REFRESH_EVENT  (SDL_USEREVENT + 1)
-//#define SFM_PAUSE_EVENT   (SDL_USEREVENT + 2)
-//#define SFM_BREAK_EVENT  (SDL_USEREVENT + 3)
-
 #include <QWidget>
 #include <QTimer>
 #include <QDebug>
@@ -28,30 +24,18 @@ public:
     int init(void *winID);
 
     void setMetaData(const int width, const int height, const int _frameRate, const enum AVPixelFormat _pix_fmt, const AVRational time_base);
-    // 根据输出窗口重设sdl的参数
-    //    void setDstWH(const int screenWidth, const int screenHeight);
-    //    void createTimer();
+
     // 将一帧图像转储为YUVFrame
-
-
     void getFrameYUV();
     // 绘制
     void paint(AVFrame *frameYUV);
-    //public slots:
-    //    void getFrameYUV();
-    //    static int sfp_signal_thread(void* opaque);
 
     void pause();
     void stop();
     void resume();
-    //    void paintNextFrame();
     void restartTimer();
     void stopTimer();
-    //    int getFrameRate();
-    // 是否停止
-    //    std::atomic_bool stopFlag = false;
-    //    int getCurFrameNumber();
-    //
+
     double basePts = 0;
     double curPts = -1;
     double frameDelay = 0.0;
@@ -63,7 +47,6 @@ private:
     QTimer *sdlTimer = nullptr;
 
     //------------SDL----------------
-    //    int screenWidth = 0, screenHeight = 0;
 
     SDL_Window *screen = nullptr;
     SDL_Renderer *sdlRenderer = nullptr;
@@ -91,8 +74,6 @@ private:
     int frameRate = -1;
     // 帧之间的延时
     int preDelay = 0;
-
-
 };
 
 #endif // SDLPAINT_H

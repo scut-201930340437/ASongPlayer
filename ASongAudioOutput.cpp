@@ -4,20 +4,9 @@
 #include "DataSink.h"
 
 Q_GLOBAL_STATIC(ASongAudioOutput, asongAudioOutput)
-
-//QAtomicPointer<ASongAudioOutput> ASongAudioOutput::_instance = nullptr;
-//QMutex ASongAudioOutput::_mutex;
-
 // 获取单一的实例
 ASongAudioOutput* ASongAudioOutput::getInstance()
 {
-    // QMutexLocker 在构造对象时加锁，在析构时解锁
-    //    QMutexLocker locker(&_mutex);
-    //    if(_instance.testAndSetOrdered(nullptr, nullptr))
-    //    {
-    //        //        SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)ApplicationCrashHandler);//注冊异常捕获函数
-    //        _instance.testAndSetOrdered(nullptr, new ASongAudioOutput);
-    //    }
     return asongAudioOutput;
 }
 
@@ -46,10 +35,6 @@ void ASongAudioOutput::initSwr()
                        0, nullptr);
     // 初始化
     swr_init(pSwrCtx);
-    // 初始化sonic，包括倍速等参数
-    //    sonicInit();
-    //    sonicSetSpeed(2.0);
-    //    sonicSetVolume(ASongAudio::getInstance()->getVolume());
 }
 
 // 重采样
@@ -74,41 +59,14 @@ int ASongAudioOutput::swrToPCM(uint8_t *outBuffer, AVFrame *frame)
 // 倍速处理
 int ASongAudioOutput::changeSpeed(uint8_t *outBuffer, AVFrame *frame)
 {
-    //
-    //    int ret = sonicWriteShortToStream(sonicStream, (short*)outBuffer, frame->nb_samples);
-    //    int ret = sonicWriteUnsignedCharToStream(sonicStream, outBuffer, frame->nb_samples);
     soundtouch_putSamples_i16(soundTouch, (short*)outBuffer, frame->nb_samples);
-    //    if(ret > 0)
-    //    {
-    // 乘2保证调用一次sonicReadShortFromStream可以读取全部数据
     int numSamples = 2 * frame->nb_samples / speed;
-    //        qDebug() << numSamples;
-    //        if(speed < 1)
-    //        {
-    //            int size = numSamples * channels * av_get_bytes_per_sample(out_sample_fmt);
-    //            if(speedBufferSize < size)
-    //            {
-    //                speedBuffer = av_realloc(speedBuffer, size);
-    //                speedBufferSize = size;
-    //            }
-    //            outBuffer =
-    //        }
     // 读取处理后的音频采样点数
-    //    int newNumSamples = sonicReadShortFromStream(sonicStream, (short*)outBuffer, numSamples);
     int newNumSamples = soundtouch_receiveSamples_i16(soundTouch, (short*)outBuffer, numSamples);
-    //    qDebug() << newNumSamples;
-    //        int newNumSamples = sonicReadUnsignedCharFromStream(sonicStream, outBuffer, numSamples);
     frame->nb_samples = newNumSamples;
     // 重新计算数据大小
     int resampleDataSize = newNumSamples * channels * av_get_bytes_per_sample(out_sample_fmt);
-    //        qDebug() << resampleDataSize;
     return resampleDataSize;
-    //    }
-    //    else
-    //    {
-    //        qDebug() << "sonicWriteShortToStream failed";
-    //        return -1;
-    //    }
 }
 
 void ASongAudioOutput::closeAudioOuput()
@@ -123,11 +81,6 @@ void ASongAudioOutput::closeAudioOuput()
         audioIO->close();
         audioIO = nullptr;
     }
-    //    if (nullptr != sonicStream)
-    //    {
-    //        sonicDestroyStream(sonicStream);
-    //        sonicStream = nullptr;
-    //    }
     if(nullptr != soundTouch)
     {
         soundtouch_destroyInstance(soundTouch);
@@ -162,11 +115,6 @@ void ASongAudioOutput::setSpeed(float _speed)
     }
     // 先暂停音频播放线程，防止通过sonicSetSpeed后音频播放线程不能及时更新速率
     pause();
-    //设置倍速
-    //    if(nullptr != sonicStream)
-    //    {
-    //        sonicSetSpeed(sonicStream, _speed);
-    //    }
     if(nullptr != soundTouch)
     {
         soundtouch_setTempo(soundTouch, _speed);
@@ -190,15 +138,11 @@ void ASongAudioOutput::start(Priority pri)
     pauseReq = false;
     pauseFlag = false;
     stopFlag = false;
-    //初始化sonicStream
-    //    sonicStream = sonicCreateStream(sample_rate, channels);
     soundTouch = soundtouch_createInstance();
     soundtouch_setSampleRate(soundTouch, sample_rate);
     soundtouch_setChannels(soundTouch, channels);
     //设置倍速
     setSpeed(speed);
-    // 设置质量
-    //    sonicSetQuality(sonicStream, 0);
     QThread::start(pri);
 }
 
@@ -211,10 +155,6 @@ void ASongAudioOutput::stop()
         QThread::quit();
         QThread::wait();
     }
-    //    QMutexLocker locker(&DataSink::getInstance()->aFrameListMutex);
-    //    stopFlag = true;
-    //    DataSink::getInstance()->wakeAudioWithFraCond();
-    //    locker.unlock();
     // 关闭重采样上下文
     if(nullptr != pSwrCtx)
     {
@@ -250,7 +190,6 @@ void ASongAudioOutput::resume()
 
 void ASongAudioOutput::run()
 {
-    //    SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)ApplicationCrashHandler);//注冊异常捕获函数
     QAudioDevice audioDevice = mediaDevice->defaultAudioOutput();
     QAudioFormat format = audioDevice.preferredFormat();
     format.setSampleRate(sample_rate);
@@ -259,8 +198,6 @@ void ASongAudioOutput::run()
     audioOutput->setBufferSize(maxFrameSize * 2);
     audioOutput->setVolume(ASongAudio::getInstance()->getVolume());
     audioIO = audioOutput->start();
-    //    qDebug() << "audio output thread start";
-    //    qDebug() << "";
     for(;;)
     {
         if(stopReq)
@@ -282,10 +219,6 @@ void ASongAudioOutput::run()
         }
         process();
     }
-    //    allowPlay = false;
-    //    needPaused = false;
-    //    qDebug() << "audio output thread end";
-    //    qDebug() << "";
     closeAudioOuput();
     QMutexLocker locker(&stopMutex);
     stopFlag = true;
@@ -350,7 +283,6 @@ void ASongAudioOutput::process()
         // 否则不需要重采样
         else
         {
-            //            qDebug() << "packet audio";
             int out_size = -1;
             // 做倍速处理
             if(speed > 1.00001 || speed < 0.99999)

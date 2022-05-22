@@ -26,8 +26,6 @@ public:
     static ASongVideo* getInstance();
 
     void setMetaData(AVCodecContext *_pCodecCtx, const int _videoIdx,  const AVRational timeBase, bool _hasCover);
-    //    void resetWH(const int _out_width, const int _out_height);
-    //    void setNeededVideoCode();
     // 获取pts
     double getPts(AVFrame *frame);
     // 同步
@@ -40,31 +38,20 @@ public:
     void resumeThread();
     //
     void stop();
-    //    void pause();
     void resume();
-    // 获取线程是否暂停
-    //    bool isPaused();
     std::atomic_bool stopFlag = false;
     // 暂停标志
     std::atomic_bool pauseFlag = false;
 
 private:
-    //    ASongVideo() = default;
 
     void run() override;
-
-
     // 校准pts
     void caliBratePts(AVFrame *frame, double &pts);
-
-    //    static QAtomicPointer<ASongVideo>_instance;
-    //    static QMutex _mutex;
 
     //
     std::atomic_bool stopReq = false;
     std::atomic_bool pauseReq = false;
-    // 需要暂停
-    //    std::atomic_bool needPaused = false;
 
     // 为使线程暂停所用的锁和条件变量
     QMutex _pauseMutex;
