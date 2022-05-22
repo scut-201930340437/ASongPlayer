@@ -7,6 +7,7 @@
 #include <QTimer>
 #include <QTime>
 #include <QMouseEvent>
+#include <QPushButton>
 
 
 class MyPlayWidget : public QWidget
@@ -24,9 +25,12 @@ public:
     int batten_contain;  //一根柱子代表多少采样点
     int max_num;  //读出来的最大的采样点的值
     float mul;  //缩放倍数
-    //时间
-    QTime randtime;
+    // 波形图模式 1，线性图 2，柱状图
+    int wave_mode;
     explicit MyPlayWidget(QWidget *parent = nullptr);
+
+    //改变波形图
+    void changeWaveMode();
 
 
 protected:
@@ -37,7 +41,7 @@ signals:
 
 private slots:
     void waveDraw(const char *outBuffer,int sample_nb);
-    void test();
+    void setTitleBar(int width, int height);
 
 };
 

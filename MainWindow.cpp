@@ -1053,13 +1053,25 @@ void MainWindow::on_wave_button_clicked()
     //第一次生成
     waveWidget = new MyPlayWidget();
     waveWidget->resize(300, 600);
+    waveWidget->move(this->size().width() + this->pos().x(),this->pos().y());
+    waveWidget->setStyleSheet("background-color:#44413f");
     waveWidget->setFocusPolicy(Qt::NoFocus);
     waveWidget->show();
+    //给个按钮
+    QPushButton *change_button = new QPushButton(waveWidget);
+    change_button->resize(50,30);
+    change_button->move(0,waveWidget->size().height() - 30 - 5);
+    change_button->setText("模式");
+    change_button->show();
+    change_button->setStyleSheet("background:black");
+    connect(change_button,&QPushButton::clicked,waveWidget,&MyPlayWidget::changeWaveMode);
 }
+
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     saveFilePath();
     event->accept();
 }
+
 
