@@ -16,6 +16,7 @@ MySlider::MySlider(QWidget *parent):QSlider (parent)
      preview->resize(165,120);
      label=new QLabel(preview);
      label->resize(preview->size());
+     label->setAlignment(Qt::AlignCenter);
      preview->hide();
 }
 

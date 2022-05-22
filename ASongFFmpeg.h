@@ -62,8 +62,7 @@ struct MediaMetaData
 class ASongFFmpeg: public QThread
 {
     Q_OBJECT
-public:
-    ASongFFmpeg();
+public: ASongFFmpeg();
     ~ASongFFmpeg();
     // 播放状态锁
     static QMutex _mediaStatusMutex;
@@ -104,6 +103,15 @@ public:
     // 播放状态: -1 - 没有文件  0-停止  1-播放   2-暂停
     std::atomic_int curMediaStatus = -1;
 
+    // metaData
+    //MediaMetaDate mediaMetaData;
+    MediaMetaData *mediaMetaData = nullptr;
+
+    int	videoIdx = -1, audioIdx = -1;
+
+    //ffmpeg
+    AVFormatContext *pFormatCtx = nullptr;
+
     //flush_pkt
     AVPacket *flushPacket;
     QMutex stopMutex;
@@ -127,10 +135,6 @@ private:
     // 跳转
     void handleSeek();
 
-
-    // metaData
-    //MediaMetaDate mediaMetaData;
-    MediaMetaData *mediaMetaData = nullptr;
     bool hasCover = false;
     // 需要停止
     std::atomic_bool stopReq = false;
@@ -140,10 +144,6 @@ private:
     // 为使线程暂停所用的锁和条件变量
     QMutex _pauseMutex;
     QWaitCondition pauseCond;
-
-    //ffmpeg
-    AVFormatContext *pFormatCtx = nullptr;
-    int	videoIdx = -1, audioIdx = -1;
     // seek
     //    QMutex seekMutex;
     bool seekReq = false;

@@ -56,10 +56,10 @@ public:
     double curPts = -1;
     double frameDelay = 0.0;
 private:
-    //    SDLPaint() = default;
-    //    int got_picture = 0;
-    //    static QAtomicPointer<SDLPaint>_instance;
-    //    static QMutex _mutex;
+    void calDisplayRect(SDL_Rect *rect,
+                        int scr_xleft, int scr_ytop, int scr_width, int scr_height,
+                        int pic_width, int pic_height);
+
     QTimer *sdlTimer = nullptr;
 
     //------------SDL----------------
@@ -68,11 +68,8 @@ private:
     SDL_Window *screen = nullptr;
     SDL_Renderer *sdlRenderer = nullptr;
     SDL_Texture *sdlTexture = nullptr;
-    //    SDL_Rect sdlRect;
-    //    SDL_Thread *videoTid = nullptr;
-    //    SDL_Event event;
-    // thread
-    //    SDL_Thread *tid;
+    SDL_Surface *sdlSurface = nullptr;
+    SDL_Rect sdlRect;
     // ffmpeg
     double tb;
     SwsContext *pSwsCtx = nullptr;
@@ -86,6 +83,10 @@ private:
 
     // 源视频流宽高
     int srcWidth, srcHeight;
+    // 窗口宽高
+    int lastScreenWidth = 0, lastScreenHeight = 0;
+    // 采样纵横比
+    AVRational sar;
     // 帧率
     int frameRate = -1;
     // 帧之间的延时

@@ -46,31 +46,44 @@ int SDLPaint::init(void *winID)
         qDebug() << "SDL: could not create window - exiting:" << SDL_GetError();
         return -1;
     }
-    sdlRenderer = SDL_CreateRenderer(screen, -1, 0);
+    sdlSurface = SDL_GetWindowSurface(screen);
+    if(nullptr == sdlSurface)
+    {
+        qDebug() << "SDL: could not create surface - exiting:" << SDL_GetError();
+        return -1;
+    }
+    //
+    lastScreenWidth = sdlSurface->w;
+    lastScreenHeight = sdlSurface->h;
+    //
+    sdlRenderer = SDL_CreateRenderer(screen, -1, SDL_RENDERER_SOFTWARE);
     if(nullptr == sdlRenderer)
     {
         qDebug() << "create rendered failed";
         return -1;
     }
-    // 设置输出宽高和pix_fmt
-    //    setDstWH(initWidth, initHeight);
     // 创建纹理
     sdlTexture = SDL_CreateTexture(sdlRenderer, SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STREAMING, srcWidth, srcHeight);
-    //    sdlTexture = SDL_CreateTexture(sdlRenderer, SDL_PIXELFORMAT_BGRA4444, SDL_TEXTUREACCESS_STREAMING, dstWidth, dstHeight);
     if(nullptr == sdlTexture)
     {
         qDebug() << "create texture failed";
         return -1;
     }
+    //    qDebug() << "sdlinifinish";
     // 初始化swsCtx
     pSwsCtx = sws_getCachedContext(pSwsCtx, srcWidth, srcHeight, pix_fmt,
                                    srcWidth, srcHeight, AV_PIX_FMT_YUV420P, SWS_BICUBIC, NULL, NULL, NULL);
     if(nullptr == pSwsCtx)
     {
-        qDebug() << "swsGetCtx failed";
+        qDebug() << "sdl 208:swsGetCtx failed";
         return -1;
     }
-    //    qDebug() << "sdlinifinish";
+    // sar
+    AVFormatContext *pFormatCtx = ASongFFmpeg::getInstance()->pFormatCtx;
+    int idx = ASongFFmpeg::getInstance()->mediaMetaData->vMetaDatas[ASongFFmpeg::getInstance()->videoIdx].idx;
+    // 获取采样纵横比
+    sar = av_guess_sample_aspect_ratio(pFormatCtx, pFormatCtx->streams[idx], nullptr);
+    calDisplayRect(&sdlRect, 0, 0, lastScreenWidth, lastScreenHeight, srcWidth, srcHeight);
     // 开启定时器
     sdlTimer = new QTimer(this);
     connect(sdlTimer, &QTimer::timeout, this, &SDLPaint::getFrameYUV);
@@ -81,7 +94,6 @@ int SDLPaint::init(void *winID)
     else
     {
         preDelay = 40;
-        //        QTimer::singleShot(1000, this, &SDLPaint::getFrameYUV);
     }
     sdlTimer->start(preDelay);
     pauseFlag = false;
@@ -99,22 +111,33 @@ void SDLPaint::setMetaData(const int width, const int height, const int _frameRa
     tb = av_q2d(time_base);
 }
 
-//void SDLPaint::setDstWH(const int screenWidth, const int screenHeight)
-//{
-//    // 保证源视频流的宽高比
-//    // 宽>高，以宽为基准
-//    if(srcRate > 1.0)
-//    {
-//        dstWidth = screenWidth;
-//        dstHeight = screenWidth / srcRate;
-//    }
-//    // 宽<=高，以高为基准
-//    else
-//    {
-//        dstHeight = screenHeight;
-//        dstWidth = screenHeight * srcRate;
-//    }
-//}
+void SDLPaint::calDisplayRect(SDL_Rect *rect,
+                              int scr_xleft, int scr_ytop, int scr_width, int scr_height,
+                              int pic_width, int pic_height)
+{
+    // 视频的SAR 采样纵横比
+    AVRational aspect_ratio = sar;
+    int64_t width, height, x, y;
+    if (av_cmp_q(aspect_ratio, av_make_q(0, 1)) <= 0)
+    {
+        aspect_ratio = av_make_q(1, 1);
+    }
+    // aspect_ratio 输出的宽高比 = 采样纵横比aspect_ratio * 视频width / 视频height
+    aspect_ratio = av_mul_q(aspect_ratio, av_make_q(pic_width, pic_height));
+    height = scr_height;
+    width = av_rescale(height, aspect_ratio.num, aspect_ratio.den) & ~1;
+    if (width > scr_width)
+    {
+        width = scr_width;
+        height = av_rescale(width, aspect_ratio.den, aspect_ratio.num) & ~1;
+    }
+    x = (scr_width - width) / 2;
+    y = (scr_height - height) / 2;
+    rect->x = scr_xleft + x;
+    rect->y = scr_ytop  + y;
+    rect->w = FFMAX((int)width,  1);
+    rect->h = FFMAX((int)height, 1);
+}
 
 // 转换为YUV图像并进行同步
 void SDLPaint::getFrameYUV()
@@ -137,6 +160,16 @@ void SDLPaint::getFrameYUV()
             {
                 if(nullptr != preFrame)
                 {
+                    // 适应窗口--begin
+                    // 计算rect参数
+                    sdlSurface = SDL_GetWindowSurface(screen);
+                    if(sdlSurface->w != lastScreenWidth || sdlSurface->h != lastScreenHeight)
+                    {
+                        calDisplayRect(&sdlRect, 0, 0, sdlSurface->w, sdlSurface->h, srcWidth, srcHeight);
+                        lastScreenWidth = sdlSurface->w;
+                        lastScreenHeight = sdlSurface->h;
+                    }
+                    // 适应窗口--end
                     paint(preFrame);
                 }
             }
@@ -167,6 +200,16 @@ void SDLPaint::getFrameYUV()
             {
                 basePts = curPts;
             }
+            // 适应窗口--begin
+            // 计算rect参数
+            sdlSurface = SDL_GetWindowSurface(screen);
+            if(sdlSurface->w != lastScreenWidth || sdlSurface->h != lastScreenHeight)
+            {
+                calDisplayRect(&sdlRect, 0, 0, sdlSurface->w, sdlSurface->h, frame->width, frame->height);
+                lastScreenWidth = sdlSurface->w;
+                lastScreenHeight = sdlSurface->h;
+            }
+            // 适应窗口--end
             // 同步
             double actualDelay = ASongVideo::getInstance()->synVideo(*((double*)frame->opaque));
             // 倍速>=8，丢帧
@@ -232,10 +275,20 @@ void SDLPaint::getFrameYUV()
 
 void SDLPaint::paint(AVFrame *frameYUV)
 {
-    SDL_UpdateTexture(sdlTexture, nullptr, frameYUV->data[0], frameYUV->linesize[0]);
+    if (frameYUV->linesize[0] > 0 && frameYUV->linesize[1] > 0 && frameYUV->linesize[2] > 0)
+    {
+        SDL_UpdateYUVTexture(sdlTexture, NULL, frameYUV->data[0], frameYUV->linesize[0],
+                             frameYUV->data[1], frameYUV->linesize[1],
+                             frameYUV->data[2], frameYUV->linesize[2]);
+    }
+    else if (frameYUV->linesize[0] < 0 && frameYUV->linesize[1] < 0 && frameYUV->linesize[2] < 0)
+    {
+        SDL_UpdateYUVTexture(sdlTexture, NULL, frameYUV->data[0] + frameYUV->linesize[0] * (frameYUV->height - 1), -frameYUV->linesize[0],
+                             frameYUV->data[1] + frameYUV->linesize[1] * (AV_CEIL_RSHIFT(frameYUV->height, 1) - 1), -frameYUV->linesize[1],
+                             frameYUV->data[2] + frameYUV->linesize[2] * (AV_CEIL_RSHIFT(frameYUV->height, 1) - 1), -frameYUV->linesize[2]);
+    }
     SDL_RenderClear(sdlRenderer);
-    //SDL_RenderCopy(sdlRenderer, sdlTexture, &sdlRect, &sdlRect);
-    SDL_RenderCopy(sdlRenderer, sdlTexture, nullptr, nullptr);
+    SDL_RenderCopyEx(sdlRenderer, sdlTexture, NULL, &sdlRect, 0.0, NULL,  SDL_FLIP_NONE);
     SDL_RenderPresent(sdlRenderer);
 }
 
