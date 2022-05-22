@@ -249,6 +249,7 @@ void MainWindow::on_minimize_button_clicked()
 void MainWindow::on_maximize_button_clicked()
 {
     this->isMaximized() ? this->showNormal() : this->showMaximized();
+    if(multipleWidget!=nullptr&&multipleWidget->isVisible()) multipleWidget->hide();
 }
 
 
@@ -814,6 +815,8 @@ void MainWindow::mouseMoveEvent(QMouseEvent *event)
         else
         {
             ui->control_widget->hide();
+            //倍速窗口
+            if(multipleWidget!=nullptr&&multipleWidget->isVisible()) multipleWidget->hide();
         }
     }
 }
@@ -937,9 +940,12 @@ void MainWindow::on_multiple_button_clicked()
 {
     //倍速选项
     QString vector[6] = {"0.5", "1.0", "1.5", "2.0", "4.0", "8.0"};
-    //关闭或重新打开
+    //关闭或重新打开，记得换位置
     if(multipleWidget != nullptr)
     {
+        QPoint *p = new QPoint(-0.3 * multipleWidget->size().width(), -1 * multipleWidget->size().height());
+        multipleWidget->move(ui->control_widget->pos() + ui->control_sub_widget->pos() + ui->multiple_button->pos() + *p);
+
         multipleWidget->isVisible() ? multipleWidget->hide() : multipleWidget->show();
         //遍历
         QList<QAbstractButton*> list = m_pButtonGroup->buttons();
@@ -1053,7 +1059,7 @@ void MainWindow::on_wave_button_clicked()
     //第一次生成
     waveWidget = new MyPlayWidget();
     waveWidget->resize(300, 600);
-    waveWidget->move(this->size().width() + this->pos().x(),this->pos().y());
+    waveWidget->move(this->pos().x(),this->pos().y());
     waveWidget->setStyleSheet("background-color:#44413f");
     waveWidget->setFocusPolicy(Qt::NoFocus);
     waveWidget->show();
