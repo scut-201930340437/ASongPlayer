@@ -1,7 +1,7 @@
 #include "PlayTable.h"
 #include "MyMessageWidget.h"
 
-MyMessageWidget * test;
+extern QTimer* myTimer;
 
 PlayTable::PlayTable(QWidget *parent)
     : QTableWidget(parent)
@@ -17,13 +17,16 @@ void PlayTable::init()
     this->setSelectionBehavior(QAbstractItemView::SelectRows);  //整行选中的方式
     this->setSelectionMode(QAbstractItemView::SingleSelection);  //设置为只能选中单个目标
     this->resize(390,480);
-    this->setColumnCount(2);
+    this->setColumnCount(1);
 
     this->setContextMenuPolicy(Qt::CustomContextMenu);
     this->horizontalHeader()->setVisible(false);
     this->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
     this->setShowGrid(false);
     this->setStyleSheet("selection-background-color:lightblue;"); //设置选中背景色
+    this->setColumnWidth(0,this->size().width()-190);
+    this->setMouseTracking(true);
+    connect(this, &PlayTable::entered, this, &PlayTable::doMouseTrackTip);
 }
 
 void PlayTable::setTable(QList<QString> infoList,QString filePath)
@@ -38,7 +41,7 @@ void PlayTable::setTable(QList<QString> infoList,QString filePath)
     for(qint16 i=0;i<numFile;i++)
     {
         this->setItem(i,0,new QTableWidgetItem(getFileNameFromPath(infoList[i])));
-        this->setItem(i,1,new QTableWidgetItem(infoList[i]));
+//        this->setItem(i,1,new QTableWidgetItem(infoList[i]));
     }
 
     //生成随机列表
@@ -93,7 +96,7 @@ bool PlayTable::isNeededFile(QFileInfo file)
 
 QString PlayTable::getPath(qint16 row)
 {
-    if(!this->item(row,1))
+    if(row>=orderInfoList.size())
         return "";
     return this->orderInfoList[row];
 }
@@ -146,7 +149,7 @@ qint16 PlayTable::getNumFiles()
 
 void PlayTable::showHighLight(qint16 pre,qint16 cur)
 {
-    for(int i=0;i<2;i++)
+    for(int i=0;i<1;i++)
     {
         this->item(pre,i)->setBackground(QBrush(this->backgroundColor));
         this->item(cur,i)->setBackground(QBrush(this->onPlayingColor));
@@ -163,7 +166,6 @@ void PlayTable::showMessage()
         MediaMetaData * mediaMetaData=ASongFFmpeg::getInstance()->openMediaInfo(path);
         MyMessageWidget * myMessageWidget = new MyMessageWidget(mediaMetaData);
         myMessageWidget->show();
-        test=myMessageWidget;
 
     }
 }
@@ -197,12 +199,16 @@ void PlayTable::deleteFile()
         playPos--;
     }
     randomPos=order_random[playPos];
-    test->show();
 }
 
 QString PlayTable::getFileNameFromPath(QString path)
 {
     return path.section('/', -1, -1);
+}
+
+void PlayTable::doMouseTrackTip(QModelIndex index)
+{
+    QToolTip::showText(QCursor::pos(), orderInfoList[index.row()]);
 }
 
 

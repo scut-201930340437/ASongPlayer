@@ -10,6 +10,10 @@
 #include <QAction>
 #include <QMessageBox>
 #include <QHeaderView>
+#include <QToolTip>
+
+
+
 class PlayTable : public QTableWidget
 {
     Q_OBJECT
@@ -38,6 +42,7 @@ public:
     void showHighLight(qint16 pre,qint16 cur);
     QString getFileNameFromPath(QString path);
     void deleteFile();
+    void doMouseTrackTip(QModelIndex index);
 
 private:
     QVector<QString> neededFile={"mp3","mp4","flv","avi","mkv"};
@@ -51,3 +56,4 @@ private slots:
 };
 
 #endif // PLAYTABLE_H
+
