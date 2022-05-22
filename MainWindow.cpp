@@ -495,10 +495,9 @@ void MainWindow::handleTimeout()
 void MainWindow::on_fullScreen_button_clicked()
 {
     //倍速窗口关闭
-    if(multipleWidget != nullptr)
+    if(multipleWidget != nullptr && multipleWidget->isVisible())
     {
-        multipleWidget->close();
-        multipleWidget = nullptr;
+        multipleWidget->hide();
     }
     if(ui->play_widget->size() == this->size())
     {
