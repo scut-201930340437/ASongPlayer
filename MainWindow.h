@@ -106,6 +106,8 @@ private slots:
 
     void deleteFile();
 
+    void clearPlayList();
+
     void on_forward_button_clicked();
 
     void on_backward_button_clicked();

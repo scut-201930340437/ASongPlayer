@@ -847,12 +847,18 @@ void MainWindow::on_play_table_customContextMenuRequested(const QPoint &pos)
     QMenu *pMenu = new QMenu(this);
     QAction *mes = new QAction(tr("详细信息"), this);
     QAction *dlt = new QAction(tr("删除文件"), this);
+    QAction *clear = new QAction(tr("清空列表"), this);
+    QAction *resetRadomList = new QAction(tr("重设随机顺序"), this);
     /* 添加菜单项 */
     pMenu->addAction(mes);
     pMenu->addAction(dlt);
+    pMenu->addAction(clear);
+    pMenu->addAction(resetRadomList);
     /* 连接槽函数 */
     connect(mes, SIGNAL(triggered()), ui->play_table, SLOT(showMessage()));
     connect(dlt, SIGNAL(triggered()), this, SLOT(deleteFile()));  //直接触发窗口的close函数
+    connect(clear, SIGNAL(triggered()), this, SLOT(clearPlayList()));  //直接触发窗口的close函数
+    connect(resetRadomList, SIGNAL(triggered()), this->ui->play_table, SLOT(generateRandomList()));  //直接触发窗口的close函数
     /* 在鼠标右键处显示菜单 */
     pMenu->exec(cursor().pos());
     /* 释放内存 */
@@ -1015,10 +1021,7 @@ void MainWindow::deleteFile()
     }
     if( n == 1 )
     {
-        ui->play_table->clear();
-        ui->play_table->setRowCount(0);
-        on_stop_button_clicked();
-        filePath="";
+        clearPlayList();
         return;
     }
     //如果是当前播放，切换filename,保证filename 正确
@@ -1032,6 +1035,14 @@ void MainWindow::deleteFile()
         on_stop_button_clicked();
     }
     ui->play_table->deleteFile();
+}
+
+void MainWindow::clearPlayList()
+{
+    ui->play_table->clear();
+    ui->play_table->setRowCount(0);
+    on_stop_button_clicked();
+    filePath="";
 }
 
 void MainWindow::on_forward_button_clicked()
@@ -1079,5 +1090,4 @@ void MainWindow::closeEvent(QCloseEvent *event)
     saveFilePath();
     event->accept();
 }
-
 

@@ -59,7 +59,6 @@ void PlayTable::setTable(QList<QString> infoList,QString filePath)
 
 void PlayTable::generateRandomList()
 {
-    randomList.clear();
     //根据orderInfoLst生成RandomList
     numFile=orderInfoList.size();
 //    order_random.resize(numFile);
@@ -67,7 +66,6 @@ void PlayTable::generateRandomList()
     //记录原来的位置
     for(qint16 i=0;i<numFile;i++)
     {
-        randomList.append(orderInfoList[i]);
         random_order[i]=i;
     }
     quint32 seed = quint32(QDateTime::currentDateTime().toSecsSinceEpoch());
@@ -75,8 +73,6 @@ void PlayTable::generateRandomList()
     for(qint16 i=0;i<numFile;i++)
     {
         int rand = generator.bounded(i, numFile);
-
-        qSwap(randomList[i],randomList[rand]);
         qSwap(random_order[i],random_order[rand]);
     }
     for(qint16 i=0;i<numFile;i++)
@@ -181,7 +177,6 @@ void PlayTable::deleteFile()
     {   //删除顺序列表，随机列表，两个哈希的相应映射对
         this->removeRow(orderDltRowIndex);
         orderInfoList.removeAt(orderDltRowIndex);
-        randomList.removeAt(randomDltRowIndex);
         order_random.removeAt(orderDltRowIndex);
         random_order.removeAt(randomDltRowIndex);
         //修正哈希映射

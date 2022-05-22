@@ -29,7 +29,6 @@ public:
     //同理
     QList<qint16> random_order;
     QList<QString> orderInfoList;
-    QList<QString> randomList;
     void init();
     void setTable(QList<QString> infoList,QString filePath);
     bool isNeededFile(QFileInfo file);
@@ -47,13 +46,13 @@ public:
 
 private:
     QVector<QString> neededFile={"mp3","mp4","flv","avi","mkv"};
-    void generateRandomList();
     QColor backgroundColor=QColor(68, 65, 63);
     QColor selectColor=QColor(158, 158, 252);
     QColor onPlayingColor=QColor(224, 224, 226);
 
 private slots:
     void showMessage();
+    void generateRandomList();
 };
 
 #endif // PLAYTABLE_H
