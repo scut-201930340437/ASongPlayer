@@ -165,7 +165,7 @@ void PlayTable::showMessage()
         MediaMetaData * mediaMetaData=ASongFFmpeg::getInstance()->openMediaInfo(path);
         MyMessageWidget * myMessageWidget = new MyMessageWidget(mediaMetaData);
         myMessageWidget->show();
-
+        allCloseWidget.append(myMessageWidget);
     }
 }
 void PlayTable::deleteFile()

@@ -29,6 +29,8 @@ public:
     //同理
     QList<qint16> random_order;
     QList<QString> orderInfoList;
+
+    QList<QWidget *> allCloseWidget;
     void init();
     void setTable(QList<QString> infoList,QString filePath);
     bool isNeededFile(QFileInfo file);
@@ -43,6 +45,7 @@ public:
     void deleteFile();
     void doMouseTrackTip(QModelIndex index);
     void addFilePath(QString filepath);
+
 
 private:
     QVector<QString> neededFile={"mp3","mp4","flv","avi","mkv"};

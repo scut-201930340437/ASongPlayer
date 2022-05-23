@@ -878,6 +878,7 @@ bool MainWindow::checkIfExist(QString path)
     {
         MyMessageWidget *infoWindow = new MyMessageWidget();
         infoWindow->show();
+        ui->play_table->allCloseWidget.append(infoWindow);
         setListFromFilePath();
         return false;
     }
@@ -1091,6 +1092,16 @@ void MainWindow::on_wave_button_clicked()
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     saveFilePath();
+    if(waveWidget!=nullptr)
+    {
+        waveWidget->close();
+    }
+    for(QWidget * widget:ui->play_table->allCloseWidget)
+    {
+        widget->close();
+    }
+    ui->play_table->allCloseWidget.clear();
+
     event->accept();
 }
 
