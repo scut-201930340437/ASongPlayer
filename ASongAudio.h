@@ -3,13 +3,11 @@
 
 #include <atomic>
 
-//#include "MyThread.h"
 #include <QThread>
 #include <QMutex>
 #include <QMutexLocker>
 #include <QWaitCondition>
 #include <QList>
-
 
 #include <QMediaDevices>
 #include <QAudioOutput>
@@ -18,12 +16,8 @@
 extern "C"
 {
 #include "libavcodec/avcodec.h"
-
 #include "libavformat/avformat.h"
-
 #include "libavdevice/avdevice.h"
-
-
 #include "libavutil/time.h"
 #include "libavutil/mathematics.h"
 };
@@ -31,23 +25,17 @@ extern "C"
 class ASongAudio: public QThread
 {
 public:
-
     // 单例模式，全局访问点
     static ASongAudio* getInstance();
-
     // 初始化音频设备参数
     void initParaAndSwr();
-
     // 初始化元数据，从ffmpeg的load中读取
     void setMetaData(AVFormatContext * _pFormatCtx, AVCodecContext * _pCodecCtx, const int _audioIdx);
     // 设置音频时钟
     void setAudioClock(AVFrame *frame, const double duration);
-    // 设置需要解码
-    //    void setNeededAudioCode();
     /* 访问成员变量*/
     // 获取时钟，用于同步，音频为基准
     double getAudioClock();
-
 
     /* 播放控制*/
     void start(Priority = InheritPriority);
@@ -57,16 +45,12 @@ public:
     void stop();
     //    void pause();
     void resume();
-    // 查看线程是否暂停
-    //    bool isPaused();
     void setVolume(int volume);
     qreal getVolume();
 
-    std::atomic_bool stopFlag = false;
+    //    std::atomic_bool stopFlag = true;
     // 暂停标志
     std::atomic_bool pauseFlag = false;
-    //
-
 private:
     // thread 音频解码
     void run() override;
@@ -86,7 +70,6 @@ private:
     double audioClock = 0.0;
     // 时基
     double tb;
-
     // stream_index
     int audioIdx = -1;
     //

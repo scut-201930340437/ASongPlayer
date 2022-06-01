@@ -43,18 +43,6 @@ MainWindow::~MainWindow()
 {
     // 结束线程
     ASongFFmpeg::getInstance()->stop();
-    //    if(nullptr != ASongAudio::getInstance())
-    //    {
-    //        delete ASongAudio::getInstance();
-    //    }
-    //    if(nullptr != ASongVideo::getInstance())
-    //    {
-    //        delete ASongVideo::getInstance();
-    //    }
-    //    if(nullptr != ASongFFmpeg::getInstance())
-    //    {
-    //        delete ASongFFmpeg::getInstance();
-    //    }
     delete ui;
 }
 
@@ -1052,14 +1040,11 @@ void MainWindow::clearPlayList()
 void MainWindow::on_forward_button_clicked()
 {
     ASongFFmpeg::getInstance()->step_to_dst_frame(1);
-    //    qDebug() << "下一帧";
 }
-
 
 void MainWindow::on_backward_button_clicked()
 {
     ASongFFmpeg::getInstance()->step_to_dst_frame(-1);
-    //    qDebug() << "上一帧";
 }
 
 

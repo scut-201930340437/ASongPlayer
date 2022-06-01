@@ -47,6 +47,7 @@ void ASongVideo::caliBratePts(AVFrame *frame, double &pts)
         pts = videoClock;
     }
     double frameDelay = tb;
+    // extra_delay = repeat_pict / (2*fps)
     frameDelay *= (1.0 + 0.5 * frame->repeat_pict);
     videoClock += frameDelay; // 此时videoClock实际上也是下一帧的时间点
 }
@@ -68,7 +69,6 @@ double ASongVideo::synVideo(const double pts)
                                  FFMIN(AV_SYNC_THRESHOLD_MAX / ASongFFmpeg::getInstance()->getSpeed(), delay));
     // 计算视频帧pts和音频时钟的差
     double diff = pts - ASongAudio::getInstance()->getAudioClock();
-    //    qDebug() << diff;
     // 没有超过非同步阈值则可以同步
     if(fabs(diff) < FFMAX(noSynUpperBound * ASongFFmpeg::getInstance()->getSpeed(), 12.0))
     {
@@ -92,13 +92,10 @@ double ASongVideo::synVideo(const double pts)
                 }
             }
         }
-        frameTimer += delay;
         return delay;
     }
-    // 视频时钟与音频时钟相差太大，重新获取系统时间
     else
     {
-        frameTimer = av_gettime_relative() / 1000000.0;
         return 0.0;
     }
 }
@@ -107,10 +104,9 @@ double ASongVideo::synVideo(const double pts)
 void ASongVideo::start(Priority pri)
 {
     stopReq = false;
-    stopFlag = false;
+    //    stopFlag = false;
     pauseReq = false;
     pauseFlag = false;
-    frameTimer = av_gettime_relative() / 1000000.0;
     QThread::start(pri);
 }
 
@@ -132,19 +128,12 @@ void ASongVideo::stop()
         pCodecCtx = nullptr;
     }
     videoClock = 0.0;
-    // frameTimer
-    frameTimer = 0.0;
     // 上一帧pts
     lastFramePts = 0.0;
     // 上一帧delay
     lastFrameDelay = 0.0;
     // stream_index
     videoIdx = -1;
-}
-
-void ASongVideo::resume()
-{
-    frameTimer = av_gettime_relative() / 1000000.0; // 更新起始时间基准
 }
 
 void ASongVideo::pauseThread()
@@ -176,12 +165,21 @@ void ASongVideo::resumeThread()
 void ASongVideo::run()
 {
     AVPacket *packet = nullptr;
+    QList<AVFrame*> *frameList = new QList<AVFrame*>;
     std::atomic_bool coverAlready = false;
     for(;;)
     {
         if(stopReq)
         {
             stopReq = false;
+            AVFrame *frame = nullptr;
+            while(!frameList->isEmpty())
+            {
+                frame = frameList->takeFirst();
+                av_frame_free(&frame);
+            }
+            frameList->clear();
+            delete frameList;
             break;
         }
         if(pauseReq)
@@ -197,17 +195,17 @@ void ASongVideo::run()
             // 唤醒主线程
             pauseCond.wakeAll();
         }
-        //        qDebug() << "start";
-        if(DataSink::getInstance()->allowAddVFrame())
+        if(!ASongFFmpeg::getInstance()->invertFlag && DataSink::getInstance()->allowAddFrame(1) ||
+                ASongFFmpeg::getInstance()->invertFlag && DataSink::getInstance()->allowAddInvertFrameList(1))
         {
             packet = DataSink::getInstance()->takeNextPacket(1);
             if(nullptr != packet)
             {
                 // flushpkt
-                if(packet == ASongFFmpeg::getInstance()->flushPacket)
+                if(packet->data == (uint8_t*)packet)
                 {
-                    // 有seek操作
                     avcodec_flush_buffers(pCodecCtx);
+                    av_packet_free(&packet);
                     continue;
                 }
                 // 解码
@@ -219,8 +217,29 @@ void ASongVideo::run()
                     ret = avcodec_receive_frame(pCodecCtx, frame);
                     if(ret == 0)
                     {
-                        frame->opaque = (double*)new double(getPts(frame));
-                        DataSink::getInstance()->appendFrameList(1, frame);
+                        // 处于倒放
+                        if(ASongFFmpeg::getInstance()->invertFlag)
+                        {
+                            if(frame->pts * tb < ASongFFmpeg::getInstance()->invertPts)
+                            {
+                                frameList->append(frame);
+                            }
+                            else
+                            {
+                                if(!frameList->isEmpty())
+                                {
+                                    DataSink::getInstance()->appendInvertFrameList(1, frameList);
+                                    ASongFFmpeg::getInstance()->invertPts = frameList->first()->pts * tb;
+                                    frameList = new QList<AVFrame*>;
+                                }
+                                ASongFFmpeg::getInstance()->needInvertSeek = true;
+                            }
+                        }
+                        else
+                        {
+                            frame->opaque = (double*)new double(getPts(frame));
+                            DataSink::getInstance()->appendFrame(1, frame);
+                        }
                         // 如果是带音频的封面，该线程只做一次循环
                         if(ASongFFmpeg::getInstance()->hasCover)
                         {
@@ -253,8 +272,29 @@ void ASongVideo::run()
                                 avcodec_flush_buffers(pCodecCtx);
                                 break;
                             }
-                            frame->opaque = (double*)new double(getPts(frame));
-                            DataSink::getInstance()->appendFrameList(1, frame);
+                            // 处于倒放
+                            if(ASongFFmpeg::getInstance()->invertFlag)
+                            {
+                                if(frame->pts * tb < ASongFFmpeg::getInstance()->invertPts)
+                                {
+                                    frameList->append(frame);
+                                }
+                                else
+                                {
+                                    if(!frameList->isEmpty())
+                                    {
+                                        DataSink::getInstance()->appendInvertFrameList(1, frameList);
+                                        ASongFFmpeg::getInstance()->invertPts = frameList->first()->pts * tb;
+                                        frameList = new QList<AVFrame*>;
+                                    }
+                                    ASongFFmpeg::getInstance()->needInvertSeek = true;
+                                }
+                            }
+                            else
+                            {
+                                frame->opaque = (double*)new double(getPts(frame));
+                                DataSink::getInstance()->appendFrame(1, frame);
+                            }
                         }
                         // 然后再调用avcodec_send_packet
                         ret = avcodec_send_packet(pCodecCtx, packet);
@@ -264,8 +304,29 @@ void ASongVideo::run()
                             ret = avcodec_receive_frame(pCodecCtx, frame);
                             if(ret == 0)
                             {
-                                frame->opaque = (double*)new double(getPts(frame));
-                                DataSink::getInstance()->appendFrameList(1, frame);
+                                // 处于倒放
+                                if(ASongFFmpeg::getInstance()->invertFlag)
+                                {
+                                    if(frame->pts * tb < ASongFFmpeg::getInstance()->invertPts)
+                                    {
+                                        frameList->append(frame);
+                                    }
+                                    else
+                                    {
+                                        if(!frameList->isEmpty())
+                                        {
+                                            DataSink::getInstance()->appendInvertFrameList(1, frameList);
+                                            ASongFFmpeg::getInstance()->invertPts = frameList->first()->pts * tb;
+                                            frameList = new QList<AVFrame*>;
+                                        }
+                                        ASongFFmpeg::getInstance()->needInvertSeek = true;
+                                    }
+                                }
+                                else
+                                {
+                                    frame->opaque = (double*)new double(getPts(frame));
+                                    DataSink::getInstance()->appendFrame(1, frame);
+                                }
                             }
                             else
                             {
@@ -281,24 +342,25 @@ void ASongVideo::run()
                 }
                 // 释放
                 av_packet_free(&packet);
-                //        }
                 if(coverAlready)
                 {
                     stopReq = true;
+                    frameList->clear();
+                    delete frameList;
                     break;
                 }
             }
             else
             {
-                QMutexLocker locker(&ASongFFmpeg::getInstance()->stopMutex);
-                if(ASongFFmpeg::getInstance()->stopFlag)
+                //                QMutexLocker locker(&ASongFFmpeg::getInstance()->stopMutex);
+                if(ASongFFmpeg::getInstance()->isFinished())
                 {
-                    locker.unlock();
+                    //                    locker.unlock();
                     stopReq = true;
                 }
                 else
                 {
-                    locker.unlock();
+                    //                    locker.unlock();
                     msleep(5);
                 }
             }

@@ -220,17 +220,24 @@ void ASongAudioOutput::run()
         process();
     }
     closeAudioOuput();
-    QMutexLocker locker(&stopMutex);
+    //    QMutexLocker locker(&stopMutex);
     stopFlag = true;
-    locker.unlock();
+    //    locker.unlock();
 }
 
 void ASongAudioOutput::process()
 {
-    AVFrame *frame = DataSink::getInstance()->takeNextFrame(0);
+    AVFrame *frame = nullptr;
+    if(ASongFFmpeg::getInstance()->invertFlag)
+    {
+        frame = DataSink::getInstance()->takeInvertFrame(0);
+    }
+    else
+    {
+        frame = DataSink::getInstance()->takeNextFrame(0);
+    }
     if(nullptr != frame)
     {
-        curPictureNumber = frame->display_picture_number;
         // 如果是planar（每个声道数据单独存放），一定要重采样，因为PCM是packed（每个声道数据交错存放）
         if(av_sample_fmt_is_planar(in_sample_fmt) == 1)
         {
@@ -334,10 +341,5 @@ void ASongAudioOutput::process()
             emit playFinish();
         }
     }
-}
-
-int ASongAudioOutput::getCurFrameNumber()
-{
-    return curPictureNumber;
 }
 

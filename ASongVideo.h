@@ -38,8 +38,8 @@ public:
     void resumeThread();
     //
     void stop();
-    void resume();
-    std::atomic_bool stopFlag = false;
+    //    void resume();
+    //    std::atomic_bool stopFlag = true;
     // 暂停标志
     std::atomic_bool pauseFlag = false;
 
@@ -48,7 +48,6 @@ private:
     void run() override;
     // 校准pts
     void caliBratePts(AVFrame *frame, double &pts);
-
     //
     std::atomic_bool stopReq = false;
     std::atomic_bool pauseReq = false;
@@ -58,15 +57,12 @@ private:
     QWaitCondition pauseCond;
     // videoClock
     double videoClock = 0.0;
-    // frameTimer 最后一帧播放时刻
-    double frameTimer = 0.0;
     // 上一帧pts
     double lastFramePts = 0.0;
     // 上一帧delay
     double lastFrameDelay = 0.0;
     // av_q2d后的时基
     double tb;
-
     // stream_index
     int videoIdx = -1;
 

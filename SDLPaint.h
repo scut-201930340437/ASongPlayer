@@ -22,32 +22,29 @@ public:
     ~SDLPaint();
     // 初始化sdl
     int init(void *winID);
-
+    // 设置参数
     void setMetaData(const int width, const int height, const int _frameRate, const enum AVPixelFormat _pix_fmt, const AVRational time_base);
-
-    // 将一帧图像转储为YUVFrame
+    // 将一帧图像转为YUVFrame
     void getFrameYUV();
     // 绘制
     void paint(AVFrame *frameYUV);
-
+    // 播放控制
     void pause();
     void stop();
     void resume();
     void restartTimer();
     void stopTimer();
 
-    double basePts = 0;
-    double curPts = -1;
-    double frameDelay = 0.0;
+    double basePts = 0.0;
+    double curPts = 0.0;
+    int curFrameNum = -1;
 private:
     void calDisplayRect(SDL_Rect *rect,
                         int scr_xleft, int scr_ytop, int scr_width, int scr_height,
                         int pic_width, int pic_height);
 
     QTimer *sdlTimer = nullptr;
-
-    //------------SDL----------------
-
+    // SDL
     SDL_Window *screen = nullptr;
     SDL_Renderer *sdlRenderer = nullptr;
     SDL_Texture *sdlTexture = nullptr;

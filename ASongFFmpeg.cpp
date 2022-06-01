@@ -7,20 +7,21 @@
 
 Q_GLOBAL_STATIC(ASongFFmpeg, asongFFmpeg) // 采用qt实现的线程安全的单例模式
 
-ASongFFmpeg::ASongFFmpeg()
-{
-    // 设置flushpkt
-    flushPacket = av_packet_alloc();
-    flushPacket->data = (uint8_t*)flushPacket;
-}
+//ASongFFmpeg::ASongFFmpeg()
+//{
+//    // 设置flushpkt
+//    flushPacket = av_packet_alloc();
+//    flushPacket->data = (uint8_t*)flushPacket;
+//}
 
-ASongFFmpeg::~ASongFFmpeg()
-{
-    if(nullptr != flushPacket)
-    {
-        av_packet_free(&flushPacket);
-    }
-}
+//ASongFFmpeg::~ASongFFmpeg()
+//{
+//    if(nullptr != flushPacket)
+//    {
+//        av_packet_free(&flushPacket);
+//        flushPacket = nullptr;
+//    }
+//}
 
 // 全局访问点
 ASongFFmpeg* ASongFFmpeg::getInstance()
@@ -324,7 +325,6 @@ bool ASongFFmpeg::audioHasCover()
     return hasCover;
 }
 
-
 // 开始播放
 int ASongFFmpeg::play(QObject *par, QString path, void *winID)
 {
@@ -350,7 +350,12 @@ void ASongFFmpeg::start(Priority pri)
     stopReq = false;
     pauseReq = false;
     pauseFlag = false;
-    stopFlag = false;
+    invertFlag = false;
+    invertReq = false;
+    seekReq = false;
+    stepSeek = false;
+    seekVideo = false;
+    //    stopFlag = false;
     QThread::start(pri);
 }
 
@@ -363,14 +368,9 @@ int ASongFFmpeg::stop()
     curMediaStatus = 0;
     // 先结束音频播放线程和关闭音频设备
     ASongAudioOutput::getInstance()->stop();
-    // 再结束音频解码
-    ASongAudio::getInstance()->stop();
-    if(videoIdx >= 0)
-    {
-        SDLPaint::getInstance()->stop();
-        ASongVideo::getInstance()->stop();
-        VideoPreview::getInstance()->stop();
-    }
+    // 结束视频渲染
+    SDLPaint::getInstance()->stop();
+    // 结束解复用线程
     if(QThread::isRunning())
     {
         stopReq = true;
@@ -378,8 +378,17 @@ int ASongFFmpeg::stop()
         QThread::quit();
         QThread::wait();
     }
+    // 结束音频解码
+    ASongAudio::getInstance()->stop();
+    // 结束视频解码、预览
+    if(videoIdx >= 0)
+    {
+        ASongVideo::getInstance()->stop();
+        VideoPreview::getInstance()->stop();
+    }
     // 清空队列
     DataSink::getInstance()->clearList();
+    DataSink::getInstance()->clearInvertList();
     // 关闭文件流上下文
     if(nullptr != pFormatCtx)
     {
@@ -427,11 +436,6 @@ int ASongFFmpeg::resume()
     // 带封面的音频在不是重新播放的情况下不启动视频解码线程和SDL
     if(videoIdx >= 0)
     {
-        // 重设video frameTimer
-        if(!hasCover)
-        {
-            ASongVideo::getInstance()->resume();
-        }
         SDLPaint::getInstance()->resume();
     }
     return 0;
@@ -484,6 +488,14 @@ void ASongFFmpeg::run()
             // 唤醒主线程
             pauseCond.wakeAll();
         }
+        if(invertReq)
+        {
+            initInvert();
+        }
+        if(needInvertSeek)
+        {
+            handleInvertSeek();
+        }
         if(seekReq)
         {
             handleSeek();
@@ -504,44 +516,55 @@ void ASongFFmpeg::run()
             // 如果是音频
             if(packet->stream_index == mediaMetaData->aMetaDatas[audioIdx].idx)
             {
-                DataSink::getInstance()->appendPacketList(0, packet);
+                DataSink::getInstance()->appendPacket(0, packet);
             }
             else
             {
                 if(packet->stream_index == mediaMetaData->vMetaDatas[videoIdx].idx)
                 {
-                    DataSink::getInstance()->appendPacketList(1, packet);
+                    DataSink::getInstance()->appendPacket(1, packet);
                 }
             }
         }
     }
-    QMutexLocker locker(&stopMutex);
-    stopFlag = true;
-    locker.unlock();
+    //    QMutexLocker locker(&stopMutex);
+    //    stopFlag = true;
+    //    locker.unlock();
     // 解复用结束
 }
 
 void ASongFFmpeg::handleSeek()
 {
     // 停止音频播放和视频渲染
-    if(!stepSeek)
+    if(!stepSeek && !invertFlag)
     {
         pause();
     }
     // 阻塞解码线程
     ASongAudio::getInstance()->pauseThread();
     ASongVideo::getInstance()->pauseThread();
-    // 清理队列
+    // 清理正常播放的队列
     DataSink::getInstance()->clearList();
+    // 设置清空标志位
+    if(stepSeek)
+    {
+        QMutexLocker locker(&clearListMutex);
+        cleared = true;
+        clearListCond.wakeAll();
+        locker.unlock();
+    }
+    // 放入flushpkt
     if(audioIdx >= 0)
     {
-        // 放入flushpkt
-        DataSink::getInstance()->appendPacketList(0, flushPacket);
+        AVPacket *flushPacket = av_packet_alloc();
+        flushPacket->data = (uint8_t*)flushPacket;
+        DataSink::getInstance()->appendPacket(0, flushPacket);
     }
     if(videoIdx >= 0 && !hasCover)
     {
-        // 放入flushpkt
-        DataSink::getInstance()->appendPacketList(1, flushPacket);
+        AVPacket *flushPacket = av_packet_alloc();
+        flushPacket->data = (uint8_t*)flushPacket;
+        DataSink::getInstance()->appendPacket(1, flushPacket);
     }
     // seek_file
     int ret = avformat_seek_file(pFormatCtx, -1, seekMin, seekPos, seekMax, seekFlag);
@@ -549,35 +572,27 @@ void ASongFFmpeg::handleSeek()
     {
         qDebug() << "seek failed";
     }
-    // seek后，重置req和flag
-    seekReq = false;
-    // 设置seektime用于丢掉过时的packet
-    seekTime = seekPos / 1000000.0;
-    //
-    seekAudio = true;
-    if(videoIdx >= 0 && !hasCover)
+    // 重启音频播放线程和渲染timer
+    if(!stepSeek)
     {
-        seekVideo = true;
+        resume();
     }
-    // 重启解码线程
+    // 重启解码线程，解码线程唤醒后会唤醒主线程，所以要在音频播放线程和渲染timer启动后才启动解码线程
     ASongAudio::getInstance()->resumeThread();
     if(videoIdx >= 0 && !hasCover)
     {
         ASongVideo::getInstance()->resumeThread();
     }
-    if(!stepSeek)
-    {
-        resume();
-    }
-    stepSeek = false;
+    // seek后，重置req和flag
+    seekReq = false;
     seekFlag = -1;
 }
 
-int ASongFFmpeg::seek(int64_t posSec)
+void ASongFFmpeg::seek(int64_t posSec)
 {
     if(nullptr == pFormatCtx || curMediaStatus <= 0)
     {
-        return -1;
+        return;
     }
     // 阻塞解复用线程
     pauseThread();
@@ -587,82 +602,125 @@ int ASongFFmpeg::seek(int64_t posSec)
     seekMin = seekRel > 0 ? seekPos - seekRel + 2 : INT64_MIN;
     seekMax = seekRel < 0 ? seekPos - seekRel - 2 : INT64_MAX;
     seekFlag = AVSEEK_FLAG_BACKWARD;
-    stepSeek = false;
     seekReq = true;
     // 唤醒解复用线程
     resumeThread();
-    return 0;
 }
 
 // 逐帧
-int ASongFFmpeg::step_to_dst_frame(int step)
+void ASongFFmpeg::step_to_dst_frame(int step)
 {
-    if(nullptr == pFormatCtx || curMediaStatus <= 0)
+    if(nullptr == pFormatCtx || curMediaStatus <= 0 || videoIdx < 0 || hasCover)
     {
-        return -1;
+        return;
     }
-    curMediaStatus = 2;
-    // 暂停音频播放线程
-    ASongAudioOutput::getInstance()->pause();
     // 停止渲染定时器
     SDLPaint::getInstance()->stopTimer();
     // 设置sdl非暂停态
     SDLPaint::getInstance()->resume();
-    // 阻塞解复用线程
-    pauseThread();
-    // 设置seek请求
-    if(videoIdx >= 0 && !hasCover)
+    // 没有下一帧或下五帧 或没有上一帧或上五帧
+    targetFrameNum = SDLPaint::getInstance()->curFrameNum + step;
+    if(targetFrameNum > pFormatCtx->streams[mediaMetaData->vMetaDatas[videoIdx].idx]->nb_frames - 1 || targetFrameNum < 0)
     {
-        double curPts = SDLPaint::getInstance()->curPts;
-        double basePts = SDLPaint::getInstance()->basePts;
-        seekPos = FFMIN( FFMAX( (curPts + step * basePts) * AV_TIME_BASE, 0), pFormatCtx->duration);
+        SDLPaint::getInstance()->restartTimer();
+        return;
     }
-    else
-    {
-        seekPos = ASongAudioOutput::getInstance()->getCurFrameNumber() + step;
-    }
+    curMediaStatus = 2;
+    // 暂停音频播放线程
+    ASongAudioOutput::getInstance()->pause();
+    _step = step;
+    seekVideo = true;
+    stepSeek = true;
     // 向后跳
-    if(step > 0)
-    {
-        seekMin = seekPos;
-        seekMax = INT64_MAX;
-    }
     // 向前跳
-    else
+    if(_step < 0)
     {
+        // 阻塞解复用线程
+        pauseThread();
+        // 设置seek请求
+        targetPts = SDLPaint::getInstance()->curPts + _step * SDLPaint::getInstance()->basePts;
+        seekPos = FFMAX((targetPts - 1.0 * SDLPaint::getInstance()->basePts) * AV_TIME_BASE, 0);
         seekMin = INT64_MIN;
         seekMax = seekPos;
-    }
-    //    seekFlag = AVSEEK_FLAG_FRAME | AVSEEK_FLAG_ANY;
-    seekFlag = AVSEEK_FLAG_BACKWARD;
-    stepSeek = true;
-    seekReq = true;
-    // 唤醒解复用线程
-    resumeThread();
-    // 等待帧解码并放入队列
-    DataSink::getInstance()->frameListIsEmpty(0);
-    // 播放一帧音频
-    ASongAudioOutput::getInstance()->resume();
-    if(videoIdx >= 0 && !hasCover)
-    {
+        seekFlag = AVSEEK_FLAG_BACKWARD;
+        seekReq = true;
+        // 唤醒解复用线程
+        resumeThread();
+        // 等待队列清理完成
+        QMutexLocker locker(&clearListMutex);
+        while(!cleared)
+        {
+            clearListCond.wait(&clearListMutex);
+        }
+        locker.unlock();
+        cleared = false;
+        // 等待帧解码并放入队列
+        DataSink::getInstance()->frameListIsEmpty(0);
         // 等待帧解码并放入队列
         DataSink::getInstance()->frameListIsEmpty(1);
-        // 渲染一帧，丢弃不是目标位置的帧
-        while(seekVideo)
-        {
-            SDLPaint::getInstance()->getFrameYUV();
-        }
-        // 设置sdl暂停态
-        SDLPaint::getInstance()->pause();
-        // 重启定时器使sdl不断渲染上一帧
-        SDLPaint::getInstance()->restartTimer();
     }
-    return 0;
+    // 播放一帧音频
+    ASongAudioOutput::getInstance()->resume();
+    // 渲染一帧，丢弃不是目标位置的帧
+    while(seekVideo)
+    {
+        SDLPaint::getInstance()->getFrameYUV();
+    }
+    // 设置sdl暂停态
+    SDLPaint::getInstance()->pause();
+    // 重启定时器使sdl不断渲染上一帧
+    SDLPaint::getInstance()->restartTimer();
+    stepSeek = false;
+    _step = 0;
 }
 // 设置速率
 void ASongFFmpeg::setSpeed(float _speed)
 {
     ASongAudioOutput::getInstance()->setSpeed(_speed);
+}
+
+void ASongFFmpeg::initInvert()
+{
+    pause();
+    invertPts = SDLPaint::getInstance()->curPts;
+    // 阻塞解码线程
+    ASongAudio::getInstance()->pauseThread();
+    ASongVideo::getInstance()->pauseThread();
+    if(!invertFlag)
+    {
+        // 清除上一次倒放的残留帧
+        DataSink::getInstance()->clearInvertList();
+        invertFlag = true;
+    }
+    else
+    {
+        invertFlag = false;
+    }
+    needInvertSeek = true;
+    invertReq = false;
+}
+
+void ASongFFmpeg::handleInvertSeek()
+{
+    // 设置seek请求
+    seekPos = FFMAX((invertPts - SDLPaint::getInstance()->basePts * 0.5) * AV_TIME_BASE, 0);
+    seekMin = INT64_MIN;
+    seekMax = seekPos;
+    seekFlag = AVSEEK_FLAG_BACKWARD;
+    seekReq = true;
+    needInvertSeek = false;
+}
+
+void ASongFFmpeg::invertPlay()
+{
+    if(nullptr == pFormatCtx || curMediaStatus <= 0 || videoIdx < 0 || hasCover)
+    {
+        return;
+    }
+    pauseThread();
+    // 设置倒放请求
+    invertReq = true;
+    resumeThread();
 }
 
 void ASongFFmpeg::hideCursor()

@@ -8,27 +8,14 @@
 
 Q_GLOBAL_STATIC(DataSink, dataSink) // 采用qt实现的线程安全的单例模式
 
-//QAtomicPointer<DataSink> DataSink::_instance = nullptr;
-//QMutex DataSink::_mutex;
-
 DataSink::DataSink()
 {
-    //    audioPackCond = new QWaitCondition;
-    //    videoPackCond = new QWaitCondition;
     audioFraCond = new QWaitCondition;
     videoFraCond = new QWaitCondition;
 }
 
-
 DataSink* DataSink::getInstance()
 {
-    //    QMutexLocker locker(&_mutex);
-    //    if(_instance.testAndSetOrdered(nullptr, nullptr))
-    //    {
-    //        //        SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)ApplicationCrashHandler);//注冊异常捕获函数
-    //        //        qDebug() << "----";
-    //        _instance.testAndSetOrdered(nullptr, new DataSink);
-    //    }
     return dataSink;
 }
 
@@ -36,19 +23,6 @@ AVPacket* DataSink::takeNextPacket(int type)
 {
     if(type == 0)
     {
-        //        QMutexLocker aPacketListLocker(&aPacketListMutex);
-        //        while(aPacketList.isEmpty() && !ASongFFmpeg::getInstance()->stopFlag)
-        //        {
-        //            audioPackCond->wait(&aPacketListMutex);
-        //        }
-        //        if(!aPacketList.isEmpty())
-        //        {
-        //            return aPacketList.takeFirst();
-        //        }
-        //        else
-        //        {
-        //            return nullptr;
-        //        }
         QMutexLocker locker(&aPacketListMutex);
         if(aPacketList.isEmpty())
         {
@@ -70,18 +44,6 @@ AVPacket* DataSink::takeNextPacket(int type)
         {
             return vPacketList.takeFirst();
         }
-        //        while(vPacketList.isEmpty() && !ASongFFmpeg::getInstance()->stopFlag)
-        //        {
-        //            videoPackCond->wait(&vPacketListMutex);
-        //        }
-        //        if(!vPacketList.isEmpty())
-        //        {
-        //            return vPacketList.takeFirst();
-        //        }
-        //        else
-        //        {
-        //            return nullptr;
-        //        }
     }
 }
 
@@ -96,8 +58,6 @@ AVFrame* DataSink::takeNextFrame(int type)
         }
         else
         {
-            //            AVFrame *frame = aFrameList.takeFirst();
-            //            audioFraCond->wakeAll();
             return aFrameList.takeFirst();
         }
     }
@@ -106,8 +66,6 @@ AVFrame* DataSink::takeNextFrame(int type)
         QMutexLocker locker(&vFrameListMutex);
         if(vFrameList.isEmpty())
         {
-            //            AVFrame *frame = vFrameList.takeFirst();
-            //            videoFraCond->wakeAll();
             return nullptr;
         }
         else
@@ -117,57 +75,127 @@ AVFrame* DataSink::takeNextFrame(int type)
     }
 }
 
-void DataSink::appendPacketList(int type, AVPacket *packet)
+AVFrame* DataSink::takeInvertFrame(int type)
+{
+    if(type == 0)
+    {
+        QMutexLocker locker(&aInvertFrameListMutex);
+        if(aInvertFrameList.isEmpty())
+        {
+            return nullptr;
+        }
+        else
+        {
+            QList<AVFrame*> *V = aInvertFrameList.first();
+            if(V->isEmpty())
+            {
+                aInvertFrameList.removeFirst();
+                if(aInvertFrameList.isEmpty())
+                {
+                    return nullptr;
+                }
+                else
+                {
+                    V = aInvertFrameList.first();
+                    return V->takeLast();
+                }
+            }
+            else
+            {
+                return V->takeLast();
+            }
+        }
+    }
+    else
+    {
+        QMutexLocker locker(&vInvertFrameListMutex);
+        if(vInvertFrameList.isEmpty())
+        {
+            return nullptr;
+        }
+        else
+        {
+            QList<AVFrame*> *V = vInvertFrameList.first();
+            if(V->isEmpty())
+            {
+                vInvertFrameList.removeFirst();
+                if(vInvertFrameList.isEmpty())
+                {
+                    return nullptr;
+                }
+                else
+                {
+                    V = vInvertFrameList.first();
+                    return V->takeLast();
+                }
+            }
+            else
+            {
+                return V->takeLast();
+            }
+        }
+    }
+}
+
+void DataSink::appendPacket(int type, AVPacket *packet)
 {
     if(type == 0)
     {
         QMutexLocker locker(&aPacketListMutex);
         aPacketList.append(packet);
-        //            audioPackCond->wakeAll();
-        //        else
-        //        {
-        //            audioPackCond->wakeAll();
-        //        }
     }
     else
     {
         QMutexLocker locker(&vPacketListMutex);
         vPacketList.append(packet);
-        //            videoPackCond->wakeAll();
-        //        else
-        //        {
-        //            videoPackCond->wakeAll();
-        //        }
     }
 }
 
-bool DataSink::allowAddAFrame()
+bool DataSink::allowAddFrame(int type)
 {
-    QMutexLocker locker(&aFrameListMutex);
-    if(aFrameList.size() >= maxAFrameListLength)
+    if(type == 0)
     {
-        //        ASongAudio::getInstance()->pauseFlag = true;
-        //        audioFraCond->wait(&aFrameListMutex);
-        //        ASongAudio::getInstance()->pauseFlag = false;
-        return false;
+        QMutexLocker locker(&aFrameListMutex);
+        if(aFrameList.size() >= maxAFrameListLength)
+        {
+            return false;
+        }
+        return true;
     }
-    return true;
+    else
+    {
+        QMutexLocker locker(&vFrameListMutex);
+        if(vFrameList.size() >= maxVFrameListLength)
+        {
+            return false;
+        }
+        return true;
+    }
 }
 
-bool DataSink::allowAddVFrame()
+bool DataSink::allowAddInvertFrameList(int type)
 {
-    QMutexLocker locker(&vFrameListMutex);
-    if( vFrameList.size() >= maxVFrameListLength)
+    if(type == 0)
     {
-        //        ASongVideo::getInstance()->pauseFlag = true;
-        //        videoFraCond->wait(&vFrameListMutex);
-        //        ASongVideo::getInstance()->pauseFlag = false;
-        return false;
+        QMutexLocker locker(&aInvertFrameListMutex);
+        if(aInvertFrameList.size() >= maxAInvertFrameListLength)
+        {
+            return false;
+        }
+        return true;
     }
-    return true;
+    else
+    {
+        QMutexLocker locker(&vInvertFrameListMutex);
+        if(vInvertFrameList.size() >= maxVInvertFrameListLength)
+        {
+            return false;
+        }
+        return true;
+    }
 }
 
-void DataSink::appendFrameList(int type, AVFrame *frame)
+void DataSink::appendFrame(int type, AVFrame *frame)
 {
     if(type == 0)
     {
@@ -180,6 +208,20 @@ void DataSink::appendFrameList(int type, AVFrame *frame)
         QMutexLocker locker(&vFrameListMutex);
         vFrameList.append(frame);
         videoFraCond->wakeAll();
+    }
+}
+
+void DataSink::appendInvertFrameList(int type, QList<AVFrame*> *frameList)
+{
+    if(type == 0)
+    {
+        QMutexLocker locker(&aInvertFrameListMutex);
+        aInvertFrameList.append(frameList);
+    }
+    else
+    {
+        QMutexLocker locker(&vInvertFrameListMutex);
+        vInvertFrameList.append(frameList);
     }
 }
 
@@ -280,6 +322,33 @@ void DataSink::clearList()
     vFrameList.clear();
 }
 
+void DataSink::clearInvertList()
+{
+    AVFrame *frame = nullptr;
+    while(!aInvertFrameList.isEmpty())
+    {
+        QList<AVFrame*> *V = aInvertFrameList.takeFirst();
+        while(!V->isEmpty())
+        {
+            frame = V->takeFirst();
+            av_frame_free(&frame);
+        }
+        V->clear();
+    }
+    aInvertFrameList.clear();
+    while(!vInvertFrameList.isEmpty())
+    {
+        QList<AVFrame*> *V = vInvertFrameList.takeFirst();
+        while(!V->isEmpty())
+        {
+            frame = V->takeFirst();
+            av_frame_free(&frame);
+        }
+        V->clear();
+    }
+    vInvertFrameList.clear();
+}
+
 void DataSink::frameListIsEmpty(int type)
 {
     if(type == 0)
@@ -299,3 +368,31 @@ void DataSink::frameListIsEmpty(int type)
         }
     }
 }
+
+//void DataSink::insertMap(int frameNum, int64_t pts)
+//{
+//    QMutexLocker locker(&mapMutex);
+//    frameNumMap[frameNum] = pts;
+//}
+
+//int DataSink::getNumByPts(int64_t pts)
+//{
+//    QMutexLocker locker(&mapMutex);
+//    if(frameNumMap.contains(pts))
+//    {
+//        return frameNumMap.value(pts);
+//    }
+//    qDebug() << "seek error pts";
+//    return -1;
+//}
+
+//int64_t DataSink::getPtsByNum(int frameNum)
+//{
+//    QMutexLocker locker(&mapMutex);
+//    if(frameNumMap.contains(frameNum))
+//    {
+//        return frameNumMap.value(frameNum);
+//    }
+//    qDebug() << "seek error frameNum";
+//    return -1;
+//}

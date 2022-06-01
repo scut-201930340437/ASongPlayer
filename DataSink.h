@@ -4,9 +4,9 @@
 #include <QDebug>
 
 #include <QMutex>
-//#include <QSemaphore>
 #include <QWaitCondition>
 #include <QList>
+//#include <QMap>
 extern "C"
 {
 #include "libavcodec/avcodec.h"
@@ -25,17 +25,21 @@ public:
     // 帧list最大长度
     static const qsizetype maxAFrameListLength = 120;
     static const qsizetype maxVFrameListLength = 60;
-    //    static const int maxFrameListLength=100;
+    // 倒放二维list最大长度
+    static const qsizetype maxAInvertFrameListLength = 2;
+    static const qsizetype maxVInvertFrameListLength = 3;
 
     AVPacket* takeNextPacket(int type);
     AVFrame* takeNextFrame(int type);
+    AVFrame* takeInvertFrame(int type);
 
-    void appendPacketList(int type, AVPacket *packet);
+    void appendPacket(int type, AVPacket *packet);
 
-    bool allowAddAFrame();
-    bool allowAddVFrame();
+    bool allowAddFrame(int type);
+    bool allowAddInvertFrameList(int type);
 
-    void appendFrameList(int type, AVFrame *frame);
+    void appendFrame(int type, AVFrame *frame);
+    void appendInvertFrameList(int type, QList<AVFrame*> *frameList);
 
     qsizetype packetListSize(int type);
 
@@ -45,46 +49,35 @@ public:
     //    void clearVFrameList();
 
     void clearList();
+    void clearInvertList();
 
     void frameListIsEmpty(int type);
 
-
-
-
-
-    //    *audioFraEmpSem = nullptr, *videoFraEmpSem = nullptr;
-    //    *videoFraSem = nullptr;
-
+    //    void insertMap(int frameNum, int64_t pts);
+    //    int getNumByPts(int64_t pts);
+    //    int64_t getPtsByNum(int frameNum);
 private:
-    //    DataSink();
-
-    //    static QAtomicPointer<DataSink> _instance;
-    //    static QMutex _mutex;
-
-
     // packetList
     QList<AVPacket*>aPacketList;
     QList<AVPacket*>vPacketList;
-
     // frametList
     QList<AVFrame*>aFrameList;
     QList<AVFrame*>vFrameList;
-
+    QList<QList<AVFrame*>*>aInvertFrameList;
+    QList<QList<AVFrame*>*>vInvertFrameList;
     // packetList是共享资源，需要加锁
     QMutex aPacketListMutex;
     QMutex vPacketListMutex;
     // frameList是共享资源，需要加锁
     QMutex aFrameListMutex;
     QMutex vFrameListMutex;
-    // 信号量
-    //    QSemaphore *audioPackSem = nullptr, *videoPackSem = nullptr;
-    //    *audioFraSem = nullptr;
+    QMutex aInvertFrameListMutex;
+    QMutex vInvertFrameListMutex;
+    // framenumber-pts map
+    //    QMap<int, int64_t>frameNumMap;
+    //    QMutex mapMutex;
     // 条件变量
-    //    QWaitCondition *audioPackCond = nullptr, *videoPackCond = nullptr;
     QWaitCondition *audioFraCond = nullptr, *videoFraCond = nullptr;
-    // 条件变量对应的锁
-    //    QMutex audioPackCond_mutex, videoPackCond_mutex;
-    //    QMutex audioFraCond_mutex, videoFraCond_mutex;
 };
 
 #endif // DATASINK_H

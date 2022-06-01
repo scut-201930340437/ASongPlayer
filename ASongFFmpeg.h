@@ -62,8 +62,9 @@ struct MediaMetaData
 class ASongFFmpeg: public QThread
 {
     Q_OBJECT
-public: ASongFFmpeg();
-    ~ASongFFmpeg();
+public:
+    //    ASongFFmpeg();
+    //    ~ASongFFmpeg();
     static ASongFFmpeg* getInstance();
 
     // 加载文件信息，获取媒体元数据
@@ -87,50 +88,62 @@ public: ASongFFmpeg();
     int stop();
     int pause();
     int resume();
-    int seek(int64_t posSec);
+    void seek(int64_t posSec);
     // 进度微调
-    int step_to_dst_frame(int step);
+    void step_to_dst_frame(int step);
     // 设置倍速
     void setSpeed(float _speed);
+    // 倒放
+    void invertPlay();
     // 隐藏光标
     void hideCursor();
     // 显示光标
     void showCursor();
 
-    // 播放状态: -1 - 没有文件  0-停止  1-播放   2-暂停
+    // 播放状态: -1 - 没有文件  0-停止 1-播放 2-暂停
     std::atomic_int curMediaStatus = -1;
 
     // metaData
     MediaMetaData *mediaMetaData = nullptr;
-    bool hasCover = false;
-
     int	videoIdx = -1, audioIdx = -1;
+    bool hasCover = false;
 
     //ffmpeg
     AVFormatContext *pFormatCtx = nullptr;
 
     //flush_pkt
-    AVPacket *flushPacket;
-    QMutex stopMutex;
-    // 停止标志
-    std::atomic_bool stopFlag = true;
-    std::atomic_bool pauseFlag = false;
-    // 有seek请求
-    bool stepSeek = false;
-    bool seekAudio = false;
-    bool seekVideo = false;
-    double seekTime = 0.0;
+    //    AVPacket *flushPacket;
 
-    // 逐帧所用的条件变量
-    QWaitCondition aFrameCond;
-    QWaitCondition vFrameCond;
+    //    QMutex stopMutex;
+    // 线程暂停和停止标志
+    //    std::atomic_bool stopFlag = true;
+    std::atomic_bool pauseFlag = false;
+
+    // 有逐帧seek请求
+    bool stepSeek = false;
+    // 进度微调时的丢帧标志位
+    //    bool seekAudio = false;
+    bool seekVideo = false;
+    // 进度微调的目标帧号
+    int targetFrameNum = -1;
+    // 进度微调的目标pts
+    double targetPts = 0.0;
+    int _step = 0;
+    // invert
+    bool invertReq = false;
+    bool invertFlag = false;
+    bool needInvertSeek = false;
+    double invertPts = 0.0;
 private:
     // thread
     void run() override;
     void pauseThread();
     void resumeThread();
-    // 跳转
+    // 处理跳转
     void handleSeek();
+    // 处理倒放
+    void initInvert();
+    void handleInvertSeek();
     // 需要停止
     std::atomic_bool stopReq = false;
     // 需要暂停
@@ -147,6 +160,11 @@ private:
     int64_t seekMax = INT64_MAX;
 
     int seekFlag = -1;
+    // 逐帧所用的条件变量
+    QWaitCondition clearListCond;
+    QMutex clearListMutex;
+    bool cleared = false;
+
 };
 
 

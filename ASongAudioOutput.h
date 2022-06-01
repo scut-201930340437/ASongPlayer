@@ -2,6 +2,7 @@
 #define ASONGAUDIOOUTPUT_H
 
 #include <atomic>
+
 #include <QThread>
 #include <QMutex>
 #include <QWaitCondition>
@@ -20,14 +21,12 @@ extern "C"
 
 };
 
-
 class ASongAudioOutput: public QThread
 {
     Q_OBJECT
 public:
     // 单例模式，全局访问点
     static ASongAudioOutput* getInstance();
-
     //
     static const int maxFrameSize = 19200;
 
@@ -57,15 +56,12 @@ public:
     // 获取线程是否暂停
     //    bool isPaused();
     void setVolume(const qreal curVolume);
-
-    int getCurFrameNumber();
-
-
-    // 暂停标志
-    std::atomic_bool pauseFlag = false;
     // 停止标志
     std::atomic_bool stopFlag = false;
-    QMutex stopMutex;
+    // 暂停标志
+    std::atomic_bool pauseFlag = false;
+
+    //    QMutex stopMutex;
 private:
     // thread 音频解码
     void run() override;
@@ -101,9 +97,6 @@ private:
     QMediaDevices *mediaDevice = nullptr;
     QIODevice *audioIO = nullptr;
     QAudioSink *audioOutput = nullptr;
-
-    //
-    int curPictureNumber = -1;
 
 signals:
     void playFinish();

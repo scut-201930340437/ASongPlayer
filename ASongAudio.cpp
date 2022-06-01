@@ -51,7 +51,7 @@ void ASongAudio::start(Priority pri)
     stopReq = false;
     pauseReq = false;
     pauseFlag = false;
-    stopFlag = false;
+    //    stopFlag = false;
     QThread::start(pri);
 }
 
@@ -72,7 +72,6 @@ void ASongAudio::stop()
         avcodec_close(pCodecCtx);
         pCodecCtx = nullptr;
     }
-    //    qDebug() << 2;
 }
 
 void ASongAudio::resume()
@@ -112,11 +111,20 @@ void ASongAudio::resumeThread()
 void ASongAudio::run()
 {
     AVPacket *packet = nullptr;
+    QList<AVFrame*> *frameList = new QList<AVFrame*>;
     for(;;)
     {
         if(stopReq)
         {
             stopReq = false;
+            AVFrame *frame = nullptr;
+            while(!frameList->isEmpty())
+            {
+                frame = frameList->takeFirst();
+                av_frame_free(&frame);
+            }
+            frameList->clear();
+            delete frameList;
             break;
         }
         if(pauseReq)
@@ -132,32 +140,19 @@ void ASongAudio::run()
             // 唤醒主线程
             pauseCond.wakeAll();
         }
-        if(DataSink::getInstance()->allowAddAFrame())
+        if(!ASongFFmpeg::getInstance()->invertFlag && DataSink::getInstance()->allowAddFrame(0) ||
+                ASongFFmpeg::getInstance()->invertFlag && DataSink::getInstance()->allowAddInvertFrameList(0))
         {
             packet = DataSink::getInstance()->takeNextPacket(0);
             if(nullptr != packet)
             {
-                //                qDebug() << "audiothread:get";
                 // flushpkt
-                if(packet == ASongFFmpeg::getInstance()->flushPacket)
+                if(packet->data == (uint8_t*)packet)
                 {
                     avcodec_flush_buffers(pCodecCtx);
+                    av_packet_free(&packet);
                     continue;
                 }
-                // 扔掉小于seek的目标pts的帧
-                //                if(ASongFFmpeg::getInstance()->seekAudio)
-                //                {
-                //                    if(packet->pts * tb < ASongFFmpeg::getInstance()->seekTime)
-                //                    {
-                //                        av_packet_free(&packet);
-                //                        continue;
-                //                    }
-                //                    else
-                //                    {
-                //                        ASongFFmpeg::getInstance()->seekAudio = false;
-                //                    }
-                //                }
-                //
                 int ret = avcodec_send_packet(pCodecCtx, packet);
                 // avcodec_send_packet成功
                 if(ret == 0)
@@ -168,7 +163,25 @@ void ASongAudio::run()
                         ret = avcodec_receive_frame(pCodecCtx, frame);
                         if(ret == 0)
                         {
-                            DataSink::getInstance()->appendFrameList(0, frame);
+                            if(ASongFFmpeg::getInstance()->invertFlag)
+                            {
+                                if(frame->pts * tb < ASongFFmpeg::getInstance()->invertPts)
+                                {
+                                    frameList->append(frame);
+                                }
+                                else
+                                {
+                                    if(!frameList->isEmpty())
+                                    {
+                                        DataSink::getInstance()->appendInvertFrameList(0, frameList);
+                                        frameList = new QList<AVFrame*>;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                DataSink::getInstance()->appendFrame(0, frame);
+                            }
                         }
                         else
                         {
@@ -187,7 +200,6 @@ void ASongAudio::run()
                     // 如果是AVERROR(EAGAIN)，需要先调用avcodec_receive_frame将frame读取出来
                     if(ret == AVERROR(EAGAIN))
                     {
-                        qDebug() << "eagain";
                         while(1)
                         {
                             AVFrame *frame = av_frame_alloc();
@@ -199,8 +211,25 @@ void ASongAudio::run()
                                 avcodec_flush_buffers(pCodecCtx);
                                 break;
                             }
-                            //            qDebug() << "decode";
-                            DataSink::getInstance()->appendFrameList(0, frame);
+                            if(ASongFFmpeg::getInstance()->invertFlag)
+                            {
+                                if(frame->pts * tb < ASongFFmpeg::getInstance()->invertPts)
+                                {
+                                    frameList->append(frame);
+                                }
+                                else
+                                {
+                                    if(!frameList->isEmpty())
+                                    {
+                                        DataSink::getInstance()->appendInvertFrameList(0, frameList);
+                                        frameList = new QList<AVFrame*>;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                DataSink::getInstance()->appendFrame(0, frame);
+                            }
                         }
                         // 然后再调用avcodec_send_packet
                         ret = avcodec_send_packet(pCodecCtx, packet);
@@ -212,7 +241,25 @@ void ASongAudio::run()
                                 ret = avcodec_receive_frame(pCodecCtx, frame);
                                 if(ret == 0)
                                 {
-                                    DataSink::getInstance()->appendFrameList(0, frame);
+                                    if(ASongFFmpeg::getInstance()->invertFlag)
+                                    {
+                                        if(frame->pts * tb < ASongFFmpeg::getInstance()->invertPts)
+                                        {
+                                            frameList->append(frame);
+                                        }
+                                        else
+                                        {
+                                            if(!frameList->isEmpty())
+                                            {
+                                                DataSink::getInstance()->appendInvertFrameList(0, frameList);
+                                                frameList = new QList<AVFrame*>;
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        DataSink::getInstance()->appendFrame(0, frame);
+                                    }
                                 }
                                 else
                                 {
@@ -233,15 +280,15 @@ void ASongAudio::run()
             }
             else
             {
-                QMutexLocker locker(&ASongFFmpeg::getInstance()->stopMutex);
-                if(ASongFFmpeg::getInstance()->stopFlag)
+                //                QMutexLocker locker(&ASongFFmpeg::getInstance()->stopMutex);
+                if(ASongFFmpeg::getInstance()->isFinished())
                 {
-                    locker.unlock();
+                    //                    locker.unlock();
                     stopReq = true;
                 }
                 else
                 {
-                    locker.unlock();
+                    //                    locker.unlock();
                     msleep(5);
                 }
             }
@@ -251,6 +298,7 @@ void ASongAudio::run()
             msleep(30);
         }
     }
+    //    stopFlag = true;
 }
 
 void ASongAudio::setVolume(int volume)

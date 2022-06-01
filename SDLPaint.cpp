@@ -56,7 +56,6 @@ int SDLPaint::init(void *winID)
         qDebug() << "create texture failed";
         return -1;
     }
-    //    qDebug() << "sdlinifinish";
     // 初始化swsCtx
     pSwsCtx = sws_getCachedContext(pSwsCtx, srcWidth, srcHeight, pix_fmt,
                                    srcWidth, srcHeight, AV_PIX_FMT_YUV420P, SWS_BICUBIC, NULL, NULL, NULL);
@@ -71,8 +70,13 @@ int SDLPaint::init(void *winID)
     // 获取采样纵横比
     sar = av_guess_sample_aspect_ratio(pFormatCtx, pFormatCtx->streams[idx], nullptr);
     calDisplayRect(&sdlRect, 0, 0, lastScreenWidth, lastScreenHeight, srcWidth, srcHeight);
+    // 初始化各变量
+    pauseFlag = false;
+    basePts = 0.0;
+    curPts = 0.0;
+    curFrameNum = -1;
     // 开启定时器
-    sdlTimer = new QTimer(this);
+    sdlTimer = new QTimer;
     connect(sdlTimer, &QTimer::timeout, this, &SDLPaint::getFrameYUV);
     if(frameRate != -1)
     {
@@ -83,7 +87,6 @@ int SDLPaint::init(void *winID)
         preDelay = 40;
     }
     sdlTimer->start(preDelay);
-    pauseFlag = false;
     return 0;
 }
 
@@ -131,15 +134,22 @@ void SDLPaint::getFrameYUV()
     // 没有暂停
     if(!pauseFlag)
     {
+        AVFrame *frame = nullptr;
         // 取一帧
-        AVFrame *frame = DataSink::getInstance()->takeNextFrame(1);
+        if(ASongFFmpeg::getInstance()->invertFlag)
+        {
+            frame = DataSink::getInstance()->takeInvertFrame(1);
+        }
+        else
+        {
+            frame = DataSink::getInstance()->takeNextFrame(1);
+        }
         if(nullptr == frame)
         {
             // 音频播放线程结束且拿不到frame，此时说明播放结束
             if(ASongAudioOutput::getInstance()->stopFlag)
             {
                 stop();
-                //
             }
             // 播放未结束但是拿不到frame，渲染上一帧
             else
@@ -162,24 +172,42 @@ void SDLPaint::getFrameYUV()
         }
         else
         {
-            // 扔掉小于seek的目标pts的帧
+            // 扔掉小于stepSeek的目标帧号的帧
             if(ASongFFmpeg::getInstance()->stepSeek && ASongFFmpeg::getInstance()->seekVideo)
             {
-                if(frame->pts * tb < ASongFFmpeg::getInstance()->seekTime)
+                if(ASongFFmpeg::getInstance()->_step > 1)
                 {
                     av_frame_free(&frame);
+                    --ASongFFmpeg::getInstance()->_step;
                     return;
                 }
                 else
                 {
-                    ASongFFmpeg::getInstance()->seekVideo = false;
+                    if(ASongFFmpeg::getInstance()->_step == 1)
+                    {
+                        ASongFFmpeg::getInstance()->seekVideo = false;
+                    }
+                    else
+                    {
+                        if(frame->pts * tb < ASongFFmpeg::getInstance()->targetPts - 0.5 * basePts)
+                        {
+                            av_frame_free(&frame);
+                            return;
+                        }
+                        else
+                        {
+                            ASongFFmpeg::getInstance()->seekVideo = false;
+                        }
+                    }
                 }
             }
-            curPts = frame->pts * tb;
-            if(basePts == 0)
+            // 更新最近一帧的pts
+            if(basePts >= -DBL_EPSILON && basePts <= DBL_EPSILON)
             {
-                basePts = curPts;
+                basePts = frame->pts * tb;
             }
+            curPts = frame->pts * tb;
+            curFrameNum = curPts / basePts;
             // 适应窗口--begin
             // 计算rect参数
             sdlSurface = SDL_GetWindowSurface(screen);
@@ -191,7 +219,15 @@ void SDLPaint::getFrameYUV()
             }
             // 适应窗口--end
             // 同步
-            double actualDelay = ASongVideo::getInstance()->synVideo(*((double*)frame->opaque));
+            double actualDelay;
+            if(ASongFFmpeg::getInstance()->invertFlag)
+            {
+                actualDelay = 1.0 / frameRate;
+            }
+            else
+            {
+                actualDelay = ASongVideo::getInstance()->synVideo(*((double*)frame->opaque));
+            }
             // 倍速>=8，丢帧（仅对视频）
             if(!ASongFFmpeg::getInstance()->hasCover && ASongFFmpeg::getInstance()->getSpeed() >= 7.9999 && actualDelay <= 0.0001)
             {
@@ -323,7 +359,6 @@ void SDLPaint::stop()
         delete sdlTimer;
         sdlTimer = nullptr;
     }
-    pauseFlag = false;
 }
 
 void SDLPaint::pause()
