@@ -38,8 +38,6 @@ public:
     void resumeThread();
     //
     void stop();
-    //    void resume();
-    //    std::atomic_bool stopFlag = true;
     // 暂停标志
     std::atomic_bool pauseFlag = false;
 
@@ -76,6 +74,10 @@ private:
     const double noSynUpperBound = 2.0;
     // 单帧最大显示时间
     const double AV_SYNC_FRAMEDUP_THRESHOLD = 0.07;
+
+    QList<AVFrame*> *invertFrameList = nullptr;
+
+    void appendFrame(AVFrame *frame);
 };
 
 #endif // ASONGVIDEO_H

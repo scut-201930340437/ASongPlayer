@@ -137,7 +137,6 @@ void ASongAudioOutput::start(Priority pri)
     stopReq = false;
     pauseReq = false;
     pauseFlag = false;
-    stopFlag = false;
     soundTouch = soundtouch_createInstance();
     soundtouch_setSampleRate(soundTouch, sample_rate);
     soundtouch_setChannels(soundTouch, channels);
@@ -220,9 +219,6 @@ void ASongAudioOutput::run()
         process();
     }
     closeAudioOuput();
-    //    QMutexLocker locker(&stopMutex);
-    stopFlag = true;
-    //    locker.unlock();
 }
 
 void ASongAudioOutput::process()
@@ -330,6 +326,12 @@ void ASongAudioOutput::process()
             // 写入设备
             audioIO->write((const char*)frame->data, out_size);
             av_frame_free(&frame);
+        }
+        // 倒放时如果音频时钟几乎为零说明播放结束
+        if(ASongFFmpeg::getInstance()->invertFlag && ASongAudio::getInstance()->getAudioClock() <= 0.005)
+        {
+            stopReq = true;
+            emit playFinish();
         }
     }
     else

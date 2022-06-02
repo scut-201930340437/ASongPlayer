@@ -35,7 +35,14 @@ void ASongAudio::setAudioClock(AVFrame * frame, const double duration)
     {
         audioClock = frame->pts * tb;
     }
-    audioClock += (duration * ASongFFmpeg::getInstance()->getSpeed());
+    if(ASongFFmpeg::getInstance()->invertFlag)
+    {
+        audioClock -= (duration * ASongFFmpeg::getInstance()->getSpeed());
+    }
+    else
+    {
+        audioClock += (duration * ASongFFmpeg::getInstance()->getSpeed());
+    }
 }
 //获取时钟
 double ASongAudio::getAudioClock()
@@ -111,20 +118,21 @@ void ASongAudio::resumeThread()
 void ASongAudio::run()
 {
     AVPacket *packet = nullptr;
-    QList<AVFrame*> *frameList = new QList<AVFrame*>;
+    invertFrameList = new QList<AVFrame*>;
     for(;;)
     {
         if(stopReq)
         {
             stopReq = false;
             AVFrame *frame = nullptr;
-            while(!frameList->isEmpty())
+            while(!invertFrameList->isEmpty())
             {
-                frame = frameList->takeFirst();
+                frame = invertFrameList->takeFirst();
                 av_frame_free(&frame);
             }
-            frameList->clear();
-            delete frameList;
+            invertFrameList->clear();
+            delete invertFrameList;
+            invertFrameList = nullptr;
             break;
         }
         if(pauseReq)
@@ -163,25 +171,7 @@ void ASongAudio::run()
                         ret = avcodec_receive_frame(pCodecCtx, frame);
                         if(ret == 0)
                         {
-                            if(ASongFFmpeg::getInstance()->invertFlag)
-                            {
-                                if(frame->pts * tb < ASongFFmpeg::getInstance()->invertPts)
-                                {
-                                    frameList->append(frame);
-                                }
-                                else
-                                {
-                                    if(!frameList->isEmpty())
-                                    {
-                                        DataSink::getInstance()->appendInvertFrameList(0, frameList);
-                                        frameList = new QList<AVFrame*>;
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                DataSink::getInstance()->appendFrame(0, frame);
-                            }
+                            appendFrame(frame);
                         }
                         else
                         {
@@ -211,25 +201,7 @@ void ASongAudio::run()
                                 avcodec_flush_buffers(pCodecCtx);
                                 break;
                             }
-                            if(ASongFFmpeg::getInstance()->invertFlag)
-                            {
-                                if(frame->pts * tb < ASongFFmpeg::getInstance()->invertPts)
-                                {
-                                    frameList->append(frame);
-                                }
-                                else
-                                {
-                                    if(!frameList->isEmpty())
-                                    {
-                                        DataSink::getInstance()->appendInvertFrameList(0, frameList);
-                                        frameList = new QList<AVFrame*>;
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                DataSink::getInstance()->appendFrame(0, frame);
-                            }
+                            appendFrame(frame);
                         }
                         // 然后再调用avcodec_send_packet
                         ret = avcodec_send_packet(pCodecCtx, packet);
@@ -241,25 +213,7 @@ void ASongAudio::run()
                                 ret = avcodec_receive_frame(pCodecCtx, frame);
                                 if(ret == 0)
                                 {
-                                    if(ASongFFmpeg::getInstance()->invertFlag)
-                                    {
-                                        if(frame->pts * tb < ASongFFmpeg::getInstance()->invertPts)
-                                        {
-                                            frameList->append(frame);
-                                        }
-                                        else
-                                        {
-                                            if(!frameList->isEmpty())
-                                            {
-                                                DataSink::getInstance()->appendInvertFrameList(0, frameList);
-                                                frameList = new QList<AVFrame*>;
-                                            }
-                                        }
-                                    }
-                                    else
-                                    {
-                                        DataSink::getInstance()->appendFrame(0, frame);
-                                    }
+                                    appendFrame(frame);
                                 }
                                 else
                                 {
@@ -299,6 +253,29 @@ void ASongAudio::run()
         }
     }
     //    stopFlag = true;
+}
+
+void ASongAudio::appendFrame(AVFrame *frame)
+{
+    if(ASongFFmpeg::getInstance()->invertFlag)
+    {
+        if(frame->pts * tb < ASongFFmpeg::getInstance()->invertPts)
+        {
+            invertFrameList->append(frame);
+        }
+        else
+        {
+            if(!invertFrameList->isEmpty())
+            {
+                DataSink::getInstance()->appendInvertFrameList(0, invertFrameList);
+                invertFrameList = new QList<AVFrame*>;
+            }
+        }
+    }
+    else
+    {
+        DataSink::getInstance()->appendFrame(0, frame);
+    }
 }
 
 void ASongAudio::setVolume(int volume)

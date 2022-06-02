@@ -49,13 +49,25 @@ void ASongVideo::caliBratePts(AVFrame *frame, double &pts)
     double frameDelay = tb;
     // extra_delay = repeat_pict / (2*fps)
     frameDelay *= (1.0 + 0.5 * frame->repeat_pict);
-    videoClock += frameDelay; // 此时videoClock实际上也是下一帧的时间点
+    if(ASongFFmpeg::getInstance()->invertFlag)
+    {
+        videoClock -= frameDelay;
+    }
+    else
+    {
+        videoClock += frameDelay;
+    }
+    // 此时videoClock实际上也是下一帧的时间点
 }
 
 // 同步
 double ASongVideo::synVideo(const double pts)
 {
     double delay = pts - lastFramePts;
+    if(ASongFFmpeg::getInstance()->invertFlag)
+    {
+        delay = -delay;
+    }
     // 延时太小或太大都不正常，使用上一帧计算的delay
     if(delay <= 0.0 || delay  >= 1.0)
     {
@@ -69,6 +81,10 @@ double ASongVideo::synVideo(const double pts)
                                  FFMIN(AV_SYNC_THRESHOLD_MAX / ASongFFmpeg::getInstance()->getSpeed(), delay));
     // 计算视频帧pts和音频时钟的差
     double diff = pts - ASongAudio::getInstance()->getAudioClock();
+    if(ASongFFmpeg::getInstance()->invertFlag)
+    {
+        diff = -diff;
+    }
     // 没有超过非同步阈值则可以同步
     if(fabs(diff) < FFMAX(noSynUpperBound * ASongFFmpeg::getInstance()->getSpeed(), 12.0))
     {
@@ -165,7 +181,7 @@ void ASongVideo::resumeThread()
 void ASongVideo::run()
 {
     AVPacket *packet = nullptr;
-    QList<AVFrame*> *frameList = new QList<AVFrame*>;
+    invertFrameList = new QList<AVFrame*>;
     std::atomic_bool coverAlready = false;
     for(;;)
     {
@@ -173,13 +189,14 @@ void ASongVideo::run()
         {
             stopReq = false;
             AVFrame *frame = nullptr;
-            while(!frameList->isEmpty())
+            while(!invertFrameList->isEmpty())
             {
-                frame = frameList->takeFirst();
+                frame = invertFrameList->takeFirst();
                 av_frame_free(&frame);
             }
-            frameList->clear();
-            delete frameList;
+            invertFrameList->clear();
+            delete invertFrameList;
+            invertFrameList = nullptr;
             break;
         }
         if(pauseReq)
@@ -217,29 +234,7 @@ void ASongVideo::run()
                     ret = avcodec_receive_frame(pCodecCtx, frame);
                     if(ret == 0)
                     {
-                        // 处于倒放
-                        if(ASongFFmpeg::getInstance()->invertFlag)
-                        {
-                            if(frame->pts * tb < ASongFFmpeg::getInstance()->invertPts)
-                            {
-                                frameList->append(frame);
-                            }
-                            else
-                            {
-                                if(!frameList->isEmpty())
-                                {
-                                    DataSink::getInstance()->appendInvertFrameList(1, frameList);
-                                    ASongFFmpeg::getInstance()->invertPts = frameList->first()->pts * tb;
-                                    frameList = new QList<AVFrame*>;
-                                }
-                                ASongFFmpeg::getInstance()->needInvertSeek = true;
-                            }
-                        }
-                        else
-                        {
-                            frame->opaque = (double*)new double(getPts(frame));
-                            DataSink::getInstance()->appendFrame(1, frame);
-                        }
+                        appendFrame(frame);
                         // 如果是带音频的封面，该线程只做一次循环
                         if(ASongFFmpeg::getInstance()->hasCover)
                         {
@@ -272,29 +267,7 @@ void ASongVideo::run()
                                 avcodec_flush_buffers(pCodecCtx);
                                 break;
                             }
-                            // 处于倒放
-                            if(ASongFFmpeg::getInstance()->invertFlag)
-                            {
-                                if(frame->pts * tb < ASongFFmpeg::getInstance()->invertPts)
-                                {
-                                    frameList->append(frame);
-                                }
-                                else
-                                {
-                                    if(!frameList->isEmpty())
-                                    {
-                                        DataSink::getInstance()->appendInvertFrameList(1, frameList);
-                                        ASongFFmpeg::getInstance()->invertPts = frameList->first()->pts * tb;
-                                        frameList = new QList<AVFrame*>;
-                                    }
-                                    ASongFFmpeg::getInstance()->needInvertSeek = true;
-                                }
-                            }
-                            else
-                            {
-                                frame->opaque = (double*)new double(getPts(frame));
-                                DataSink::getInstance()->appendFrame(1, frame);
-                            }
+                            appendFrame(frame);
                         }
                         // 然后再调用avcodec_send_packet
                         ret = avcodec_send_packet(pCodecCtx, packet);
@@ -304,29 +277,7 @@ void ASongVideo::run()
                             ret = avcodec_receive_frame(pCodecCtx, frame);
                             if(ret == 0)
                             {
-                                // 处于倒放
-                                if(ASongFFmpeg::getInstance()->invertFlag)
-                                {
-                                    if(frame->pts * tb < ASongFFmpeg::getInstance()->invertPts)
-                                    {
-                                        frameList->append(frame);
-                                    }
-                                    else
-                                    {
-                                        if(!frameList->isEmpty())
-                                        {
-                                            DataSink::getInstance()->appendInvertFrameList(1, frameList);
-                                            ASongFFmpeg::getInstance()->invertPts = frameList->first()->pts * tb;
-                                            frameList = new QList<AVFrame*>;
-                                        }
-                                        ASongFFmpeg::getInstance()->needInvertSeek = true;
-                                    }
-                                }
-                                else
-                                {
-                                    frame->opaque = (double*)new double(getPts(frame));
-                                    DataSink::getInstance()->appendFrame(1, frame);
-                                }
+                                appendFrame(frame);
                             }
                             else
                             {
@@ -345,22 +296,20 @@ void ASongVideo::run()
                 if(coverAlready)
                 {
                     stopReq = true;
-                    frameList->clear();
-                    delete frameList;
+                    invertFrameList->clear();
+                    delete invertFrameList;
+                    invertFrameList = nullptr;
                     break;
                 }
             }
             else
             {
-                //                QMutexLocker locker(&ASongFFmpeg::getInstance()->stopMutex);
                 if(ASongFFmpeg::getInstance()->isFinished())
                 {
-                    //                    locker.unlock();
                     stopReq = true;
                 }
                 else
                 {
-                    //                    locker.unlock();
                     msleep(5);
                 }
             }
@@ -369,5 +318,38 @@ void ASongVideo::run()
         {
             msleep(60);
         }
+    }
+}
+
+void ASongVideo::appendFrame(AVFrame *frame)
+{
+    // 处于倒放
+    if(ASongFFmpeg::getInstance()->invertFlag)
+    {
+        if(frame->pts * tb < ASongFFmpeg::getInstance()->invertPts)
+        {
+            frame->opaque = (double*)new double(getPts(frame));
+            invertFrameList->append(frame);
+        }
+        else
+        {
+            if(!invertFrameList->isEmpty())
+            {
+                DataSink::getInstance()->appendInvertFrameList(1, invertFrameList);
+                ASongFFmpeg::getInstance()->invertPts = invertFrameList->first()->pts * tb;
+                invertFrameList = new QList<AVFrame*>;
+            }
+            // 倒放seek不到帧，再向前倒退一个pts
+            else
+            {
+                ASongFFmpeg::getInstance()->invertPts -= SDLPaint::getInstance()->basePts;
+            }
+            ASongFFmpeg::getInstance()->needInvertSeek = true;
+        }
+    }
+    else
+    {
+        frame->opaque = (double*)new double(getPts(frame));
+        DataSink::getInstance()->appendFrame(1, frame);
     }
 }

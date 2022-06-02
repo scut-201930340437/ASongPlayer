@@ -53,11 +53,7 @@ public:
     // 线程执行的函数主体
     void process();
 
-    // 获取线程是否暂停
-    //    bool isPaused();
     void setVolume(const qreal curVolume);
-    // 停止标志
-    std::atomic_bool stopFlag = false;
     // 暂停标志
     std::atomic_bool pauseFlag = false;
 
@@ -73,7 +69,7 @@ private:
     // 关闭设备和soundtouch
     void closeAudioOuput();
 
-    // 允许播放标志
+    // 停止请求
     std::atomic_bool stopReq = false;
     // 需要暂停
     std::atomic_bool pauseReq = false;

@@ -368,31 +368,3 @@ void DataSink::frameListIsEmpty(int type)
         }
     }
 }
-
-//void DataSink::insertMap(int frameNum, int64_t pts)
-//{
-//    QMutexLocker locker(&mapMutex);
-//    frameNumMap[frameNum] = pts;
-//}
-
-//int DataSink::getNumByPts(int64_t pts)
-//{
-//    QMutexLocker locker(&mapMutex);
-//    if(frameNumMap.contains(pts))
-//    {
-//        return frameNumMap.value(pts);
-//    }
-//    qDebug() << "seek error pts";
-//    return -1;
-//}
-
-//int64_t DataSink::getPtsByNum(int frameNum)
-//{
-//    QMutexLocker locker(&mapMutex);
-//    if(frameNumMap.contains(frameNum))
-//    {
-//        return frameNumMap.value(frameNum);
-//    }
-//    qDebug() << "seek error frameNum";
-//    return -1;
-//}

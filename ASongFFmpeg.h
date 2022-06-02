@@ -63,8 +63,6 @@ class ASongFFmpeg: public QThread
 {
     Q_OBJECT
 public:
-    //    ASongFFmpeg();
-    //    ~ASongFFmpeg();
     static ASongFFmpeg* getInstance();
 
     // 加载文件信息，获取媒体元数据
@@ -111,12 +109,7 @@ public:
     //ffmpeg
     AVFormatContext *pFormatCtx = nullptr;
 
-    //flush_pkt
-    //    AVPacket *flushPacket;
-
-    //    QMutex stopMutex;
-    // 线程暂停和停止标志
-    //    std::atomic_bool stopFlag = true;
+    // 线程暂停
     std::atomic_bool pauseFlag = false;
 
     // 有逐帧seek请求
@@ -131,8 +124,8 @@ public:
     int _step = 0;
     // invert
     bool invertReq = false;
-    bool invertFlag = false;
-    bool needInvertSeek = false;
+    std::atomic_bool invertFlag = false;
+    std::atomic_bool needInvertSeek = false;
     double invertPts = 0.0;
 private:
     // thread

@@ -6,7 +6,6 @@
 #include <QMutex>
 #include <QWaitCondition>
 #include <QList>
-//#include <QMap>
 extern "C"
 {
 #include "libavcodec/avcodec.h"
@@ -26,8 +25,10 @@ public:
     static const qsizetype maxAFrameListLength = 120;
     static const qsizetype maxVFrameListLength = 60;
     // 倒放二维list最大长度
-    static const qsizetype maxAInvertFrameListLength = 2;
-    static const qsizetype maxVInvertFrameListLength = 3;
+    static const qsizetype maxAInvertFrameListLength = 12;
+    static const qsizetype maxVInvertFrameListLength = 6;
+    // 倒放一维list的最大长度
+    //    static const qsizetype maxInvertPerFrameListLength = 10;
 
     AVPacket* takeNextPacket(int type);
     AVFrame* takeNextFrame(int type);
@@ -43,19 +44,10 @@ public:
 
     qsizetype packetListSize(int type);
 
-    //    void clearAPacketList();
-    //    void clearVPacketList();
-    //    void clearAFrameList();
-    //    void clearVFrameList();
-
     void clearList();
     void clearInvertList();
 
     void frameListIsEmpty(int type);
-
-    //    void insertMap(int frameNum, int64_t pts);
-    //    int getNumByPts(int64_t pts);
-    //    int64_t getPtsByNum(int frameNum);
 private:
     // packetList
     QList<AVPacket*>aPacketList;
@@ -73,9 +65,6 @@ private:
     QMutex vFrameListMutex;
     QMutex aInvertFrameListMutex;
     QMutex vInvertFrameListMutex;
-    // framenumber-pts map
-    //    QMap<int, int64_t>frameNumMap;
-    //    QMutex mapMutex;
     // 条件变量
     QWaitCondition *audioFraCond = nullptr, *videoFraCond = nullptr;
 };

@@ -144,33 +144,7 @@ void SDLPaint::getFrameYUV()
         {
             frame = DataSink::getInstance()->takeNextFrame(1);
         }
-        if(nullptr == frame)
-        {
-            // 音频播放线程结束且拿不到frame，此时说明播放结束
-            if(ASongAudioOutput::getInstance()->stopFlag)
-            {
-                stop();
-            }
-            // 播放未结束但是拿不到frame，渲染上一帧
-            else
-            {
-                if(nullptr != preFrame)
-                {
-                    // 适应窗口--begin
-                    // 计算rect参数
-                    sdlSurface = SDL_GetWindowSurface(screen);
-                    if(sdlSurface->w != lastScreenWidth || sdlSurface->h != lastScreenHeight)
-                    {
-                        calDisplayRect(&sdlRect, 0, 0, sdlSurface->w, sdlSurface->h, srcWidth, srcHeight);
-                        lastScreenWidth = sdlSurface->w;
-                        lastScreenHeight = sdlSurface->h;
-                    }
-                    // 适应窗口--end
-                    paint(preFrame);
-                }
-            }
-        }
-        else
+        if(nullptr != frame)
         {
             // 扔掉小于stepSeek的目标帧号的帧
             if(ASongFFmpeg::getInstance()->stepSeek && ASongFFmpeg::getInstance()->seekVideo)
@@ -219,20 +193,11 @@ void SDLPaint::getFrameYUV()
             }
             // 适应窗口--end
             // 同步
-            double actualDelay;
-            if(ASongFFmpeg::getInstance()->invertFlag)
-            {
-                actualDelay = 1.0 / frameRate;
-            }
-            else
-            {
-                actualDelay = ASongVideo::getInstance()->synVideo(*((double*)frame->opaque));
-            }
+            double actualDelay = ASongVideo::getInstance()->synVideo(*((double*)frame->opaque));
             // 倍速>=8，丢帧（仅对视频）
             if(!ASongFFmpeg::getInstance()->hasCover && ASongFFmpeg::getInstance()->getSpeed() >= 7.9999 && actualDelay <= 0.0001)
             {
                 av_frame_free(&frame);
-                // 对于视频，需要重设延时
                 preDelay = 1;
                 sdlTimer->setInterval(preDelay);
                 return;
@@ -278,11 +243,47 @@ void SDLPaint::getFrameYUV()
                 preFrame = frameYUV;
             }
         }
+        else
+        {
+            // 音频播放线程结束且拿不到frame，此时说明播放结束
+            if(ASongAudioOutput::getInstance()->isFinished())
+            {
+                stop();
+            }
+            // 播放未结束但是拿不到frame，渲染上一帧
+            else
+            {
+                if(nullptr != preFrame)
+                {
+                    // 适应窗口--begin
+                    // 计算rect参数
+                    sdlSurface = SDL_GetWindowSurface(screen);
+                    if(sdlSurface->w != lastScreenWidth || sdlSurface->h != lastScreenHeight)
+                    {
+                        calDisplayRect(&sdlRect, 0, 0, sdlSurface->w, sdlSurface->h, srcWidth, srcHeight);
+                        lastScreenWidth = sdlSurface->w;
+                        lastScreenHeight = sdlSurface->h;
+                    }
+                    // 适应窗口--end
+                    paint(preFrame);
+                }
+            }
+        }
     }
     else
     {
         if(nullptr != preFrame)
         {
+            // 适应窗口--begin
+            // 计算rect参数
+            sdlSurface = SDL_GetWindowSurface(screen);
+            if(sdlSurface->w != lastScreenWidth || sdlSurface->h != lastScreenHeight)
+            {
+                calDisplayRect(&sdlRect, 0, 0, sdlSurface->w, sdlSurface->h, srcWidth, srcHeight);
+                lastScreenWidth = sdlSurface->w;
+                lastScreenHeight = sdlSurface->h;
+            }
+            // 适应窗口--end
             paint(preFrame);
         }
     }

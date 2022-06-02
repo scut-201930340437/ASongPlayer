@@ -43,12 +43,10 @@ public:
     void resumeThread();
     //
     void stop();
-    //    void pause();
     void resume();
     void setVolume(int volume);
     qreal getVolume();
 
-    //    std::atomic_bool stopFlag = true;
     // 暂停标志
     std::atomic_bool pauseFlag = false;
 private:
@@ -80,6 +78,10 @@ private:
     qreal curVolume = 0.3;
     // 音量转换系数
     const qreal volTranRate = 100.0;
+
+    QList<AVFrame*> *invertFrameList = nullptr;
+
+    void appendFrame(AVFrame *frame);
 };
 
 #endif // ASONGAUDIO_H

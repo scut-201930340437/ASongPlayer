@@ -7,22 +7,6 @@
 
 Q_GLOBAL_STATIC(ASongFFmpeg, asongFFmpeg) // 采用qt实现的线程安全的单例模式
 
-//ASongFFmpeg::ASongFFmpeg()
-//{
-//    // 设置flushpkt
-//    flushPacket = av_packet_alloc();
-//    flushPacket->data = (uint8_t*)flushPacket;
-//}
-
-//ASongFFmpeg::~ASongFFmpeg()
-//{
-//    if(nullptr != flushPacket)
-//    {
-//        av_packet_free(&flushPacket);
-//        flushPacket = nullptr;
-//    }
-//}
-
 // 全局访问点
 ASongFFmpeg* ASongFFmpeg::getInstance()
 {

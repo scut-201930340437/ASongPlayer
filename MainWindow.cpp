@@ -15,9 +15,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
-    //    SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)ApplicationCrashHandler);//注冊异常捕获函数
     ui->setupUi(this);
-    //    asongFFmpeg = new ASongFFmpeg(ui->screen_widget);
     //定时器
     myTimer->setInterval(myTimerTime); //0.5秒
     connect(myTimer, SIGNAL(timeout()), this, SLOT(handleTimeout()));
@@ -1044,7 +1042,8 @@ void MainWindow::on_forward_button_clicked()
 
 void MainWindow::on_backward_button_clicked()
 {
-    ASongFFmpeg::getInstance()->step_to_dst_frame(-1);
+    //    ASongFFmpeg::getInstance()->step_to_dst_frame(-1);
+    ASongFFmpeg::getInstance()->invertPlay();
 }
 
 
@@ -1077,16 +1076,15 @@ void MainWindow::on_wave_button_clicked()
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     saveFilePath();
-    if(waveWidget!=nullptr)
+    if(waveWidget != nullptr)
     {
         waveWidget->close();
     }
-    for(QWidget * widget:ui->play_table->allCloseWidget)
+    for(QWidget * widget : ui->play_table->allCloseWidget)
     {
         widget->close();
     }
     ui->play_table->allCloseWidget.clear();
-
     event->accept();
 }
 
