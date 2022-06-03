@@ -6,14 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>910</width>
-    <height>623</height>
+    <width>789</width>
+    <height>343</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>800</width>
-    <height>600</height>
+    <width>0</width>
+    <height>0</height>
    </size>
   </property>
   <property name="mouseTracking">
@@ -192,8 +192,8 @@
       </property>
       <property name="minimumSize">
        <size>
-        <width>300</width>
-        <height>200</height>
+        <width>0</width>
+        <height>0</height>
        </size>
       </property>
       <property name="mouseTracking">
@@ -225,8 +225,8 @@
          </property>
          <property name="minimumSize">
           <size>
-           <width>500</width>
-           <height>400</height>
+           <width>0</width>
+           <height>0</height>
           </size>
          </property>
          <property name="mouseTracking">
@@ -261,8 +261,8 @@
         <widget class="PlayTable" name="play_table">
          <property name="minimumSize">
           <size>
-           <width>200</width>
-           <height>300</height>
+           <width>0</width>
+           <height>0</height>
           </size>
          </property>
          <property name="maximumSize">
@@ -344,7 +344,7 @@
            <widget class="MySlider" name="position_ctrl">
             <property name="minimumSize">
              <size>
-              <width>300</width>
+              <width>0</width>
               <height>0</height>
              </size>
             </property>

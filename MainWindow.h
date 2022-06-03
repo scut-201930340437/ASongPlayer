@@ -21,7 +21,19 @@
 
 #include "MyPlayWidget.h"
 
-
+// 定义当前鼠标所处状态;
+enum WindowStretchRectState
+{
+    NO_SELECT = 0,              // 鼠标未进入下方矩形区域;
+    LEFT_TOP_RECT,              // 鼠标在左上角区域;
+    TOP_BORDER,                 // 鼠标在上边框区域;
+    RIGHT_TOP_RECT,             // 鼠标在右上角区域;
+    RIGHT_BORDER,               // 鼠标在右边框区域;
+    RIGHT_BOTTOM_RECT,          // 鼠标在右下角区域;
+    BOTTOM_BORDER,              // 鼠标在下边框区域;
+    LEFT_BOTTOM_RECT,           // 鼠标在左下角区域;
+    LEFT_BORDER                 // 鼠标在左边框区域;
+};
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -146,12 +158,44 @@ private:
     //读取/存储历史播放
     void saveFilePath();
     void readFilePath();
-    //全屏下的鼠标事件
-    void mouseMoveEvent (QMouseEvent *event);
     //平时的键盘事件
     void keyPressEvent(QKeyEvent *event);
     void keyReleaseEvent(QKeyEvent *event);
     void closeEvent(QCloseEvent *event);
+    //缩放窗口所需
+    QRect m_leftTopRect;
+        QRect m_leftBottomRect;
+        QRect m_rightTopRect;
+        QRect m_rightBottomRect;
+        QRect m_topBorderRect;
+        QRect m_rightBorderRect;
+        QRect m_bottomBorderRect;
+        QRect m_leftBorderRect;
+
+        WindowStretchRectState m_stretchRectState;
+        bool m_isMousePressed;
+        bool m_isWindowMax;
+        QPoint m_endPoint;
+        QPoint m_startPoint;
+        QRect m_windowRectBeforeStretch;
+        int m_windowMinWidth;
+        int m_windowMinHeight;
+    WindowStretchRectState getCurrentStretchState(QPoint cursorPos);
+
+        void updateMouseStyle(WindowStretchRectState stretchState);
+
+        void calculateCurrentStrechRect();
+
+        //鼠标事件
+        void mouseMoveEvent (QMouseEvent *event); // 含全屏逻辑
+
+        void mousePressEvent(QMouseEvent *event);
+
+        void mouseReleaseEvent(QMouseEvent *event);
+
+        void updateWindowSize();
+
+        void paintEvent(QPaintEvent *);
 
 };
 #endif // MAINWINDOW_H
