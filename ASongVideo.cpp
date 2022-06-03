@@ -120,7 +120,6 @@ double ASongVideo::synVideo(const double pts)
 void ASongVideo::start(Priority pri)
 {
     stopReq = false;
-    //    stopFlag = false;
     pauseReq = false;
     pauseFlag = false;
     QThread::start(pri);
@@ -176,6 +175,11 @@ void ASongVideo::resumeThread()
     {
         start();
     }
+}
+
+void ASongVideo::setSleepTime(int _sleepTime)
+{
+    sleepTime = _sleepTime;
 }
 
 void ASongVideo::run()
@@ -316,7 +320,7 @@ void ASongVideo::run()
         }
         else
         {
-            msleep(60);
+            msleep(sleepTime);
         }
     }
 }
@@ -333,15 +337,17 @@ void ASongVideo::appendFrame(AVFrame *frame)
         }
         else
         {
+            // 释放该帧
+            av_frame_free(&frame);
             if(!invertFrameList->isEmpty())
             {
                 DataSink::getInstance()->appendInvertFrameList(1, invertFrameList);
                 ASongFFmpeg::getInstance()->invertPts = invertFrameList->first()->pts * tb;
                 invertFrameList = new QList<AVFrame*>;
             }
-            // 倒放seek不到帧，再向前倒退一个pts
             else
             {
+                // 倒放seek不到帧，再向前倒退一个pts
                 ASongFFmpeg::getInstance()->invertPts -= SDLPaint::getInstance()->basePts;
             }
             ASongFFmpeg::getInstance()->needInvertSeek = true;
@@ -353,3 +359,4 @@ void ASongVideo::appendFrame(AVFrame *frame)
         DataSink::getInstance()->appendFrame(1, frame);
     }
 }
+

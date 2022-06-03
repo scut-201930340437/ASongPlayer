@@ -137,6 +137,8 @@ private:
     // 处理倒放
     void initInvert();
     void handleInvertSeek();
+
+    int sleepTime = 25;
     // 需要停止
     std::atomic_bool stopReq = false;
     // 需要暂停

@@ -239,6 +239,8 @@ void ASongAudioOutput::process()
         {
             uint8_t *outBuffer = (uint8_t*)av_malloc(maxFrameSize * 2);
             int out_size = swrToPCM(outBuffer, frame);
+            // 计算该帧时长
+            double duration = 1.0 * out_size / (sample_rate * 2 * channels);
             if(out_size < 0)
             {
                 qDebug() << "swr failed";
@@ -260,8 +262,6 @@ void ASongAudioOutput::process()
                 av_free(outBuffer);
                 return;
             }
-            // 计算该帧时长
-            double duration = 1.0 * out_size / (sample_rate * 2 * channels);
             if(audioOutput->bytesFree() < out_size)
             {
                 msleep(1000.0 * duration + 0.5);
@@ -286,20 +286,23 @@ void ASongAudioOutput::process()
         // 否则不需要重采样
         else
         {
-            int out_size = -1;
+            int out_size = av_samples_get_buffer_size(nullptr,
+                           channels,
+                           frame->nb_samples,
+                           out_sample_fmt,
+                           0);
+            if(out_size < 0)
+            {
+                qDebug() << "audio frame error";
+                av_frame_free(&frame);
+                return;
+            }
+            // 计算该帧时长
+            double duration = 1.0 * out_size / (sample_rate * 4);
             // 做倍速处理
             if(speed > 1.00001 || speed < 0.99999)
             {
                 out_size = changeSpeed((uint8_t*)frame->data, frame);
-            }
-            // 不需要倍速
-            else
-            {
-                out_size = av_samples_get_buffer_size(nullptr,
-                                                      channels,
-                                                      frame->nb_samples,
-                                                      out_sample_fmt,
-                                                      0);
             }
             if(out_size < 0)
             {
@@ -307,8 +310,6 @@ void ASongAudioOutput::process()
                 av_frame_free(&frame);
                 return;
             }
-            // 计算该帧时长
-            double duration = 1.0 * out_size / (sample_rate * 4);
             if(audioOutput->bytesFree() < out_size)
             {
                 msleep(1000.0 * duration + 0.5);

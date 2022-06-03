@@ -19,16 +19,17 @@ public:
     DataSink();
     static DataSink* getInstance();
 
-    static const qsizetype maxAPacketListLength = 100;
-    static const qsizetype maxVPacketListLength = 60;
+    static qsizetype maxAPacketListLength;
+    static qsizetype maxVPacketListLength;
     // 帧list最大长度
-    static const qsizetype maxAFrameListLength = 120;
-    static const qsizetype maxVFrameListLength = 60;
-    // 倒放二维list最大长度
-    static const qsizetype maxAInvertFrameListLength = 12;
-    static const qsizetype maxVInvertFrameListLength = 6;
+    static qsizetype maxAFrameListLength;
+    static qsizetype maxVFrameListLength;
+    // 倒放list最大长度
+    static qsizetype maxAInvertFrameListLength;
+    static qsizetype maxVInvertFrameListLength;
+
     // 倒放一维list的最大长度
-    //    static const qsizetype maxInvertPerFrameListLength = 10;
+    //    static const qsizetype maxInvertPerFrameListLength = 20;
 
     AVPacket* takeNextPacket(int type);
     AVFrame* takeNextFrame(int type);
@@ -67,6 +68,10 @@ private:
     QMutex vInvertFrameListMutex;
     // 条件变量
     QWaitCondition *audioFraCond = nullptr, *videoFraCond = nullptr;
+
+    // 当前倒放帧总数
+    qsizetype aInvertFrameSum = 0;
+    qsizetype vInvertFrameSum = 0;
 };
 
 #endif // DATASINK_H

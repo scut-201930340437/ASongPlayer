@@ -38,6 +38,9 @@ public:
     void resumeThread();
     //
     void stop();
+
+    void setSleepTime(int _sleepTime);
+
     // 暂停标志
     std::atomic_bool pauseFlag = false;
 
@@ -46,6 +49,8 @@ private:
     void run() override;
     // 校准pts
     void caliBratePts(AVFrame *frame, double &pts);
+
+    int sleepTime = 60;
     //
     std::atomic_bool stopReq = false;
     std::atomic_bool pauseReq = false;
