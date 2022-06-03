@@ -114,6 +114,8 @@ private slots:
 
     void on_wave_button_clicked();
 
+    void on_pushButton_clicked();
+
 private:
     //定时器时间 ms
     int myTimerTime = 500;

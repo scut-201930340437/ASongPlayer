@@ -478,6 +478,13 @@ void MainWindow::handleTimeout()
     //        multipleWidget->move(ui->control_widget->pos() + ui->control_sub_widget->pos() + ui->multiple_button->pos() + *p);
     //        multipleWidget->move(0,0);
     //    }
+    //倒放屏蔽恢复
+    if(!ASongFFmpeg::getInstance()->invertFlag)
+    {
+        ui->position_ctrl->setEnabled(true);
+        ui->forward_button->setEnabled(true);
+        ui->backward_button->setEnabled(true);
+    }
 }
 
 void MainWindow::on_fullScreen_button_clicked()
@@ -598,7 +605,7 @@ void MainWindow::on_position_ctrl_sliderReleased()
         return;
     }
     //先加锁
-    seek_mutex.tryLock();
+//    seek_mutex.tryLock();
     //切换进度要在松开鼠标后实现
     double percentage = 1.0 * ui->position_ctrl->value() / 10000.0; //精确到小数点后四位
     int posSec = ASongFFmpeg::getInstance()->getDuration() * percentage;
@@ -606,7 +613,7 @@ void MainWindow::on_position_ctrl_sliderReleased()
     //重开定时器
     myTimer->start();
     //解锁
-    seek_mutex.unlock();
+//    seek_mutex.unlock();
     //seek完后一定转入播放状态，所以按钮为”暂停“
     ui->play_button->setStyleSheet("#play_button{\
                                        image: url(:/img/pause.png);\
@@ -715,9 +722,11 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
             on_stop_button_clicked();
             break;
         case Qt::Key_A:
+            if(ASongFFmpeg::getInstance()->invertFlag) break;
             on_backward_button_clicked();
             break;
         case Qt::Key_D:
+            if(ASongFFmpeg::getInstance()->invertFlag) break;
             on_forward_button_clicked();
             break;
         case Qt::Key_C:
@@ -737,6 +746,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
             break;
         case Qt::Key_Left:
         {
+            if(ASongFFmpeg::getInstance()->invertFlag) break;
             //先加锁
             //        seek_mutex.tryLock();
             int duration = ASongFFmpeg::getInstance()->getDuration();
@@ -758,6 +768,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         break;
         case Qt::Key_Right:
         {
+            if(ASongFFmpeg::getInstance()->invertFlag) break;
             //先加锁
             //        seek_mutex.tryLock();
             int duration = ASongFFmpeg::getInstance()->getDuration();
@@ -1042,8 +1053,7 @@ void MainWindow::on_forward_button_clicked()
 
 void MainWindow::on_backward_button_clicked()
 {
-    //    ASongFFmpeg::getInstance()->step_to_dst_frame(-1);
-    ASongFFmpeg::getInstance()->invertPlay();
+    ASongFFmpeg::getInstance()->step_to_dst_frame(-1);
 }
 
 
@@ -1086,5 +1096,14 @@ void MainWindow::closeEvent(QCloseEvent *event)
     }
     ui->play_table->allCloseWidget.clear();
     event->accept();
+}
+
+
+void MainWindow::on_pushButton_clicked()
+{
+    ASongFFmpeg::getInstance()->invertPlay();
+    ui->position_ctrl->isEnabled()? ui->position_ctrl->setEnabled(false) : ui->position_ctrl->setEnabled(true);
+    ui->forward_button->isEnabled()? ui->forward_button->setEnabled(false) : ui->forward_button->setEnabled(true);
+    ui->backward_button->isEnabled()? ui->backward_button->setEnabled(false) : ui->backward_button->setEnabled(true);
 }
 
