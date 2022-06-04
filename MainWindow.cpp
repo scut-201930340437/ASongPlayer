@@ -10,8 +10,8 @@
 #include<QFileDialog>
 #include "MyMessageWidget.h"
 
-#define STRETCH_RECT_HEIGHT 4       // 拉伸小矩形的高度;
-#define STRETCH_RECT_WIDTH 4        // 拉伸小矩形的宽度;
+#define STRETCH_RECT_HEIGHT 8       // 拉伸小矩形的高度;
+#define STRETCH_RECT_WIDTH 8        // 拉伸小矩形的宽度;
 
 //定时器
 QTimer* myTimer = new QTimer();
@@ -41,10 +41,15 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ASongAudioOutput::getInstance(), SIGNAL(playFinish()), this, SLOT(playFinishSlot()));
     //缩放窗口
     m_stretchRectState = NO_SELECT;
-    m_windowMinHeight = size().height();
-    m_windowMinWidth = size().width();
+    m_windowMinHeight = 50;
+    m_windowMinWidth = 100;
     m_isWindowMax = false;
     m_isMousePressed = false;
+    //初始化边边角角拉伸矩形
+    calculateCurrentStrechRect();
+    //默认生成波形图窗口，方便释放内核传来的数据
+    on_wave_button_clicked();
+    waveWidget->hide();
 }
 
 MainWindow::~MainWindow()
@@ -850,7 +855,6 @@ void MainWindow::playFinishSlot()
     {
         on_next_button_clicked();
     }
-    ui->play_button->setText("播放");
 }
 
 void MainWindow::on_play_table_customContextMenuRequested(const QPoint &pos)
