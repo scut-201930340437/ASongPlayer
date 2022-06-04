@@ -59,10 +59,12 @@ void PlayTable::setTable(QList<QString> infoList,QString filePath)
 
 void PlayTable::generateRandomList()
 {
-    //根据orderInfoLst生成RandomList
-    numFile=orderInfoList.size();
-//    order_random.resize(numFile);
-//    random_order.resize(numFile);
+    //根据orderInfoLst生成随机序列
+    qint16 numFile=orderInfoList.size();
+
+    if(numFile==0)
+        return;
+
     //记录原来的位置
     for(qint16 i=0;i<numFile;i++)
     {
@@ -172,9 +174,10 @@ void PlayTable::deleteFile()
 {
     //保证playPos和randomPos，还有两种映射的正确
     int orderDltRowIndex = this->currentRow();
-    int randomDltRowIndex = order_random[orderDltRowIndex];
     if (orderDltRowIndex != -1)
-    {   //删除顺序列表，随机列表，两个哈希的相应映射对
+    {
+        int randomDltRowIndex = order_random[orderDltRowIndex];
+        //删除顺序列表，随机列表，两个哈希的相应映射对
         this->removeRow(orderDltRowIndex);
         orderInfoList.removeAt(orderDltRowIndex);
         order_random.removeAt(orderDltRowIndex);
@@ -190,13 +193,12 @@ void PlayTable::deleteFile()
             if(order_random[i]>=randomDltRowIndex)
                 order_random[i]--;
         }
+        if(playPos>orderDltRowIndex)
+        {
+            playPos--;
+        }
+        randomPos=order_random[playPos];
     }
-
-    if(playPos>orderDltRowIndex)
-    {
-        playPos--;
-    }
-    randomPos=order_random[playPos];
 }
 
 QString PlayTable::getFileNameFromPath(QString path)
