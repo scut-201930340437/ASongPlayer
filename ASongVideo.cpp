@@ -122,6 +122,11 @@ void ASongVideo::start(Priority pri)
     stopReq = false;
     pauseReq = false;
     pauseFlag = false;
+    videoClock = 0.0;
+    // 上一帧pts
+    lastFramePts = 0.0;
+    // 上一帧delay
+    lastFrameDelay = 0.0;
     QThread::start(pri);
 }
 
@@ -142,11 +147,6 @@ void ASongVideo::stop()
         avcodec_close(pCodecCtx);
         pCodecCtx = nullptr;
     }
-    videoClock = 0.0;
-    // 上一帧pts
-    lastFramePts = 0.0;
-    // 上一帧delay
-    lastFrameDelay = 0.0;
     // stream_index
     videoIdx = -1;
 }

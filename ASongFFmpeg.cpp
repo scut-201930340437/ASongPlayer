@@ -319,7 +319,7 @@ bool ASongFFmpeg::audioHasCover()
 }
 
 // 开始播放
-int ASongFFmpeg::play(QObject *par, QString path, void *winID)
+int ASongFFmpeg::play(QObject *par, QString path, QWidget *_playWidget)
 {
     // 切换为播放态
     curMediaStatus = 1;
@@ -330,15 +330,14 @@ int ASongFFmpeg::play(QObject *par, QString path, void *winID)
     start();
     if(videoIdx >= 0)
     {
-        SDLPaint::getInstance()->init(winID);
+        SDLPaint::getInstance()->init(_playWidget);
         // 预览线程启动
         VideoPreview::getInstance()->start(path, mediaMetaData->vMetaDatas[videoIdx].idx);
     }
     return 0;
 }
 
-// thread
-void ASongFFmpeg::start(Priority pri)
+void ASongFFmpeg::resetCtrlPara()
 {
     stopReq = false;
     pauseReq = false;
@@ -348,6 +347,23 @@ void ASongFFmpeg::start(Priority pri)
     seekReq = false;
     stepSeek = false;
     seekVideo = false;
+    targetFrameNum = -1;
+    // 进度微调的目标pts
+    targetPts = 0.0;
+    step = 0;
+    invertPts = 0.0;
+    seekPos = 0;
+    seekRel = 0;
+    seekMin = INT64_MIN;
+    seekMax = INT64_MAX;
+    seekFlag = -1;
+    cleared = false;
+}
+
+// thread
+void ASongFFmpeg::start(Priority pri)
+{
+    resetCtrlPara();
     QThread::start(pri);
 }
 
@@ -600,7 +616,7 @@ void ASongFFmpeg::seek(int64_t posSec)
 }
 
 // 逐帧
-void ASongFFmpeg::step_to_dst_frame(int step)
+void ASongFFmpeg::step_to_dst_frame(int _step)
 {
     if(nullptr == pFormatCtx || curMediaStatus <= 0 || videoIdx < 0 || hasCover)
     {
@@ -611,7 +627,7 @@ void ASongFFmpeg::step_to_dst_frame(int step)
     // 设置sdl非暂停态
     SDLPaint::getInstance()->resume();
     // 没有下一帧或下五帧 或没有上一帧或上五帧
-    targetFrameNum = SDLPaint::getInstance()->curFrameNum + step;
+    targetFrameNum = SDLPaint::getInstance()->curFrameNum + _step;
     if(targetFrameNum > pFormatCtx->streams[mediaMetaData->vMetaDatas[videoIdx].idx]->nb_frames - 1 || targetFrameNum < 0)
     {
         SDLPaint::getInstance()->restartTimer();
@@ -620,17 +636,17 @@ void ASongFFmpeg::step_to_dst_frame(int step)
     curMediaStatus = 2;
     // 暂停音频播放线程
     ASongAudioOutput::getInstance()->pause();
-    _step = step;
+    step = _step;
     seekVideo = true;
     stepSeek = true;
     // 向后跳
     // 向前跳
-    if(_step < 0)
+    if(step < 0)
     {
         // 阻塞解复用线程
         pauseThread();
         // 设置seek请求
-        targetPts = SDLPaint::getInstance()->curPts + _step * SDLPaint::getInstance()->basePts;
+        targetPts = SDLPaint::getInstance()->curPts + step * SDLPaint::getInstance()->basePts;
         seekPos = FFMAX((targetPts - 1.0 * SDLPaint::getInstance()->basePts) * AV_TIME_BASE, 0);
         seekMin = INT64_MIN;
         seekMax = seekPos;
@@ -663,7 +679,7 @@ void ASongFFmpeg::step_to_dst_frame(int step)
     // 重启定时器使sdl不断渲染上一帧
     SDLPaint::getInstance()->restartTimer();
     stepSeek = false;
-    _step = 0;
+    step = 0;
 }
 // 设置速率
 void ASongFFmpeg::setSpeed(float _speed)
@@ -695,6 +711,18 @@ void ASongFFmpeg::setSpeed(float _speed)
             ASongAudio::getInstance()->setSleepTime(10);
             ASongVideo::getInstance()->setSleepTime(10);
             sleepTime = 15;
+        }
+        else
+        {
+            DataSink::maxAPacketListLength = 110;
+            DataSink::maxVPacketListLength = 70;
+            DataSink::maxAFrameListLength = 120;
+            DataSink::maxVFrameListLength = 70;
+            DataSink::maxAInvertFrameListLength = 100;
+            DataSink::maxVInvertFrameListLength = 70;
+            ASongAudio::getInstance()->setSleepTime(30);
+            ASongVideo::getInstance()->setSleepTime(60);
+            sleepTime = 25;
         }
     }
 }

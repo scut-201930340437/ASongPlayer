@@ -20,14 +20,21 @@ SDLPaint* SDLPaint::getInstance()
     return sdlPaint;
 }
 
-int SDLPaint::init(void *winID)
+int SDLPaint::init(QWidget *_playWidget)
 {
+    if(nullptr == _playWidget)
+    {
+        qDebug() << "playWidget null";
+        return -1;
+    }
+    playWidget = _playWidget;
+    playWidget->setUpdatesEnabled(false);
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER))
     {
         qDebug() << "Could not initialize SDL" << SDL_GetError();
         return -1;
     }
-    screen = SDL_CreateWindowFrom(winID);
+    screen = SDL_CreateWindowFrom((void*)playWidget->winId());
     if (nullptr == screen)
     {
         qDebug() << "SDL: could not create window - exiting:" << SDL_GetError();
@@ -149,15 +156,15 @@ void SDLPaint::getFrameYUV()
             // 扔掉小于stepSeek的目标帧号的帧
             if(ASongFFmpeg::getInstance()->stepSeek && ASongFFmpeg::getInstance()->seekVideo)
             {
-                if(ASongFFmpeg::getInstance()->_step > 1)
+                if(ASongFFmpeg::getInstance()->step > 1)
                 {
                     av_frame_free(&frame);
-                    --ASongFFmpeg::getInstance()->_step;
+                    --ASongFFmpeg::getInstance()->step;
                     return;
                 }
                 else
                 {
-                    if(ASongFFmpeg::getInstance()->_step == 1)
+                    if(ASongFFmpeg::getInstance()->step == 1)
                     {
                         ASongFFmpeg::getInstance()->seekVideo = false;
                     }
@@ -360,6 +367,14 @@ void SDLPaint::stop()
         delete sdlTimer;
         sdlTimer = nullptr;
     }
+    if(nullptr != playWidget)
+    {
+        playWidget->setUpdatesEnabled(true);
+    }
+    // 重置参数
+    srcWidth = srcHeight = lastScreenWidth = lastScreenHeight = 0;
+    frameRate = -1;
+    preDelay = 0;
 }
 
 void SDLPaint::pause()

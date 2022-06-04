@@ -21,7 +21,7 @@ public:
     static SDLPaint* getInstance();
     ~SDLPaint();
     // 初始化sdl
-    int init(void *winID);
+    int init(QWidget *_playWidget);
     // 设置参数
     void setMetaData(const int width, const int height, const int _frameRate, const enum AVPixelFormat _pix_fmt, const AVRational time_base);
     // 将一帧图像转为YUVFrame
@@ -43,6 +43,8 @@ private:
                         int scr_xleft, int scr_ytop, int scr_width, int scr_height,
                         int pic_width, int pic_height);
 
+    QWidget *playWidget = nullptr;
+
     QTimer *sdlTimer = nullptr;
     // SDL
     SDL_Window *screen = nullptr;
@@ -62,7 +64,7 @@ private:
     enum AVPixelFormat pix_fmt;
 
     // 源视频流宽高
-    int srcWidth, srcHeight;
+    int srcWidth = 0, srcHeight = 0;
     // 窗口宽高
     int lastScreenWidth = 0, lastScreenHeight = 0;
     // 采样纵横比

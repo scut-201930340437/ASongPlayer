@@ -58,7 +58,7 @@ void ASongAudio::start(Priority pri)
     stopReq = false;
     pauseReq = false;
     pauseFlag = false;
-    //    stopFlag = false;
+    audioClock = 0.0;
     QThread::start(pri);
 }
 
@@ -79,6 +79,7 @@ void ASongAudio::stop()
         avcodec_close(pCodecCtx);
         pCodecCtx = nullptr;
     }
+    audioIdx = -1;
 }
 
 void ASongAudio::resume()

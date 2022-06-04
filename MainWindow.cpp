@@ -96,7 +96,7 @@ void MainWindow::on_play_button_clicked()
                     filePath = "";
                     break;
                 }
-                ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId());
+                ASongFFmpeg::getInstance()->play(this, filePath, ui->play_widget);
                 ui->play_button->setStyleSheet("#play_button{\
    image: url(:/img/pause.png);\
    }\
@@ -144,7 +144,7 @@ void MainWindow::on_play_button_clicked()
                 openFile();
                 break;
             }
-            ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId());
+            ASongFFmpeg::getInstance()->play(this, filePath, ui->play_widget);
             ui->play_button->setStyleSheet("#play_button{\
    image: url(:/img/play.png);\
    }\
@@ -290,7 +290,7 @@ void MainWindow::openFile()
     {
         filePath = path;
         ASongFFmpeg::getInstance()->stop();
-        ASongFFmpeg::getInstance()->play(this, path, (void*)ui->play_widget->winId());
+        ASongFFmpeg::getInstance()->play(this, path, ui->play_widget);
         setListFromFilePath();
     }
     else
@@ -342,7 +342,7 @@ void MainWindow::onPlayTableCellDoubleClicked(int row, int column)
     {
         filePath = path;
         ASongFFmpeg::getInstance()->stop();
-        ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId());
+        ASongFFmpeg::getInstance()->play(this, filePath, ui->play_widget);
         this->ui->play_table->playPos = row; //确认可以播放，记录播放位置
     }
 }
@@ -366,7 +366,7 @@ void MainWindow::dropEvent(QDropEvent *e)
         filePath = urls.first().toLocalFile();
         ui->play_table->addFilePath(filePath);
         ASongFFmpeg::getInstance()->stop();
-        ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId());
+        ASongFFmpeg::getInstance()->play(this, filePath, ui->play_widget);
     }
     else
     {
@@ -580,7 +580,7 @@ void MainWindow::on_last_button_clicked()
     {
         filePath = path;
         ASongFFmpeg::getInstance()->stop();
-        ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId());
+        ASongFFmpeg::getInstance()->play(this, filePath, ui->play_widget);
     }
 }
 
@@ -598,7 +598,7 @@ void MainWindow::on_next_button_clicked()
     {
         filePath = path;
         ASongFFmpeg::getInstance()->stop();
-        ASongFFmpeg::getInstance()->play(this, filePath, (void*)ui->play_widget->winId());
+        ASongFFmpeg::getInstance()->play(this, filePath, ui->play_widget);
     }
 }
 
@@ -620,7 +620,7 @@ void MainWindow::on_position_ctrl_sliderReleased()
         return;
     }
     //先加锁
-//    seek_mutex.tryLock();
+    //    seek_mutex.tryLock();
     //切换进度要在松开鼠标后实现
     double percentage = 1.0 * ui->position_ctrl->value() / 10000.0; //精确到小数点后四位
     int posSec = ASongFFmpeg::getInstance()->getDuration() * percentage;
@@ -628,7 +628,7 @@ void MainWindow::on_position_ctrl_sliderReleased()
     //重开定时器
     myTimer->start();
     //解锁
-//    seek_mutex.unlock();
+    //    seek_mutex.unlock();
     //seek完后一定转入播放状态，所以按钮为”暂停“
     ui->play_button->setStyleSheet("#play_button{\
                                        image: url(:/img/pause.png);\
@@ -737,11 +737,17 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
             on_stop_button_clicked();
             break;
         case Qt::Key_A:
-            if(ASongFFmpeg::getInstance()->invertFlag) break;
+            if(ASongFFmpeg::getInstance()->invertFlag)
+            {
+                break;
+            }
             on_backward_button_clicked();
             break;
         case Qt::Key_D:
-            if(ASongFFmpeg::getInstance()->invertFlag) break;
+            if(ASongFFmpeg::getInstance()->invertFlag)
+            {
+                break;
+            }
             on_forward_button_clicked();
             break;
         case Qt::Key_C:
@@ -761,7 +767,10 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
             break;
         case Qt::Key_Left:
         {
-            if(ASongFFmpeg::getInstance()->invertFlag) break;
+            if(ASongFFmpeg::getInstance()->invertFlag)
+            {
+                break;
+            }
             //先加锁
             //        seek_mutex.tryLock();
             int duration = ASongFFmpeg::getInstance()->getDuration();
@@ -783,7 +792,10 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         break;
         case Qt::Key_Right:
         {
-            if(ASongFFmpeg::getInstance()->invertFlag) break;
+            if(ASongFFmpeg::getInstance()->invertFlag)
+            {
+                break;
+            }
             //先加锁
             //        seek_mutex.tryLock();
             int duration = ASongFFmpeg::getInstance()->getDuration();
@@ -1117,9 +1129,9 @@ void MainWindow::closeEvent(QCloseEvent *event)
 void MainWindow::on_pushButton_clicked()
 {
     ASongFFmpeg::getInstance()->invertPlay();
-    ui->position_ctrl->isEnabled()? ui->position_ctrl->setEnabled(false) : ui->position_ctrl->setEnabled(true);
-    ui->forward_button->isEnabled()? ui->forward_button->setEnabled(false) : ui->forward_button->setEnabled(true);
-    ui->backward_button->isEnabled()? ui->backward_button->setEnabled(false) : ui->backward_button->setEnabled(true);
+    ui->position_ctrl->isEnabled() ? ui->position_ctrl->setEnabled(false) : ui->position_ctrl->setEnabled(true);
+    ui->forward_button->isEnabled() ? ui->forward_button->setEnabled(false) : ui->forward_button->setEnabled(true);
+    ui->backward_button->isEnabled() ? ui->backward_button->setEnabled(false) : ui->backward_button->setEnabled(true);
 }
 
 //缩放窗口
@@ -1133,7 +1145,6 @@ void MainWindow::calculateCurrentStrechRect()
     m_leftBottomRect = QRect(0, this->height() - STRETCH_RECT_HEIGHT, STRETCH_RECT_WIDTH, STRETCH_RECT_WIDTH);
     m_rightTopRect = QRect(this->width() - STRETCH_RECT_WIDTH, 0, STRETCH_RECT_WIDTH, STRETCH_RECT_HEIGHT);
     m_rightBottomRect = QRect(this->width() - STRETCH_RECT_WIDTH, this->height() - STRETCH_RECT_HEIGHT, STRETCH_RECT_WIDTH, STRETCH_RECT_HEIGHT);
-
     // 四条边Rect;
     m_topBorderRect = QRect(STRETCH_RECT_WIDTH, 0, this->width() - STRETCH_RECT_WIDTH * 2, STRETCH_RECT_HEIGHT);
     m_rightBorderRect = QRect(this->width() - STRETCH_RECT_WIDTH, STRETCH_RECT_HEIGHT, STRETCH_RECT_WIDTH, this->height() - STRETCH_RECT_HEIGHT * 2);
@@ -1181,7 +1192,6 @@ WindowStretchRectState MainWindow::getCurrentStretchState(QPoint cursorPos)
     {
         stretchState = NO_SELECT;
     }
-
     return stretchState;
 }
 
@@ -1190,30 +1200,29 @@ void MainWindow::updateMouseStyle(WindowStretchRectState stretchState)
 {
     switch (stretchState)
     {
-    case NO_SELECT:
-        setCursor(Qt::ArrowCursor);
-        break;
-    case LEFT_TOP_RECT:
-    case RIGHT_BOTTOM_RECT:
-        setCursor(Qt::SizeFDiagCursor);
-        break;
-    case TOP_BORDER:
-    case BOTTOM_BORDER:
-        setCursor(Qt::SizeVerCursor);
-        break;
-    case RIGHT_TOP_RECT:
-    case LEFT_BOTTOM_RECT:
-        setCursor(Qt::SizeBDiagCursor);
-        break;
-    case LEFT_BORDER:
-    case RIGHT_BORDER:
-        setCursor(Qt::SizeHorCursor);
-        break;
-    default:
-        setCursor(Qt::ArrowCursor);
-        break;
+        case NO_SELECT:
+            setCursor(Qt::ArrowCursor);
+            break;
+        case LEFT_TOP_RECT:
+        case RIGHT_BOTTOM_RECT:
+            setCursor(Qt::SizeFDiagCursor);
+            break;
+        case TOP_BORDER:
+        case BOTTOM_BORDER:
+            setCursor(Qt::SizeVerCursor);
+            break;
+        case RIGHT_TOP_RECT:
+        case LEFT_BOTTOM_RECT:
+            setCursor(Qt::SizeBDiagCursor);
+            break;
+        case LEFT_BORDER:
+        case RIGHT_BORDER:
+            setCursor(Qt::SizeHorCursor);
+            break;
+        default:
+            setCursor(Qt::ArrowCursor);
+            break;
     }
-
 }
 
 void MainWindow::mouseMoveEvent(QMouseEvent *event)
@@ -1242,7 +1251,6 @@ void MainWindow::mouseMoveEvent(QMouseEvent *event)
     {
         return __super::mouseMoveEvent(event);
     }
-
     // 如果当前鼠标未按下，则根据当前鼠标的位置更新鼠标的状态及样式;
     if (!m_isMousePressed)
     {
@@ -1257,7 +1265,6 @@ void MainWindow::mouseMoveEvent(QMouseEvent *event)
         m_endPoint = this->mapToGlobal(event->pos());
         updateWindowSize();
     }
-
     return __super::mouseMoveEvent(event);
 }
 
@@ -1273,7 +1280,6 @@ void MainWindow::mousePressEvent(QMouseEvent *event)
         // 保存下拉伸前的窗口位置及大小;
         m_windowRectBeforeStretch = this->geometry();
     }
-
     return __super::mousePressEvent(event);
 }
 
@@ -1282,7 +1288,6 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *event)
     // 鼠标松开后意味之窗口拉伸结束，置标志位，并且重新计算用于拉伸的8个区域Rect;
     m_isMousePressed = false;
     calculateCurrentStrechRect();
-
     return __super::mouseReleaseEvent(event);
 }
 
@@ -1293,7 +1298,6 @@ void MainWindow::updateWindowSize()
     QRect windowRect = m_windowRectBeforeStretch;
     int delValue_X = m_startPoint.x() - m_endPoint.x();
     int delValue_Y = m_startPoint.y() - m_endPoint.y();
-
     if (m_stretchRectState == LEFT_BORDER)
     {
         QPoint topLeftPoint = windowRect.topLeft();
@@ -1346,7 +1350,6 @@ void MainWindow::updateWindowSize()
         bottomLeftPoint.setY(bottomLeftPoint.y() - delValue_Y);
         windowRect.setBottomLeft(bottomLeftPoint);
     }
-
     // 避免宽或高为零窗口显示有误，这里给窗口设置最小拉伸高度、宽度;
     if (windowRect.width() < m_windowMinWidth)
     {
@@ -1358,12 +1361,5 @@ void MainWindow::updateWindowSize()
         windowRect.setTop(this->geometry().top());
         windowRect.setHeight(m_windowMinHeight);
     }
-
     this->setGeometry(windowRect);
 }
-
-void MainWindow::paintEvent(QPaintEvent *)
-{
-    ui->play_widget->setUpdatesEnabled(false);
-}
-//缩放窗口完毕

@@ -150,8 +150,8 @@ private:
     QString filePath;
     //存储播放路径的文件的路径
     QString SavePath = "filePath.ini";
-    QString curPathKey="curFilePath";
-    QString pathListKey="filePathList";
+    QString curPathKey = "curFilePath";
+    QString pathListKey = "filePathList";
 
     void setListFromFilePath();
     void dragEnterEvent(QDragEnterEvent *e);
@@ -164,38 +164,35 @@ private:
     void closeEvent(QCloseEvent *event);
     //缩放窗口所需
     QRect m_leftTopRect;
-        QRect m_leftBottomRect;
-        QRect m_rightTopRect;
-        QRect m_rightBottomRect;
-        QRect m_topBorderRect;
-        QRect m_rightBorderRect;
-        QRect m_bottomBorderRect;
-        QRect m_leftBorderRect;
+    QRect m_leftBottomRect;
+    QRect m_rightTopRect;
+    QRect m_rightBottomRect;
+    QRect m_topBorderRect;
+    QRect m_rightBorderRect;
+    QRect m_bottomBorderRect;
+    QRect m_leftBorderRect;
 
-        WindowStretchRectState m_stretchRectState;
-        bool m_isMousePressed;
-        bool m_isWindowMax;
-        QPoint m_endPoint;
-        QPoint m_startPoint;
-        QRect m_windowRectBeforeStretch;
-        int m_windowMinWidth;
-        int m_windowMinHeight;
+    WindowStretchRectState m_stretchRectState;
+    bool m_isMousePressed;
+    bool m_isWindowMax;
+    QPoint m_endPoint;
+    QPoint m_startPoint;
+    QRect m_windowRectBeforeStretch;
+    int m_windowMinWidth;
+    int m_windowMinHeight;
     WindowStretchRectState getCurrentStretchState(QPoint cursorPos);
 
-        void updateMouseStyle(WindowStretchRectState stretchState);
+    void updateMouseStyle(WindowStretchRectState stretchState);
 
-        void calculateCurrentStrechRect();
+    void calculateCurrentStrechRect();
 
-        //鼠标事件
-        void mouseMoveEvent (QMouseEvent *event); // 含全屏逻辑
+    //鼠标事件
+    void mouseMoveEvent (QMouseEvent *event); // 含全屏逻辑
 
-        void mousePressEvent(QMouseEvent *event);
+    void mousePressEvent(QMouseEvent *event);
 
-        void mouseReleaseEvent(QMouseEvent *event);
+    void mouseReleaseEvent(QMouseEvent *event);
 
-        void updateWindowSize();
-
-        void paintEvent(QPaintEvent *);
-
+    void updateWindowSize();
 };
 #endif // MAINWINDOW_H

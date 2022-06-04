@@ -80,7 +80,8 @@ public:
     bool audioHasCover();
     float getSpeed();
     /*播放控制*/
-    int play(QObject *par, QString path, void *winID);
+    void resetCtrlPara();
+    int play(QObject *par, QString path, QWidget *_playWidget);
     // thread
     void start(Priority = InheritPriority);
     int stop();
@@ -121,7 +122,7 @@ public:
     int targetFrameNum = -1;
     // 进度微调的目标pts
     double targetPts = 0.0;
-    int _step = 0;
+    int step = 0;
     // invert
     bool invertReq = false;
     std::atomic_bool invertFlag = false;
