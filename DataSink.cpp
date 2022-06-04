@@ -8,6 +8,14 @@
 
 Q_GLOBAL_STATIC(DataSink, dataSink) // 采用qt实现的线程安全的单例模式
 
+qsizetype DataSink::maxAPacketListLength = 110;
+qsizetype DataSink::maxVPacketListLength = 70;
+// 帧list最大长度
+qsizetype DataSink::maxAFrameListLength = 120;
+qsizetype DataSink::maxVFrameListLength = 70;
+qsizetype DataSink::maxAInvertFrameListLength = 100;
+qsizetype DataSink::maxVInvertFrameListLength = 70;
+
 DataSink::DataSink()
 {
     audioFraCond = new QWaitCondition;
@@ -97,11 +105,13 @@ AVFrame* DataSink::takeInvertFrame(int type)
                 else
                 {
                     V = aInvertFrameList.first();
+                    --aInvertFrameSum;
                     return V->takeLast();
                 }
             }
             else
             {
+                --aInvertFrameSum;
                 return V->takeLast();
             }
         }
@@ -126,11 +136,13 @@ AVFrame* DataSink::takeInvertFrame(int type)
                 else
                 {
                     V = vInvertFrameList.first();
+                    --vInvertFrameSum;
                     return V->takeLast();
                 }
             }
             else
             {
+                --vInvertFrameSum;
                 return V->takeLast();
             }
         }
@@ -178,7 +190,7 @@ bool DataSink::allowAddInvertFrameList(int type)
     if(type == 0)
     {
         QMutexLocker locker(&aInvertFrameListMutex);
-        if(aInvertFrameList.size() >= maxAInvertFrameListLength)
+        if(aInvertFrameSum >= maxAFrameListLength)
         {
             return false;
         }
@@ -187,7 +199,7 @@ bool DataSink::allowAddInvertFrameList(int type)
     else
     {
         QMutexLocker locker(&vInvertFrameListMutex);
-        if(vInvertFrameList.size() >= maxVInvertFrameListLength)
+        if(vInvertFrameSum >= maxVFrameListLength)
         {
             return false;
         }
@@ -217,11 +229,13 @@ void DataSink::appendInvertFrameList(int type, QList<AVFrame*> *frameList)
     {
         QMutexLocker locker(&aInvertFrameListMutex);
         aInvertFrameList.append(frameList);
+        aInvertFrameSum += frameList->size();
     }
     else
     {
         QMutexLocker locker(&vInvertFrameListMutex);
         vInvertFrameList.append(frameList);
+        vInvertFrameSum += frameList->size();
     }
 }
 
@@ -347,6 +361,7 @@ void DataSink::clearInvertList()
         V->clear();
     }
     vInvertFrameList.clear();
+    aInvertFrameSum = vInvertFrameSum = 0;
 }
 
 void DataSink::frameListIsEmpty(int type)

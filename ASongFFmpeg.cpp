@@ -213,7 +213,7 @@ int ASongFFmpeg::load(QString path)
                 break;
             }
         }
-        hasCover = (mediaMetaData->vMetaDatas[videoIdx].cover != nullptr);
+        hasCover = (nullptr != mediaMetaData->vMetaDatas[videoIdx].cover);
         if(!pVCodec)
         {
             qDebug() << "Couldn't find video code.";
@@ -238,7 +238,16 @@ int ASongFFmpeg::load(QString path)
         // 获取视频流元数据
         // 获取帧率，对于带封面的音频文件，av_q2d(pFormatCtx->streams[videoIdx]->avg_frame_rate)为nan
     }
-    ASongAudio::getInstance()->setMetaData(pFormatCtx, pACodecCtx, mediaMetaData->aMetaDatas[audioIdx].idx);
+    // 找不到音频流和视频流
+    if(videoIdx < 0 && audioIdx < 0)
+    {
+        qDebug() << "file error";
+        return -1;
+    }
+    if(audioIdx >= 0)
+    {
+        ASongAudio::getInstance()->setMetaData(pFormatCtx, pACodecCtx, mediaMetaData->aMetaDatas[audioIdx].idx);
+    }
     if(videoIdx >= 0)
     {
         int idx = mediaMetaData->vMetaDatas[videoIdx].idx;
@@ -339,7 +348,6 @@ void ASongFFmpeg::start(Priority pri)
     seekReq = false;
     stepSeek = false;
     seekVideo = false;
-    //    stopFlag = false;
     QThread::start(pri);
 }
 
@@ -661,6 +669,34 @@ void ASongFFmpeg::step_to_dst_frame(int step)
 void ASongFFmpeg::setSpeed(float _speed)
 {
     ASongAudioOutput::getInstance()->setSpeed(_speed);
+    // 调整队列最大长度和线程睡眠时长
+    if(_speed >= 7.999)
+    {
+        DataSink::maxAPacketListLength = 200;
+        DataSink::maxVPacketListLength = 140;
+        DataSink::maxAFrameListLength = 240;
+        DataSink::maxVFrameListLength = 140;
+        DataSink::maxAInvertFrameListLength = 270;
+        DataSink::maxVInvertFrameListLength = 180;
+        ASongAudio::getInstance()->setSleepTime(5);
+        ASongVideo::getInstance()->setSleepTime(5);
+        sleepTime = 5;
+    }
+    else
+    {
+        if(_speed >= 3.999)
+        {
+            DataSink::maxAPacketListLength = 130;
+            DataSink::maxVPacketListLength = 100;
+            DataSink::maxAFrameListLength = 150;
+            DataSink::maxVFrameListLength = 100;
+            DataSink::maxAInvertFrameListLength = 160;
+            DataSink::maxVInvertFrameListLength = 120;
+            ASongAudio::getInstance()->setSleepTime(10);
+            ASongVideo::getInstance()->setSleepTime(10);
+            sleepTime = 15;
+        }
+    }
 }
 
 void ASongFFmpeg::initInvert()
@@ -670,15 +706,15 @@ void ASongFFmpeg::initInvert()
     // 阻塞解码线程
     ASongAudio::getInstance()->pauseThread();
     ASongVideo::getInstance()->pauseThread();
-    if(!invertFlag)
+    if(invertFlag)
     {
-        // 清除上一次倒放的残留帧
+        // 清除倒放的残留帧
         DataSink::getInstance()->clearInvertList();
-        invertFlag = true;
+        invertFlag = false;
     }
     else
     {
-        invertFlag = false;
+        invertFlag = true;
     }
     needInvertSeek = true;
     invertReq = false;
@@ -687,7 +723,7 @@ void ASongFFmpeg::initInvert()
 void ASongFFmpeg::handleInvertSeek()
 {
     // 设置seek请求
-    seekPos = FFMAX((invertPts - SDLPaint::getInstance()->basePts * 0.5) * AV_TIME_BASE, 0);
+    seekPos = FFMAX((invertPts - 0.5 * SDLPaint::getInstance()->basePts) * AV_TIME_BASE, 0);
     seekMin = INT64_MIN;
     seekMax = seekPos;
     seekFlag = AVSEEK_FLAG_BACKWARD;

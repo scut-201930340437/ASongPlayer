@@ -37,11 +37,11 @@ void ASongAudio::setAudioClock(AVFrame * frame, const double duration)
     }
     if(ASongFFmpeg::getInstance()->invertFlag)
     {
-        audioClock -= (duration * ASongFFmpeg::getInstance()->getSpeed());
+        audioClock -= duration;
     }
     else
     {
-        audioClock += (duration * ASongFFmpeg::getInstance()->getSpeed());
+        audioClock += duration;
     }
 }
 //获取时钟
@@ -113,6 +113,11 @@ void ASongAudio::resumeThread()
     {
         start();
     }
+}
+
+void ASongAudio::setSleepTime(int _sleepTime)
+{
+    sleepTime = _sleepTime;
 }
 
 void ASongAudio::run()
@@ -249,7 +254,7 @@ void ASongAudio::run()
         }
         else
         {
-            msleep(30);
+            msleep(sleepTime);
         }
     }
     //    stopFlag = true;
@@ -265,6 +270,7 @@ void ASongAudio::appendFrame(AVFrame *frame)
         }
         else
         {
+            av_frame_free(&frame);
             if(!invertFrameList->isEmpty())
             {
                 DataSink::getInstance()->appendInvertFrameList(0, invertFrameList);

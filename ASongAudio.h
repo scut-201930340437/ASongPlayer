@@ -47,11 +47,15 @@ public:
     void setVolume(int volume);
     qreal getVolume();
 
+    void setSleepTime(int _sleepTime);
+
     // 暂停标志
     std::atomic_bool pauseFlag = false;
 private:
     // thread 音频解码
     void run() override;
+
+    int sleepTime = 30;
 
     // 允许解码标志
     std::atomic_bool stopReq = false;
