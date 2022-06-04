@@ -264,23 +264,22 @@ void ASongAudioOutput::process()
             }
             if(audioOutput->bytesFree() < out_size)
             {
-                msleep(1000.0 * duration + 0.5);
+                msleep(1000.0 * out_size / (sample_rate * 2 * channels) + 0.5);
             }
             while(audioOutput->bytesFree() < out_size)
             {
                 msleep(1);
             }
-            // 更新时钟
-            ASongAudio::getInstance()->setAudioClock(frame, duration);
             // 交给前端绘制波形图
             char *dataBuffer = (char *)malloc(out_size);
             memcpy((void*)dataBuffer, (const void*)outBuffer, out_size);
             emit playAudio((const char*)dataBuffer, out_size / (2 * channels));
             // 写入设备
             audioIO->write((const char*)outBuffer, out_size);
-            //            }
-            av_free(outBuffer);
+            // 更新时钟
+            ASongAudio::getInstance()->setAudioClock(frame, duration);
             // 释放
+            av_free(outBuffer);
             av_frame_free(&frame);
         }
         // 否则不需要重采样
@@ -312,20 +311,21 @@ void ASongAudioOutput::process()
             }
             if(audioOutput->bytesFree() < out_size)
             {
-                msleep(1000.0 * duration + 0.5);
+                msleep(1000.0 * out_size / (sample_rate * 2 * channels) + 0.5);
             }
             while(audioOutput->bytesFree() < out_size)
             {
                 msleep(1);
             }
-            // 更新时钟
-            ASongAudio::getInstance()->setAudioClock(frame, duration);
             // 交给前端绘制波形图
             char *dataBuffer = (char *)malloc(out_size);
             memcpy((void*)dataBuffer, (const void*)frame->data, out_size);
             emit playAudio((const char*)dataBuffer, out_size / (2 * channels));
             // 写入设备
             audioIO->write((const char*)frame->data, out_size);
+            // 更新时钟
+            ASongAudio::getInstance()->setAudioClock(frame, duration);
+            // 释放
             av_frame_free(&frame);
         }
         // 倒放时如果音频时钟几乎为零说明播放结束
