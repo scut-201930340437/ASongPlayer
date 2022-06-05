@@ -285,7 +285,7 @@ void MainWindow::openFile()
                    tr("选择音视频文件"),
                    tr("."),
                    tr(
-                       "视频文件(*.mp4 *.flv *.avi);;音频文件(*.mp3);;所有文件(*.*)"));
+                       "视频文件(*.mp4 *.flv *.avi *.mkv);;音频文件(*.mp3)"));
     if(!path.isEmpty())
     {
         filePath = path;
@@ -569,7 +569,7 @@ void MainWindow::on_fullScreen_button_clicked()
 //上一首
 void MainWindow::on_last_button_clicked()
 {
-    qint16 n = ui->play_table->numFile;
+    qint16 n = ui->play_table->orderInfoList.size();
     if(n == 0)
     {
         on_play_button_clicked();
@@ -587,7 +587,7 @@ void MainWindow::on_last_button_clicked()
 //下一首
 void MainWindow::on_next_button_clicked()
 {
-    qint16 n = ui->play_table->numFile;
+    qint16 n = ui->play_table->orderInfoList.size();
     if(n == 0)
     {
         on_play_button_clicked();

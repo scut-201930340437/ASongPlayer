@@ -11,7 +11,7 @@ PlayTable::PlayTable(QWidget *parent)
 
 void PlayTable::init()
 {
-    this->setRowCount(numFile);
+    this->setRowCount(0);
 
     this->setEditTriggers(QAbstractItemView::NoEditTriggers);//不可编辑
     this->setSelectionBehavior(QAbstractItemView::SelectRows);  //整行选中的方式
@@ -36,7 +36,7 @@ void PlayTable::setTable(QList<QString> infoList,QString filePath)
     //顺序播放列表
     orderInfoList=infoList;
     this->clearContents();
-    numFile=infoList.size();
+    qint16 numFile=infoList.size();
     this->setRowCount(numFile);
     for(qint16 i=0;i<numFile;i++)
     {
