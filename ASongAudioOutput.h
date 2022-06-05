@@ -49,8 +49,7 @@ public:
     void resume();
     // 设置倍速
     void setSpeed(float _speed);
-    // 线程执行的函数主体
-    void process();
+
 
     void setVolume(const qreal curVolume);
     // 暂停标志
@@ -60,6 +59,8 @@ public:
 private:
     // thread 音频解码
     void run() override;
+    // 线程执行的函数主体
+    void process();
 
     // 重采样为PCM
     int swrToPCM(uint8_t *outBuffer, AVFrame *frame);

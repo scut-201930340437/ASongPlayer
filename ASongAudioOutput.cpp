@@ -239,31 +239,31 @@ void ASongAudioOutput::process()
         // 扔掉小于stepSeek的目标帧号的帧
         if(ASongFFmpeg::getInstance()->seekAudio)
         {
-            if(ASongFFmpeg::getInstance()->step > 0)
+            //            if(ASongFFmpeg::getInstance()->step > 0)
+            //            {
+            //                av_frame_free(&frame);
+            //                --ASongFFmpeg::getInstance()->step;
+            //                return;
+            //            }
+            //            else
+            //            {
+            //                if(ASongFFmpeg::getInstance()->step == 0)
+            //                {
+            //                    ASongFFmpeg::getInstance()->seekAudio = false;
+            //                }
+            //                else
+            //                {
+            if(frame->pts * tb < ASongFFmpeg::getInstance()->targetPts - 0.5 * basePts)
             {
                 av_frame_free(&frame);
-                --ASongFFmpeg::getInstance()->step;
                 return;
             }
             else
             {
-                if(ASongFFmpeg::getInstance()->step == 0)
-                {
-                    ASongFFmpeg::getInstance()->seekAudio = false;
-                }
-                else
-                {
-                    if(frame->pts * tb < ASongFFmpeg::getInstance()->targetPts - 0.5 * basePts)
-                    {
-                        av_frame_free(&frame);
-                        return;
-                    }
-                    else
-                    {
-                        ASongFFmpeg::getInstance()->seekAudio = false;
-                    }
-                }
+                ASongFFmpeg::getInstance()->seekAudio = false;
             }
+            //                }
+            //            }
         }
         if(basePts >= -DBL_EPSILON && basePts <= DBL_EPSILON)
         {

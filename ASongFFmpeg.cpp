@@ -599,7 +599,7 @@ void ASongFFmpeg::handleSeek()
 
 void ASongFFmpeg::seek(int64_t posSec)
 {
-    if(nullptr == pFormatCtx || curMediaStatus <= 0)
+    if(nullptr == pFormatCtx || curMediaStatus <= 0 || invertFlag)
     {
         return;
     }
@@ -619,7 +619,7 @@ void ASongFFmpeg::seek(int64_t posSec)
 // 逐帧
 void ASongFFmpeg::step_to_dst_frame(int _step)
 {
-    if(nullptr == pFormatCtx || curMediaStatus <= 0 || videoIdx < 0 || hasCover)
+    if(nullptr == pFormatCtx || curMediaStatus <= 0 || videoIdx < 0 || hasCover || invertFlag)
     {
         return;
     }
@@ -641,7 +641,6 @@ void ASongFFmpeg::step_to_dst_frame(int _step)
     seekAudio = true;
     seekVideo = true;
     stepSeek = true;
-    // 向后跳
     // 向前跳
     if(step < 0)
     {
@@ -672,9 +671,8 @@ void ASongFFmpeg::step_to_dst_frame(int _step)
     // 播放一帧音频，丢弃不是目标位置的帧
     while(seekAudio)
     {
-        ASongAudioOutput::getInstance()->process();
+        ASongAudioOutput::getInstance()->resume();
     }
-    step = _step;
     // 渲染一帧，丢弃不是目标位置的帧
     while(seekVideo)
     {
