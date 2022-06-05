@@ -86,7 +86,7 @@ void MainWindow::on_play_button_clicked()
     // 定义文件对话框类
     switch (ASongFFmpeg::getInstance()->getMediaStatus())
     {
-        case -1:
+        case -1://没有文件
         {
             if(filePath != "")
             {
@@ -117,7 +117,8 @@ void MainWindow::on_play_button_clicked()
                 break;
             }
         }
-        case 1:
+        case 1://播放
+        {
             ASongFFmpeg::getInstance()->pause();
             ui->play_button->setStyleSheet("#play_button{\
                                                image: url(:/img/play.png);\
@@ -126,7 +127,8 @@ void MainWindow::on_play_button_clicked()
                                                image: url(:/img/play2.png);\
                                            }");
             break;
-        case 2:
+        }
+        case 2://暂停
         {
             ASongFFmpeg::getInstance()->resume();
             ui->play_button->setStyleSheet("#play_button{\
@@ -137,11 +139,10 @@ void MainWindow::on_play_button_clicked()
    }");
             break;
         }
-        case 0:
+        case 0://停止
         {
-            if(filePath == "")
+            if(!checkIfExist(filePath))
             {
-                openFile();
                 break;
             }
             ASongFFmpeg::getInstance()->play(this, filePath, ui->play_widget);
@@ -407,6 +408,16 @@ void MainWindow::readFilePath()
         }
         else
         {
+            //当读入缓存时，遍历列表，删除错误路径
+            for(int i=0;i<filePathList.size();i++)
+            {
+                QDir dir;
+                if(!dir.exists(filePathList[i]))
+                {
+                    filePathList.removeAt(i);
+                    i--;
+                }
+            }
             ui->play_table->setTable(filePathList, filePath);
         }
     }
@@ -913,7 +924,8 @@ bool MainWindow::checkIfExist(QString path)
         MyMessageWidget *infoWindow = new MyMessageWidget();
         infoWindow->show();
         ui->play_table->allCloseWidget.append(infoWindow);
-        setListFromFilePath();
+
+        deleteAllNotExist();
         return false;
     }
     return true;
@@ -1376,3 +1388,22 @@ void MainWindow::on_reverse_button_clicked()
     ui->backward_button->isEnabled() ? ui->backward_button->setEnabled(false) : ui->backward_button->setEnabled(true);
 }
 
+void MainWindow::deleteAllNotExist()
+{
+    //当读入缓存时，遍历列表，删除错误路径
+    for(int i=0;i<ui->play_table->orderInfoList.size();i++)
+    {
+        QDir dir;
+        if(!dir.exists(ui->play_table->orderInfoList[i]))
+        {
+            if(ui->play_table->orderInfoList[i]==filePath)
+                filePath="";
+            ui->play_table->orderInfoList.removeAt(i);
+            i--;
+        }
+    }
+    if(!ui->play_table->orderInfoList.empty())
+        ui->play_table->setTable(ui->play_table->orderInfoList, filePath);
+    else
+        clearPlayList();
+}

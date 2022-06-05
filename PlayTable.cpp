@@ -29,7 +29,7 @@ void PlayTable::init()
     connect(this, &PlayTable::entered, this, &PlayTable::doMouseTrackTip);
 }
 
-void PlayTable::setTable(QList<QString> infoList,QString filePath)
+void PlayTable::setTable(QList<QString> infoList,QString &filePath)
 {
     order_random.resize(infoList.size());
     random_order.resize(infoList.size());
@@ -43,7 +43,10 @@ void PlayTable::setTable(QList<QString> infoList,QString filePath)
         this->setItem(i,0,new QTableWidgetItem(getFileNameFromPath(infoList[i])));
 //        this->setItem(i,1,new QTableWidgetItem(infoList[i]));
     }
-
+    if(filePath=="")
+    {
+        filePath=orderInfoList[0];
+    }
     for(int i=0;i<orderInfoList.size();i++)
     {
         if(orderInfoList[i]==filePath)

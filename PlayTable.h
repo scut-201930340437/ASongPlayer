@@ -30,7 +30,7 @@ public:
 
     QList<QWidget *> allCloseWidget;
     void init();
-    void setTable(QList<QString> infoList,QString filePath);
+    void setTable(QList<QString> infoList,QString &filePath);
     bool isNeededFile(QFileInfo file);
     QString getPath(qint16 row);
     QString getNextFile();

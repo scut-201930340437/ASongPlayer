@@ -56,6 +56,8 @@ public: MainWindow(QWidget *parent = nullptr);
 
     QString getTimeString(int position);
 
+    void deleteAllNotExist();
+
 private slots:
     void on_play_button_clicked();
 
@@ -127,6 +129,7 @@ private slots:
     void on_wave_button_clicked();
 
     void on_reverse_button_clicked();
+
 
 private:
     //定时器时间 ms
