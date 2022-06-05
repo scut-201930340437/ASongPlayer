@@ -1,14 +1,6 @@
 <RCC>
     <qresource prefix="/">
-        <file>qss/Aqua.qss</file>
-        <file>qss/ConsoleStyle.qss</file>
         <file>qss/default.qss</file>
-        <file>qss/ElegantDark.qss</file>
-        <file>qss/MacOS.qss</file>
-        <file>qss/ManjaroMix.qss</file>
-        <file>qss/MaterialDark.qss</file>
-        <file>qss/NeonButtons.qss</file>
-        <file>qss/Ubuntu.qss</file>
         <file>img/close.png</file>
         <file>img/close2.png</file>
         <file>img/maximize.png</file>
@@ -17,7 +9,6 @@
         <file>img/minimize2.png</file>
         <file>qss/black.qss</file>
         <file>img/play.png</file>
-        <file>qss/AMOLED.qss</file>
         <file>img/last.png</file>
         <file>img/last2.png</file>
         <file>img/more.png</file>
@@ -43,7 +34,6 @@
         <file>img/random2.png</file>
         <file>img/singleCycle.png</file>
         <file>img/singleCycle2.png</file>
-        <file>qss/test.qss</file>
         <file>img/multiple.png</file>
         <file>img/multiple2.png</file>
         <file>img/fullScreenCancel.png</file>

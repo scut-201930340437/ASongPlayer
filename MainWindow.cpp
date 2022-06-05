@@ -1298,17 +1298,20 @@ void MainWindow::updateWindowSize()
     QRect windowRect = m_windowRectBeforeStretch;
     int delValue_X = m_startPoint.x() - m_endPoint.x();
     int delValue_Y = m_startPoint.y() - m_endPoint.y();
+//    qDebug()<<m_startPoint<<m_endPoint;
     if (m_stretchRectState == LEFT_BORDER)
     {
         QPoint topLeftPoint = windowRect.topLeft();
         topLeftPoint.setX(topLeftPoint.x() - delValue_X);
         windowRect.setTopLeft(topLeftPoint);
+        qDebug()<<windowRect.bottomRight();
     }
     else if (m_stretchRectState == RIGHT_BORDER)
     {
         QPoint bottomRightPoint = windowRect.bottomRight();
         bottomRightPoint.setX(bottomRightPoint.x() - delValue_X);
         windowRect.setBottomRight(bottomRightPoint);
+        qDebug()<<windowRect.topLeft();
     }
     else if (m_stretchRectState == TOP_BORDER)
     {
