@@ -373,7 +373,6 @@ int ASongFFmpeg::stop()
     {
         return -1;
     }
-    curMediaStatus = 0;
     // 先结束音频播放线程和关闭音频设备
     ASongAudioOutput::getInstance()->stop();
     // 结束视频渲染
@@ -408,6 +407,7 @@ int ASongFFmpeg::stop()
         closeMediaInfo(mediaMetaData);
         mediaMetaData = nullptr;
     }
+    curMediaStatus = 0;
     return 0;
 }
 

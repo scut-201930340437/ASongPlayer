@@ -8,7 +8,6 @@
 #include <QWaitCondition>
 
 #include <QMediaDevices>
-#include <QAudioOutput>
 #include <QAudioSink>
 
 #include "soundTouch/SoundTouchDLL.h"

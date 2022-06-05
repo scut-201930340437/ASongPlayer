@@ -99,12 +99,12 @@ public:
     // 显示光标
     void showCursor();
 
-    // 播放状态: -1 - 没有文件  0-停止 1-播放 2-暂停
+    // 播放状态: -1-没有文件 0-停止 1-播放 2-暂停
     std::atomic_int curMediaStatus = -1;
 
     // metaData
     MediaMetaData *mediaMetaData = nullptr;
-    int	videoIdx = -1, audioIdx = -1;
+    int videoIdx = -1, audioIdx = -1;
     bool hasCover = false;
 
     //ffmpeg

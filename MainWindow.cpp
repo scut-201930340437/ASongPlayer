@@ -496,7 +496,7 @@ void MainWindow::handleTimeout()
     //倒放图标高亮
     if(ASongFFmpeg::getInstance()->invertFlag)
     {
-            ui->reverse_button->setStyleSheet("#reverse_button{\
+        ui->reverse_button->setStyleSheet("#reverse_button{\
                                        image: url(:/img/reverse2.png);\
                                    }");
     }
@@ -1079,7 +1079,6 @@ void MainWindow::clearPlayList()
 {
     ui->play_table->myClear();
     ui->play_table->setRowCount(0);
-
     on_stop_button_clicked();
     filePath = "";
 }
@@ -1300,20 +1299,20 @@ void MainWindow::updateWindowSize()
     QRect windowRect = m_windowRectBeforeStretch;
     int delValue_X = m_startPoint.x() - m_endPoint.x();
     int delValue_Y = m_startPoint.y() - m_endPoint.y();
-//    qDebug()<<m_startPoint<<m_endPoint;
+    //    qDebug()<<m_startPoint<<m_endPoint;
     if (m_stretchRectState == LEFT_BORDER)
     {
         QPoint topLeftPoint = windowRect.topLeft();
         topLeftPoint.setX(topLeftPoint.x() - delValue_X);
         windowRect.setTopLeft(topLeftPoint);
-        qDebug()<<windowRect.bottomRight();
+        qDebug() << windowRect.bottomRight();
     }
     else if (m_stretchRectState == RIGHT_BORDER)
     {
         QPoint bottomRightPoint = windowRect.bottomRight();
         bottomRightPoint.setX(bottomRightPoint.x() - delValue_X);
         windowRect.setBottomRight(bottomRightPoint);
-        qDebug()<<windowRect.topLeft();
+        qDebug() << windowRect.topLeft();
     }
     else if (m_stretchRectState == TOP_BORDER)
     {
