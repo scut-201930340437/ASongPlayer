@@ -19,11 +19,9 @@ class PlayTable : public QTableWidget
     Q_OBJECT
 
 public:
-    //提升 机制 待研究
     explicit PlayTable(QWidget *parent = nullptr);
     qint16 playPos;
     qint16 randomPos;
-    qint16 numFile=0;
     //key为顺序列表的下标，value为随机列表的下标
     QList<qint16> order_random;
     //同理
