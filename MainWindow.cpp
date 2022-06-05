@@ -397,7 +397,6 @@ void MainWindow::readFilePath()
         if(!dir.exists(filePath))
         {
             filePath = "";
-            return;
         }
         QList<QString> filePathList = iniReader->value(pathListKey).value<QList<QString>>();
         if(filePathList.empty())
