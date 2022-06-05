@@ -493,12 +493,22 @@ void MainWindow::handleTimeout()
     //        multipleWidget->move(ui->control_widget->pos() + ui->control_sub_widget->pos() + ui->multiple_button->pos() + *p);
     //        multipleWidget->move(0,0);
     //    }
+    //倒放图标高亮
+    if(ASongFFmpeg::getInstance()->invertFlag)
+    {
+            ui->reverse_button->setStyleSheet("#reverse_button{\
+                                       image: url(:/img/reverse2.png);\
+                                   }");
+    }
     //倒放屏蔽恢复
     if(!ASongFFmpeg::getInstance()->invertFlag)
     {
         ui->position_ctrl->setEnabled(true);
         ui->forward_button->setEnabled(true);
         ui->backward_button->setEnabled(true);
+        ui->reverse_button->setStyleSheet("#reverse_button{\
+                                   image: url(:/img/reverse.png);\
+                               }");
     }
 }
 
@@ -1125,15 +1135,6 @@ void MainWindow::closeEvent(QCloseEvent *event)
     event->accept();
 }
 
-
-void MainWindow::on_pushButton_clicked()
-{
-    ASongFFmpeg::getInstance()->invertPlay();
-    ui->position_ctrl->isEnabled() ? ui->position_ctrl->setEnabled(false) : ui->position_ctrl->setEnabled(true);
-    ui->forward_button->isEnabled() ? ui->forward_button->setEnabled(false) : ui->forward_button->setEnabled(true);
-    ui->backward_button->isEnabled() ? ui->backward_button->setEnabled(false) : ui->backward_button->setEnabled(true);
-}
-
 //缩放窗口
 // 计算拉伸区域Rect位置;
 // 以下8个Rect对应上图中8个区域;
@@ -1366,3 +1367,12 @@ void MainWindow::updateWindowSize()
     }
     this->setGeometry(windowRect);
 }
+
+void MainWindow::on_reverse_button_clicked()
+{
+    ASongFFmpeg::getInstance()->invertPlay();
+    ui->position_ctrl->isEnabled() ? ui->position_ctrl->setEnabled(false) : ui->position_ctrl->setEnabled(true);
+    ui->forward_button->isEnabled() ? ui->forward_button->setEnabled(false) : ui->forward_button->setEnabled(true);
+    ui->backward_button->isEnabled() ? ui->backward_button->setEnabled(false) : ui->backward_button->setEnabled(true);
+}
+

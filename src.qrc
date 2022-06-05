@@ -41,5 +41,9 @@
         <file>img/backward.png</file>
         <file>img/forward.png</file>
         <file>img/defaultCover.jpg</file>
+        <file>img/wave.png</file>
+        <file>img/wave2.png</file>
+        <file>img/reverse.png</file>
+        <file>img/reverse2.png</file>
     </qresource>
 </RCC>

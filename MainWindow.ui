@@ -749,12 +749,12 @@
              <enum>Qt::NoFocus</enum>
             </property>
             <property name="text">
-             <string>波</string>
+             <string/>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButton">
+           <widget class="QPushButton" name="reverse_button">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -777,7 +777,7 @@
              <enum>Qt::NoFocus</enum>
             </property>
             <property name="text">
-             <string>倒</string>
+             <string/>
             </property>
            </widget>
           </item>
