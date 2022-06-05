@@ -221,3 +221,10 @@ void PlayTable::addFilePath(QString filepath)
     orderInfoList.append(filepath);
     setTable(orderInfoList,filepath);
 }
+void PlayTable:: myClear()
+{
+    this->clear();
+    orderInfoList.clear();
+    random_order.clear();
+    order_random.clear();
+}

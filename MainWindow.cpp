@@ -1067,8 +1067,9 @@ void MainWindow::deleteFile()
 
 void MainWindow::clearPlayList()
 {
-    ui->play_table->clear();
+    ui->play_table->myClear();
     ui->play_table->setRowCount(0);
+
     on_stop_button_clicked();
     filePath = "";
 }

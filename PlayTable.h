@@ -43,6 +43,7 @@ public:
     void deleteFile();
     void doMouseTrackTip(QModelIndex index);
     void addFilePath(QString filepath);
+    void myClear();
 
 
 private:
