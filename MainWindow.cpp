@@ -90,10 +90,8 @@ void MainWindow::on_play_button_clicked()
         {
             if(filePath != "")
             {
-                QDir dir(filePath);
-                if(!dir.exists(filePath))
+                if(!checkIfExist(filePath))
                 {
-                    filePath = "";
                     break;
                 }
                 ASongFFmpeg::getInstance()->play(this, filePath, ui->play_widget);
