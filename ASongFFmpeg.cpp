@@ -346,6 +346,7 @@ void ASongFFmpeg::resetCtrlPara()
     invertReq = false;
     seekReq = false;
     stepSeek = false;
+    seekAudio = false;
     seekVideo = false;
     targetFrameNum = -1;
     // 进度微调的目标pts
@@ -637,6 +638,7 @@ void ASongFFmpeg::step_to_dst_frame(int _step)
     // 暂停音频播放线程
     ASongAudioOutput::getInstance()->pause();
     step = _step;
+    seekAudio = true;
     seekVideo = true;
     stepSeek = true;
     // 向后跳
@@ -663,12 +665,16 @@ void ASongFFmpeg::step_to_dst_frame(int _step)
         locker.unlock();
         cleared = false;
         // 等待帧解码并放入队列
-        DataSink::getInstance()->frameListIsEmpty(0);
-        // 等待帧解码并放入队列
-        DataSink::getInstance()->frameListIsEmpty(1);
+        //        DataSink::getInstance()->frameListIsEmpty(0);
+        //        // 等待帧解码并放入队列
+        //        DataSink::getInstance()->frameListIsEmpty(1);
     }
-    // 播放一帧音频
-    ASongAudioOutput::getInstance()->resume();
+    // 播放一帧音频，丢弃不是目标位置的帧
+    while(seekAudio)
+    {
+        ASongAudioOutput::getInstance()->process();
+    }
+    step = _step;
     // 渲染一帧，丢弃不是目标位置的帧
     while(seekVideo)
     {

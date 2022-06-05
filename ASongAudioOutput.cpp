@@ -10,12 +10,13 @@ ASongAudioOutput* ASongAudioOutput::getInstance()
     return asongAudioOutput;
 }
 
-void ASongAudioOutput::initAudioPara(const int _channels, const int _sample_rate, const uint64_t _channel_layout, const enum AVSampleFormat _sample_fmt)
+void ASongAudioOutput::initAudioPara(const int _channels, const int _sample_rate, const uint64_t _channel_layout, const enum AVSampleFormat _sample_fmt, const double time_base)
 {
     channels = _channels;
     sample_rate = _sample_rate;
     channel_layout = _channel_layout;
     in_sample_fmt = _sample_fmt;
+    tb = time_base;
 }
 
 void ASongAudioOutput::createMediaDevice(QObject *par)
@@ -69,7 +70,7 @@ int ASongAudioOutput::changeSpeed(uint8_t *outBuffer, AVFrame *frame)
     return resampleDataSize;
 }
 
-void ASongAudioOutput::closeAudioOuput()
+void ASongAudioOutput::closeAudioOutput()
 {
     if(nullptr != audioOutput)
     {
@@ -88,10 +89,10 @@ void ASongAudioOutput::closeAudioOuput()
     }
 }
 
-int ASongAudioOutput::getUsedSize()
-{
-    return audioOutput->bufferSize() - audioOutput->bytesFree();
-}
+//int ASongAudioOutput::getUsedSize()
+//{
+//    return audioOutput->bufferSize() - audioOutput->bytesFree();
+//}
 
 qreal ASongAudioOutput::getVolume()
 {
@@ -142,6 +143,7 @@ void ASongAudioOutput::start(Priority pri)
     soundtouch_setChannels(soundTouch, channels);
     //设置倍速
     setSpeed(speed);
+    basePts = 0.0;
     QThread::start(pri);
 }
 
@@ -218,7 +220,7 @@ void ASongAudioOutput::run()
         }
         process();
     }
-    closeAudioOuput();
+    closeAudioOutput();
 }
 
 void ASongAudioOutput::process()
@@ -234,6 +236,39 @@ void ASongAudioOutput::process()
     }
     if(nullptr != frame)
     {
+        // 扔掉小于stepSeek的目标帧号的帧
+        if(ASongFFmpeg::getInstance()->seekAudio)
+        {
+            if(ASongFFmpeg::getInstance()->step > 0)
+            {
+                av_frame_free(&frame);
+                --ASongFFmpeg::getInstance()->step;
+                return;
+            }
+            else
+            {
+                if(ASongFFmpeg::getInstance()->step == 0)
+                {
+                    ASongFFmpeg::getInstance()->seekAudio = false;
+                }
+                else
+                {
+                    if(frame->pts * tb < ASongFFmpeg::getInstance()->targetPts - 0.5 * basePts)
+                    {
+                        av_frame_free(&frame);
+                        return;
+                    }
+                    else
+                    {
+                        ASongFFmpeg::getInstance()->seekAudio = false;
+                    }
+                }
+            }
+        }
+        if(basePts >= -DBL_EPSILON && basePts <= DBL_EPSILON)
+        {
+            basePts = frame->pts * tb;
+        }
         // 如果是planar（每个声道数据单独存放），一定要重采样，因为PCM是packed（每个声道数据交错存放）
         if(av_sample_fmt_is_planar(in_sample_fmt) == 1)
         {

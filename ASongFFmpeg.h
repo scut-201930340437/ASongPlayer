@@ -87,6 +87,7 @@ public:
     int stop();
     int pause();
     int resume();
+    // 进度跳转
     void seek(int64_t posSec);
     // 进度微调
     void step_to_dst_frame(int step);
@@ -116,7 +117,7 @@ public:
     // 有逐帧seek请求
     bool stepSeek = false;
     // 进度微调时的丢帧标志位
-    //    bool seekAudio = false;
+    bool seekAudio = false;
     bool seekVideo = false;
     // 进度微调的目标帧号
     int targetFrameNum = -1;

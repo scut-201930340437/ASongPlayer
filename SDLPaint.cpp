@@ -154,7 +154,7 @@ void SDLPaint::getFrameYUV()
         if(nullptr != frame)
         {
             // 扔掉小于stepSeek的目标帧号的帧
-            if(ASongFFmpeg::getInstance()->stepSeek && ASongFFmpeg::getInstance()->seekVideo)
+            if(ASongFFmpeg::getInstance()->seekVideo)
             {
                 if(ASongFFmpeg::getInstance()->step > 1)
                 {

@@ -16,11 +16,11 @@ qsizetype DataSink::maxVFrameListLength = 70;
 qsizetype DataSink::maxAInvertFrameListLength = 100;
 qsizetype DataSink::maxVInvertFrameListLength = 70;
 
-DataSink::DataSink()
-{
-    audioFraCond = new QWaitCondition;
-    videoFraCond = new QWaitCondition;
-}
+//DataSink::DataSink()
+//{
+//    audioFraCond = new QWaitCondition;
+//    videoFraCond = new QWaitCondition;
+//}
 
 DataSink* DataSink::getInstance()
 {
@@ -213,13 +213,13 @@ void DataSink::appendFrame(int type, AVFrame *frame)
     {
         QMutexLocker locker(&aFrameListMutex);
         aFrameList.append(frame);
-        audioFraCond->wakeAll();
+        //        audioFraCond->wakeAll();
     }
     else
     {
         QMutexLocker locker(&vFrameListMutex);
         vFrameList.append(frame);
-        videoFraCond->wakeAll();
+        //        videoFraCond->wakeAll();
     }
 }
 
@@ -364,22 +364,22 @@ void DataSink::clearInvertList()
     aInvertFrameSum = vInvertFrameSum = 0;
 }
 
-void DataSink::frameListIsEmpty(int type)
-{
-    if(type == 0)
-    {
-        QMutexLocker locker(&aFrameListMutex);
-        if(aFrameList.isEmpty())
-        {
-            audioFraCond->wait(&aFrameListMutex);
-        }
-    }
-    else
-    {
-        QMutexLocker locker(&vFrameListMutex);
-        if(vFrameList.isEmpty())
-        {
-            videoFraCond->wait(&vFrameListMutex);
-        }
-    }
-}
+//void DataSink::frameListIsEmpty(int type)
+//{
+//    if(type == 0)
+//    {
+//        QMutexLocker locker(&aFrameListMutex);
+//        if(aFrameList.isEmpty())
+//        {
+//            audioFraCond->wait(&aFrameListMutex);
+//        }
+//    }
+//    else
+//    {
+//        QMutexLocker locker(&vFrameListMutex);
+//        if(vFrameList.isEmpty())
+//        {
+//            videoFraCond->wait(&vFrameListMutex);
+//        }
+//    }
+//}

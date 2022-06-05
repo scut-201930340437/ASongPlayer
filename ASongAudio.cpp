@@ -16,7 +16,7 @@ ASongAudio* ASongAudio::getInstance()
 void ASongAudio::initParaAndSwr()
 {
     ASongAudioOutput::getInstance()->initAudioPara(pCodecCtx->channels, pCodecCtx->sample_rate,
-            pCodecCtx->channel_layout, pCodecCtx->sample_fmt);
+            pCodecCtx->channel_layout, pCodecCtx->sample_fmt, tb);
     ASongAudioOutput::getInstance()->initSwr();
 }
 

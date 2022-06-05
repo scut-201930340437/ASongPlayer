@@ -15,8 +15,7 @@ extern "C"
 class DataSink
 {
 public:
-
-    DataSink();
+    //    DataSink();
     static DataSink* getInstance();
 
     static qsizetype maxAPacketListLength;
@@ -48,7 +47,7 @@ public:
     void clearList();
     void clearInvertList();
 
-    void frameListIsEmpty(int type);
+    //    void frameListIsEmpty(int type);
 private:
     // packetList
     QList<AVPacket*>aPacketList;
@@ -67,7 +66,7 @@ private:
     QMutex aInvertFrameListMutex;
     QMutex vInvertFrameListMutex;
     // 条件变量
-    QWaitCondition *audioFraCond = nullptr, *videoFraCond = nullptr;
+    //    QWaitCondition *audioFraCond = nullptr, *videoFraCond = nullptr;
 
     // 当前倒放帧总数
     qsizetype aInvertFrameSum = 0;
