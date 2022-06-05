@@ -32,7 +32,6 @@ private:
     int vidx;
     SDL_cond* continue_preview_thread = NULL;
     bool abort_req;
-    bool preview_req;
     bool img_up_to_date;
     int64_t posSec;
     QImage preview_img;

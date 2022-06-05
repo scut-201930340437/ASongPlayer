@@ -12,7 +12,6 @@ void VideoPreview::start(QString path, int videoIndex, Priority prio){
     this->vidx = videoIndex;
     thread_fail = false;
     abort_req = false;
-    preview_req = false;
     posSec = -1;
     QThread::start(prio);
 }
