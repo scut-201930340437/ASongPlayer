@@ -84,17 +84,24 @@
 }
 #multiple_button{
     image: url(:/img/multiple.png);
-    color:#8a8a8a;
 }
 #multiple_button::hover{
     image: url(:/img/multiple2.png);
-    color:#e6e6e6;
 }
 #forward_button{
     image: url(:/img/forward.png);
 }
 #backward_button{
     image: url(:/img/backward.png);
+}
+#wave_button{
+    image: url(:/img/wave.png);
+}
+#wave_button::hover{
+    image: url(:/img/wave2.png);
+}
+#reverse_button{
+    image: url(:/img/reverse.png);
 }
 
 /*播放窗口默认色*/
