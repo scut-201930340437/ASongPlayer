@@ -10,8 +10,8 @@
 #include<QFileDialog>
 #include "MyMessageWidget.h"
 
-#define STRETCH_RECT_HEIGHT 8       // 拉伸小矩形的高度;
-#define STRETCH_RECT_WIDTH 8        // 拉伸小矩形的宽度;
+#define STRETCH_RECT_HEIGHT 4       // 拉伸小矩形的高度;
+#define STRETCH_RECT_WIDTH 4        // 拉伸小矩形的宽度;
 
 //定时器
 QTimer* myTimer = new QTimer();
