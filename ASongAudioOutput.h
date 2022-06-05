@@ -62,6 +62,8 @@ private:
     // 线程执行的函数主体
     void process();
 
+    void resetPara();
+
     // 重采样为PCM
     int swrToPCM(uint8_t *outBuffer, AVFrame *frame);
     // 倍速处理

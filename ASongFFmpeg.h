@@ -77,10 +77,9 @@ public:
     int getDuration();
     int64_t getCurPlaySec();
     QString getFilepath();
-    bool audioHasCover();
     float getSpeed();
     /*播放控制*/
-    void resetCtrlPara();
+    void resetPara();
     int play(QObject *par, QString path, QWidget *_playWidget);
     // thread
     void start(Priority = InheritPriority);

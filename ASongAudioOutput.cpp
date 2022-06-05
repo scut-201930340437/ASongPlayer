@@ -133,17 +133,22 @@ float ASongAudioOutput::getSpeed()
     return speed;
 }
 
-void ASongAudioOutput::start(Priority pri)
+void ASongAudioOutput::resetPara()
 {
     stopReq = false;
     pauseReq = false;
     pauseFlag = false;
+    basePts = 0.0;
+}
+
+void ASongAudioOutput::start(Priority pri)
+{
+    resetPara();
     soundTouch = soundtouch_createInstance();
     soundtouch_setSampleRate(soundTouch, sample_rate);
     soundtouch_setChannels(soundTouch, channels);
     //设置倍速
     setSpeed(speed);
-    basePts = 0.0;
     QThread::start(pri);
 }
 
@@ -162,6 +167,7 @@ void ASongAudioOutput::stop()
         swr_free(&pSwrCtx);
         pSwrCtx = nullptr;
     }
+    resetPara();
 }
 
 void ASongAudioOutput::pause()

@@ -53,12 +53,18 @@ double ASongAudio::getAudioClock()
     //    return neededAudioClock - (double)bufferDataSize / bytesPerSec;
     return audioClock;
 }
-void ASongAudio::start(Priority pri)
+
+void ASongAudio::resetPara()
 {
     stopReq = false;
     pauseReq = false;
     pauseFlag = false;
     audioClock = 0.0;
+}
+
+void ASongAudio::start(Priority pri)
+{
+    resetPara();
     QThread::start(pri);
 }
 
@@ -79,6 +85,7 @@ void ASongAudio::stop()
         avcodec_close(pCodecCtx);
         pCodecCtx = nullptr;
     }
+    resetPara();
     audioIdx = -1;
 }
 

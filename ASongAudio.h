@@ -55,6 +55,7 @@ private:
     // thread 音频解码
     void run() override;
 
+    void resetPara();
     int sleepTime = 30;
 
     // 允许解码标志

@@ -14,6 +14,7 @@ extern "C"
 #include "libswscale/swscale.h"
 #include "SDL2/SDL.h"
 };
+
 class SDLPaint: public QObject
 {
     Q_OBJECT

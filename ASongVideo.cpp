@@ -116,8 +116,7 @@ double ASongVideo::synVideo(const double pts)
     }
 }
 
-/*thread*/
-void ASongVideo::start(Priority pri)
+void ASongVideo::resetPara()
 {
     stopReq = false;
     pauseReq = false;
@@ -127,6 +126,12 @@ void ASongVideo::start(Priority pri)
     lastFramePts = 0.0;
     // 上一帧delay
     lastFrameDelay = 0.0;
+}
+
+/*thread*/
+void ASongVideo::start(Priority pri)
+{
+    resetPara();
     QThread::start(pri);
 }
 
@@ -147,6 +152,7 @@ void ASongVideo::stop()
         avcodec_close(pCodecCtx);
         pCodecCtx = nullptr;
     }
+    resetPara();
     // stream_index
     videoIdx = -1;
 }
@@ -300,10 +306,6 @@ void ASongVideo::run()
                 if(coverAlready)
                 {
                     stopReq = true;
-                    invertFrameList->clear();
-                    delete invertFrameList;
-                    invertFrameList = nullptr;
-                    break;
                 }
             }
             else

@@ -4,7 +4,6 @@
 #include <QDebug>
 
 #include <QMutex>
-#include <QWaitCondition>
 #include <QList>
 extern "C"
 {

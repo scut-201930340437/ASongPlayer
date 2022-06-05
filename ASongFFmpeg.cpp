@@ -313,11 +313,6 @@ float ASongFFmpeg::getSpeed()
     return ASongAudioOutput::getInstance()->getSpeed();
 }
 
-bool ASongFFmpeg::audioHasCover()
-{
-    return hasCover;
-}
-
 // 开始播放
 int ASongFFmpeg::play(QObject *par, QString path, QWidget *_playWidget)
 {
@@ -337,7 +332,7 @@ int ASongFFmpeg::play(QObject *par, QString path, QWidget *_playWidget)
     return 0;
 }
 
-void ASongFFmpeg::resetCtrlPara()
+void ASongFFmpeg::resetPara()
 {
     stopReq = false;
     pauseReq = false;
@@ -348,6 +343,7 @@ void ASongFFmpeg::resetCtrlPara()
     stepSeek = false;
     seekAudio = false;
     seekVideo = false;
+    needInvertSeek = false;
     targetFrameNum = -1;
     // 进度微调的目标pts
     targetPts = 0.0;
@@ -364,7 +360,8 @@ void ASongFFmpeg::resetCtrlPara()
 // thread
 void ASongFFmpeg::start(Priority pri)
 {
-    resetCtrlPara();
+    // 重置参数
+    resetPara();
     QThread::start(pri);
 }
 
@@ -409,6 +406,7 @@ int ASongFFmpeg::stop()
         mediaMetaData = nullptr;
     }
     curMediaStatus = 0;
+    resetPara();
     return 0;
 }
 
@@ -581,16 +579,16 @@ void ASongFFmpeg::handleSeek()
     {
         qDebug() << "seek failed";
     }
-    // 重启音频播放线程和渲染timer
-    if(!stepSeek)
-    {
-        resume();
-    }
-    // 重启解码线程，解码线程唤醒后会唤醒主线程，所以要在音频播放线程和渲染timer启动后才启动解码线程
+    // 唤醒解码线程
     ASongAudio::getInstance()->resumeThread();
     if(videoIdx >= 0 && !hasCover)
     {
         ASongVideo::getInstance()->resumeThread();
+    }
+    // 重启音频播放线程和渲染timer
+    if(!stepSeek)
+    {
+        resume();
     }
     // seek后，重置req和flag
     seekReq = false;

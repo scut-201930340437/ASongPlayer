@@ -47,6 +47,7 @@ public:
 private:
 
     void run() override;
+    void resetPara();
     // 校准pts
     void caliBratePts(AVFrame *frame, double &pts);
 
