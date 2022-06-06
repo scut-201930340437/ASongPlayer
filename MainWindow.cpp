@@ -302,6 +302,8 @@ void MainWindow::setListFromFilePath()
 {
     //设置播放列表
     QString path = filePath.section('/', 0, -2);
+    if(path=="")
+       return;
     QDir Dir(path);
     if(!Dir.exists())
     {
@@ -391,17 +393,15 @@ void MainWindow::readFilePath()
     if(iniReader)
     {
         filePath = iniReader->value(curPathKey).toString();
-        QDir dir(filePath);
-        if(!dir.exists(filePath))
+        QDir dir;
+        if( filePath=="" || !dir.exists(filePath))
         {
             filePath = "";
         }
         QList<QString> filePathList = iniReader->value(pathListKey).value<QList<QString>>();
         if(filePathList.empty())
         {
-            //通过filePath设置播放列表
-            setListFromFilePath();
-            qDebug() << "播放路径读取成功，播放路径读取失败";
+            qDebug() << "播放列表为空";
         }
         else
         {
@@ -409,7 +409,7 @@ void MainWindow::readFilePath()
             for(int i=0;i<filePathList.size();i++)
             {
                 QDir dir;
-                if(!dir.exists(filePathList[i]))
+                if( filePathList[i] =="" || !dir.exists(filePathList[i]))
                 {
                     filePathList.removeAt(i);
                     i--;
@@ -915,8 +915,8 @@ void MainWindow::on_play_table_customContextMenuRequested(const QPoint &pos)
 
 bool MainWindow::checkIfExist(QString path)
 {
-    QDir dir(path);
-    if(!dir.exists(path))
+    QDir dir;
+    if(path=="" || !dir.exists(path))
     {
         MyMessageWidget *infoWindow = new MyMessageWidget();
         infoWindow->show();
