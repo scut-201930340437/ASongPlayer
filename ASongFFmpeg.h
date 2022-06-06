@@ -72,8 +72,6 @@ public:
     // 读取一个packet
     AVPacket* readFrame();
     /* 获取成员变量*/
-    int getMediaType();
-    int getMediaStatus();
     int getDuration();
     int64_t getCurPlaySec();
     QString getFilepath();
@@ -146,7 +144,7 @@ private:
     std::atomic_bool pauseReq = false;
 
     // 为使线程暂停所用的锁和条件变量
-    QMutex _pauseMutex;
+    QMutex pauseMutex;
     QWaitCondition pauseCond;
     // seek
     bool seekReq = false;

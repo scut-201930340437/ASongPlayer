@@ -29,27 +29,24 @@ public:
     //
     static const int maxFrameSize = 19200;
 
-    void initAudioPara(const int _channels, const int _sample_rate, const uint64_t _channel_layout, const enum AVSampleFormat _sample_fmt, const double time_base);
     // 初始化音频设备参数
+    void initAudioPara(const int _channels, const int _sample_rate, const uint64_t _channel_layout, const enum AVSampleFormat _sample_fmt, const double time_base);
+    // 创建设备
     void createMediaDevice(QObject *par);
     // 初始化重采样参数
     void initSwr();
 
-    // 获取当前设备缓存已用空间
-    //    int getUsedSize();
-    // 获取设备音量
-    qreal getVolume();
-    // 获取倍速
-    float getSpeed();
-    // 播放控制
-
-    void start(Priority = InheritPriority);
+    /* 播放控制*/
     void stop();
     void pause();
     void resume();
+    /*thread*/
+    void start(Priority = InheritPriority);
+
     // 设置倍速
     void setSpeed(float _speed);
-
+    // 获取倍速
+    float getSpeed();
 
     void setVolume(const qreal curVolume);
     // 暂停标志
@@ -77,7 +74,7 @@ private:
     std::atomic_bool pauseReq = false;
 
     // 为使线程暂停所用的锁和条件变量
-    QMutex _pauseMutex;
+    QMutex pauseMutex;
     QWaitCondition pauseCond;
     // 音频参数
     int channels = 0;
@@ -86,9 +83,9 @@ private:
     enum AVSampleFormat in_sample_fmt;
     const enum AVSampleFormat out_sample_fmt = AV_SAMPLE_FMT_S16;
     double tb = 0.0;
+    double basePts = 0.0;
     // 重采样上下文
     SwrContext *pSwrCtx = nullptr;
-    double basePts = 0.0;
     /*倍速*/
     HANDLE soundTouch = nullptr;
     float speed = 1.0;

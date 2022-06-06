@@ -76,7 +76,7 @@ void MyPlayWidget::paintEvent(QPaintEvent *)
 }
 void MyPlayWidget::waveDraw(const char *outBuffer, int sample_nb)
 {
-    if(ASongFFmpeg::getInstance()->getMediaStatus() <= 0)
+    if(ASongFFmpeg::getInstance()->curMediaStatus <= 0)
     {
         return;
     }

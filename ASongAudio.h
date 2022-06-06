@@ -30,7 +30,7 @@ public:
     // 初始化音频设备参数
     void initParaAndSwr();
     // 初始化元数据，从ffmpeg的load中读取
-    void setMetaData(AVFormatContext * _pFormatCtx, AVCodecContext * _pCodecCtx, const int _audioIdx);
+    void setMetaData(AVCodecContext * _pCodecCtx, const AVRational timeBase);
     // 设置音频时钟
     void setAudioClock(AVFrame *frame, const double duration);
     /* 访问成员变量*/
@@ -43,7 +43,6 @@ public:
     void resumeThread();
     //
     void stop();
-    void resume();
     void setVolume(int volume);
     qreal getVolume();
 
@@ -54,39 +53,32 @@ public:
 private:
     // thread 音频解码
     void run() override;
-
+    void appendFrame(AVFrame *frame);
     void resetPara();
+
     int sleepTime = 30;
 
-    // 允许解码标志
+    // 停止请求标志位
     std::atomic_bool stopReq = false;
-    // 还需不需要解码
-    std::atomic_bool neededAudioCode = true;
     // 需要暂停
     std::atomic_bool pauseReq = false;
 
     // 为使线程暂停所用的锁和条件变量
-    QMutex _pauseMutex;
+    QMutex pauseMutex;
     QWaitCondition pauseCond;
 
     // 时钟，音频为准
     double audioClock = 0.0;
     // 时基
     double tb;
-    // stream_index
-    int audioIdx = -1;
-    //
-    AVFormatContext *pFormatCtx = nullptr;
     // 音频解码器上下文
     AVCodecContext *pCodecCtx = nullptr;
     // 音量
     qreal curVolume = 0.3;
     // 音量转换系数
     const qreal volTranRate = 100.0;
-
+    // 每次倒放seek解码得到的一段时间间隔的帧队列
     QList<AVFrame*> *invertFrameList = nullptr;
-
-    void appendFrame(AVFrame *frame);
 };
 
 #endif // ASONGAUDIO_H

@@ -12,15 +12,13 @@ ASongVideo* ASongVideo::getInstance()
 }
 
 // 初始化参数
-void ASongVideo::setMetaData(AVCodecContext *_pCodecCtx, const int _videoIdx, const AVRational timeBase)
+void ASongVideo::setMetaData(AVCodecContext *_pCodecCtx, const AVRational timeBase)
 {
     pCodecCtx = _pCodecCtx;
-    videoIdx = _videoIdx;
     tb = av_q2d(timeBase);
     lastFrameDelay = tb;
     AV_SYNC_THRESHOLD_MAX = 1.5 * tb;
 }
-
 
 double ASongVideo::getPts(AVFrame *frame)
 {
@@ -31,6 +29,7 @@ double ASongVideo::getPts(AVFrame *frame)
     }
     pts *= tb;
     caliBratePts(frame, pts);
+    //    qDebug() << pts;
     return pts;
 }
 // 修正pts
@@ -86,7 +85,7 @@ double ASongVideo::synVideo(const double pts)
         diff = -diff;
     }
     // 没有超过非同步阈值则可以同步
-    if(fabs(diff) < FFMAX(noSynUpperBound * ASongFFmpeg::getInstance()->getSpeed(), 12.0))
+    if(fabs(diff) < FFMAX(AV_NOSYNC * ASongFFmpeg::getInstance()->getSpeed(), 12.0))
     {
         // 视频慢于音频的时间超过同步阈值，降低延迟
         if(diff <= -syn_threshold)
@@ -152,30 +151,28 @@ void ASongVideo::stop()
         avcodec_close(pCodecCtx);
         pCodecCtx = nullptr;
     }
-    resetPara();
-    // stream_index
-    videoIdx = -1;
+    //    resetPara();
 }
 
 void ASongVideo::pauseThread()
 {
-    QMutexLocker locker(&_pauseMutex);
+    QMutexLocker locker(&pauseMutex);
     if(!pauseFlag && QThread::isRunning())
     {
         pauseReq = true;
-        pauseCond.wait(&_pauseMutex);
+        pauseCond.wait(&pauseMutex);
         locker.relock();
     }
 }
 
 void ASongVideo::resumeThread()
 {
-    QMutexLocker locker(&_pauseMutex);
+    QMutexLocker locker(&pauseMutex);
     if(pauseFlag && QThread::isRunning())
     {
         pauseReq = false;
         pauseCond.wakeAll();
-        pauseCond.wait(&_pauseMutex);
+        pauseCond.wait(&pauseMutex);
     }
     else if(QThread::isFinished())
     {
@@ -211,12 +208,12 @@ void ASongVideo::run()
         }
         if(pauseReq)
         {
-            QMutexLocker locker(&_pauseMutex);
+            QMutexLocker locker(&pauseMutex);
             pauseFlag = true;
             // 唤醒主线程，此时主线程知道音频解码线程阻塞
             pauseCond.wakeAll();
             // 音频解码线程阻塞
-            pauseCond.wait(&_pauseMutex);
+            pauseCond.wait(&pauseMutex);
             locker.relock();
             pauseFlag = false;
             // 唤醒主线程

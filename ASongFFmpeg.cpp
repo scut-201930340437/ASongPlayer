@@ -246,17 +246,17 @@ int ASongFFmpeg::load(QString path)
     }
     if(audioIdx >= 0)
     {
-        ASongAudio::getInstance()->setMetaData(pFormatCtx, pACodecCtx, mediaMetaData->aMetaDatas[audioIdx].idx);
+        int idx = mediaMetaData->aMetaDatas[audioIdx].idx;
+        ASongAudio::getInstance()->setMetaData(pACodecCtx, pFormatCtx->streams[idx]->time_base);
     }
     if(videoIdx >= 0)
     {
         int idx = mediaMetaData->vMetaDatas[videoIdx].idx;
-        ASongVideo::getInstance()->setMetaData(pVCodecCtx, idx,
-                                               pFormatCtx->streams[idx]->time_base);
+        ASongVideo::getInstance()->setMetaData(pVCodecCtx, pFormatCtx->streams[idx]->time_base);
         SDLPaint::getInstance()->setMetaData(mediaMetaData->vMetaDatas[videoIdx].width,
                                              mediaMetaData->vMetaDatas[videoIdx].height,
                                              mediaMetaData->vMetaDatas[videoIdx].frame_rate,
-                                             pVCodecCtx->pix_fmt, pFormatCtx->streams[mediaMetaData->vMetaDatas[videoIdx].idx]->time_base);
+                                             pVCodecCtx->pix_fmt, pFormatCtx->streams[idx]->time_base);
     }
     pACodec = pVCodec = nullptr;
     return 0;
@@ -278,11 +278,6 @@ AVPacket* ASongFFmpeg::readFrame()
         packet = nullptr;
     }
     return packet;
-}
-
-int ASongFFmpeg::getMediaStatus()
-{
-    return curMediaStatus;
 }
 
 int ASongFFmpeg::getDuration()
@@ -406,7 +401,7 @@ int ASongFFmpeg::stop()
         mediaMetaData = nullptr;
     }
     curMediaStatus = 0;
-    resetPara();
+    //    resetPara();
     return 0;
 }
 
@@ -425,11 +420,11 @@ int ASongFFmpeg::pause()
 
 void ASongFFmpeg::pauseThread()
 {
-    QMutexLocker locker(&_pauseMutex);
+    QMutexLocker locker(&pauseMutex);
     if(!pauseFlag && QThread::isRunning())
     {
         pauseReq = true;
-        pauseCond.wait(&_pauseMutex);
+        pauseCond.wait(&pauseMutex);
         locker.relock();
     }
 }
@@ -450,12 +445,12 @@ int ASongFFmpeg::resume()
 
 void ASongFFmpeg::resumeThread()
 {
-    QMutexLocker locker(&_pauseMutex);
+    QMutexLocker locker(&pauseMutex);
     if(pauseFlag && QThread::isRunning())
     {
         pauseReq = false;
         pauseCond.wakeAll();
-        pauseCond.wait(&_pauseMutex);
+        pauseCond.wait(&pauseMutex);
     }
     else if(QThread::isFinished())
     {
@@ -484,12 +479,12 @@ void ASongFFmpeg::run()
         }
         if(pauseReq)
         {
-            QMutexLocker locker(&_pauseMutex);
+            QMutexLocker locker(&pauseMutex);
             pauseFlag = true;
             // 唤醒主线程，此时主线程知道音频解码线程阻塞
             pauseCond.wakeAll();
             // 线程阻塞
-            pauseCond.wait(&_pauseMutex);
+            pauseCond.wait(&pauseMutex);
             locker.relock();
             pauseFlag = false;
             // 唤醒主线程
@@ -627,7 +622,12 @@ void ASongFFmpeg::step_to_dst_frame(int _step)
     SDLPaint::getInstance()->resume();
     // 没有下一帧或下五帧 或没有上一帧或上五帧
     targetFrameNum = SDLPaint::getInstance()->curFrameNum + _step;
-    if(targetFrameNum > pFormatCtx->streams[mediaMetaData->vMetaDatas[videoIdx].idx]->nb_frames - 1 || targetFrameNum < 0)
+    //    if(targetFrameNum > pFormatCtx->streams[mediaMetaData->vMetaDatas[videoIdx].idx]->nb_frames - 1 || targetFrameNum < 0)
+    //    {
+    //        SDLPaint::getInstance()->restartTimer();
+    //        return;
+    //    }
+    if(targetFrameNum < 0)
     {
         SDLPaint::getInstance()->restartTimer();
         return;
@@ -646,7 +646,7 @@ void ASongFFmpeg::step_to_dst_frame(int _step)
         pauseThread();
         // 设置seek请求
         targetPts = SDLPaint::getInstance()->curPts + step * SDLPaint::getInstance()->basePts;
-        seekPos = FFMAX((targetPts - 1.0 * SDLPaint::getInstance()->basePts) * AV_TIME_BASE, 0);
+        seekPos = FFMAX((targetPts - SDLPaint::getInstance()->basePts) * AV_TIME_BASE, 0);
         seekMin = INT64_MIN;
         seekMax = seekPos;
         seekFlag = AVSEEK_FLAG_BACKWARD;

@@ -3,7 +3,6 @@
 #include "ASongAudioOutput.h"
 #include "DataSink.h"
 
-
 Q_GLOBAL_STATIC(ASongAudio, asongAudio)
 
 // 获取单一的实例
@@ -21,12 +20,10 @@ void ASongAudio::initParaAndSwr()
 }
 
 /*设置成员变量*/
-void ASongAudio::setMetaData(AVFormatContext * _pFormatCtx, AVCodecContext * _pCodecCtx, const int _audioIdx)
+void ASongAudio::setMetaData(AVCodecContext * _pCodecCtx, const AVRational timeBase)
 {
-    pFormatCtx = _pFormatCtx;
     pCodecCtx = _pCodecCtx;
-    audioIdx = _audioIdx;
-    tb = av_q2d(pFormatCtx->streams[audioIdx]->time_base);
+    tb = av_q2d(timeBase);
 }
 // 设置时钟
 void ASongAudio::setAudioClock(AVFrame * frame, const double duration)
@@ -85,37 +82,28 @@ void ASongAudio::stop()
         avcodec_close(pCodecCtx);
         pCodecCtx = nullptr;
     }
-    resetPara();
-    audioIdx = -1;
-}
-
-void ASongAudio::resume()
-{
-    if(QThread::isFinished())
-    {
-        start();
-    }
+    //    resetPara();
 }
 
 void ASongAudio::pauseThread()
 {
-    QMutexLocker locker(&_pauseMutex);
+    QMutexLocker locker(&pauseMutex);
     if(!pauseFlag && QThread::isRunning())
     {
         pauseReq = true;
-        pauseCond.wait(&_pauseMutex);
+        pauseCond.wait(&pauseMutex);
         locker.relock();
     }
 }
 
 void ASongAudio::resumeThread()
 {
-    QMutexLocker locker(&_pauseMutex);
+    QMutexLocker locker(&pauseMutex);
     if(pauseFlag && QThread::isRunning())
     {
         pauseReq = false;
         pauseCond.wakeAll();
-        pauseCond.wait(&_pauseMutex);
+        pauseCond.wait(&pauseMutex);
     }
     else if(QThread::isFinished())
     {
@@ -150,12 +138,12 @@ void ASongAudio::run()
         }
         if(pauseReq)
         {
-            QMutexLocker locker(&_pauseMutex);
+            QMutexLocker locker(&pauseMutex);
             pauseFlag = true;
             // 唤醒主线程，此时主线程知道音频解码线程阻塞
             pauseCond.wakeAll();
             // 音频解码线程阻塞
-            pauseCond.wait(&_pauseMutex);
+            pauseCond.wait(&pauseMutex);
             locker.relock();
             pauseFlag = false;
             // 唤醒主线程

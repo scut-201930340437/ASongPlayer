@@ -30,11 +30,11 @@ public:
     // 绘制
     void paint(AVFrame *frameYUV);
     // 播放控制
-    void pause();
     void stop();
+    void pause();
     void resume();
-    void restartTimer();
     void stopTimer();
+    void restartTimer();
 
     double basePts = 0.0;
     double curPts = 0.0;
@@ -43,6 +43,9 @@ private:
     void calDisplayRect(SDL_Rect *rect,
                         int scr_xleft, int scr_ytop, int scr_width, int scr_height,
                         int pic_width, int pic_height);
+
+    // 是否暂停
+    std::atomic_bool pauseFlag = false;
 
     QWidget *playWidget = nullptr;
 
@@ -59,8 +62,7 @@ private:
     // 上一帧，用于暂停时不停渲染上一帧
     AVFrame *preFrame = nullptr;
     uint8_t *pre_out_buffer = nullptr;
-    // 是否暂停
-    std::atomic_bool pauseFlag = false;
+
     // 样本格式
     enum AVPixelFormat pix_fmt;
 
@@ -73,7 +75,7 @@ private:
     // 帧率
     int frameRate = -1;
     // 帧之间的延时
-    int preDelay = 0;
+    int frameDelay = 0;
 };
 
 #endif // SDLPAINT_H

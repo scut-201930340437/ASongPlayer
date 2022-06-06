@@ -8,11 +8,11 @@
 
 Q_GLOBAL_STATIC(DataSink, dataSink) // 采用qt实现的线程安全的单例模式
 
-qsizetype DataSink::maxAPacketListLength = 110;
-qsizetype DataSink::maxVPacketListLength = 70;
+qsizetype DataSink::maxAPacketListLength = 250;
+qsizetype DataSink::maxVPacketListLength = 200;
 // 帧list最大长度
-qsizetype DataSink::maxAFrameListLength = 120;
-qsizetype DataSink::maxVFrameListLength = 70;
+qsizetype DataSink::maxAFrameListLength = 250;
+qsizetype DataSink::maxVFrameListLength = 200;
 qsizetype DataSink::maxAInvertFrameListLength = 100;
 qsizetype DataSink::maxVInvertFrameListLength = 70;
 

@@ -84,7 +84,7 @@ QString MainWindow::getTimeString(int position)
 void MainWindow::on_play_button_clicked()
 {
     // 定义文件对话框类
-    switch (ASongFFmpeg::getInstance()->getMediaStatus())
+    switch (ASongFFmpeg::getInstance()->curMediaStatus)
     {
         case -1://没有文件
         {
@@ -163,7 +163,7 @@ void MainWindow::on_stop_button_clicked()
                                    #play_button::hover{\
                                        image: url(:/img/play2.png);\
                                    }");
-    if(ASongFFmpeg::getInstance()->getMediaStatus() > 0)
+    if(ASongFFmpeg::getInstance()->curMediaStatus > 0)
     {
         int ret = ASongFFmpeg::getInstance()->stop();
         if(ret == -1)
@@ -429,7 +429,7 @@ void MainWindow::handleTimeout()
     //        return;    //没有视频就不用动
     //    }
     //停止后的进度条
-    if(ASongFFmpeg::getInstance()->getMediaStatus() == 0)
+    if(ASongFFmpeg::getInstance()->curMediaStatus == 0)
     {
         ui->position_ctrl->setValue(0);
         duration = 0;
@@ -475,7 +475,7 @@ void MainWindow::handleTimeout()
         }
     }
     //图标更新
-    if(ASongFFmpeg::getInstance()->getMediaStatus() == 1)
+    if(ASongFFmpeg::getInstance()->curMediaStatus == 1)
     {
         ui->play_button->setStyleSheet("#play_button{\
                                            image: url(:/img/pause.png);\
@@ -622,7 +622,7 @@ void MainWindow::on_next_button_clicked()
 
 void MainWindow::on_position_ctrl_sliderPressed()
 {
-    if(ASongFFmpeg::getInstance()->getMediaStatus() <= 0)
+    if(ASongFFmpeg::getInstance()->curMediaStatus <= 0)
     {
         return;
     }
@@ -633,7 +633,7 @@ void MainWindow::on_position_ctrl_sliderPressed()
 
 void MainWindow::on_position_ctrl_sliderReleased()
 {
-    if(ASongFFmpeg::getInstance()->getMediaStatus() <= 0)
+    if(ASongFFmpeg::getInstance()->curMediaStatus <= 0)
     {
         return;
     }
@@ -668,7 +668,7 @@ void MainWindow::on_play_widget_customContextMenuRequested(const QPoint &/*pos*/
     QAction *mode1 = new QAction(tr("顺序播放"), this);
     QAction *mode2 = new QAction(tr("随机播放"), this);
     QAction *mode3 = new QAction(tr("单曲循环"), this);
-    QAction *play = new QAction(tr(ASongFFmpeg::getInstance()->getMediaStatus() == 1 ? "暂停" : "播放"), this);
+    QAction *play = new QAction(tr(ASongFFmpeg::getInstance()->curMediaStatus == 1 ? "暂停" : "播放"), this);
     //    QAction *play = new QAction(tr(ui->play_button->text().toStdString().c_str()), this);
     QAction *last = new QAction(tr("上一个 (Ctrl+←)"), this);
     QAction *next = new QAction(tr("下一个 (Ctrl+→)"), this);

@@ -87,13 +87,13 @@ int SDLPaint::init(QWidget *_playWidget)
     connect(sdlTimer, &QTimer::timeout, this, &SDLPaint::getFrameYUV);
     if(frameRate != -1)
     {
-        preDelay = int(1000.0 / frameRate + 0.5);
+        frameDelay = int(1000.0 / frameRate + 0.5);
     }
     else
     {
-        preDelay = 40;
+        frameDelay = 40;
     }
-    sdlTimer->start(preDelay);
+    sdlTimer->start(frameDelay);
     return 0;
 }
 
@@ -170,7 +170,7 @@ void SDLPaint::getFrameYUV()
                     }
                     else
                     {
-                        if(frame->pts * tb < ASongFFmpeg::getInstance()->targetPts - 0.5 * basePts)
+                        if((*(double*)frame->opaque) < ASongFFmpeg::getInstance()->targetPts - 0.9 * basePts)
                         {
                             av_frame_free(&frame);
                             return;
@@ -178,6 +178,7 @@ void SDLPaint::getFrameYUV()
                         else
                         {
                             ASongFFmpeg::getInstance()->seekVideo = false;
+                            //                            qDebug() << "sdl 181:correct";
                         }
                     }
                 }
@@ -185,9 +186,9 @@ void SDLPaint::getFrameYUV()
             // 更新最近一帧的pts
             if(basePts >= -DBL_EPSILON && basePts <= DBL_EPSILON)
             {
-                basePts = frame->pts * tb;
+                basePts = (*(double*)frame->opaque);
             }
-            curPts = frame->pts * tb;
+            curPts = (*(double*)frame->opaque);
             curFrameNum = curPts / basePts;
             // 适应窗口--begin
             // 计算rect参数
@@ -205,8 +206,8 @@ void SDLPaint::getFrameYUV()
             if(!ASongFFmpeg::getInstance()->hasCover && ASongFFmpeg::getInstance()->getSpeed() >= 7.9999 && actualDelay <= 0.0001)
             {
                 av_frame_free(&frame);
-                preDelay = 1;
-                sdlTimer->setInterval(preDelay);
+                frameDelay = 1;
+                sdlTimer->setInterval(frameDelay);
                 return;
             }
             else
@@ -225,8 +226,8 @@ void SDLPaint::getFrameYUV()
                     // 绘制
                     paint(frameYUV);
                     // 对于视频，需要重设延时
-                    preDelay = int(actualDelay * 1000.0 + 0.5);
-                    sdlTimer->setInterval(preDelay);
+                    frameDelay = int(actualDelay * 1000.0 + 0.5);
+                    sdlTimer->setInterval(frameDelay);
                 }
                 else
                 {
@@ -374,7 +375,7 @@ void SDLPaint::stop()
     // 重置参数
     srcWidth = srcHeight = lastScreenWidth = lastScreenHeight = 0;
     frameRate = -1;
-    preDelay = 0;
+    frameDelay = 0;
 }
 
 void SDLPaint::pause()
@@ -391,7 +392,7 @@ void SDLPaint::restartTimer()
 {
     if(nullptr != sdlTimer)
     {
-        sdlTimer->start(preDelay);
+        sdlTimer->start(frameDelay);
     }
 }
 

@@ -89,16 +89,6 @@ void ASongAudioOutput::closeAudioOutput()
     }
 }
 
-//int ASongAudioOutput::getUsedSize()
-//{
-//    return audioOutput->bufferSize() - audioOutput->bytesFree();
-//}
-
-qreal ASongAudioOutput::getVolume()
-{
-    return audioOutput->volume();
-}
-
 void ASongAudioOutput::setVolume(const qreal curVolume)
 {
     if(nullptr != audioOutput)
@@ -167,23 +157,23 @@ void ASongAudioOutput::stop()
         swr_free(&pSwrCtx);
         pSwrCtx = nullptr;
     }
-    resetPara();
+    //    resetPara();
 }
 
 void ASongAudioOutput::pause()
 {
-    QMutexLocker locker(&_pauseMutex);
+    QMutexLocker locker(&pauseMutex);
     if(!pauseFlag && QThread::isRunning())
     {
         pauseReq = true;
-        pauseCond.wait(&_pauseMutex);
+        pauseCond.wait(&pauseMutex);
         locker.relock();
     }
 }
 
 void ASongAudioOutput::resume()
 {
-    QMutexLocker locker(&_pauseMutex);
+    QMutexLocker locker(&pauseMutex);
     if(pauseFlag && QThread::isRunning())
     {
         if(!ASongFFmpeg::getInstance()->stepSeek)
@@ -191,7 +181,7 @@ void ASongAudioOutput::resume()
             pauseReq = false;
         }
         pauseCond.wakeAll();
-        pauseCond.wait(&_pauseMutex);
+        pauseCond.wait(&pauseMutex);
     }
 }
 
@@ -213,12 +203,12 @@ void ASongAudioOutput::run()
         }
         if(pauseReq)
         {
-            QMutexLocker locker(&_pauseMutex);
+            QMutexLocker locker(&pauseMutex);
             pauseFlag = true;
             // 唤醒主线程，此时主线程知道音频解码线程阻塞
             pauseCond.wakeAll();
             // 线程阻塞
-            pauseCond.wait(&_pauseMutex);
+            pauseCond.wait(&pauseMutex);
             locker.relock();
             pauseFlag = false;
             // 唤醒主线程

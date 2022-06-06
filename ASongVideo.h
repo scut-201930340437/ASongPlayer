@@ -25,20 +25,18 @@ class ASongVideo: public QThread
 public:
     static ASongVideo* getInstance();
 
-    void setMetaData(AVCodecContext *_pCodecCtx, const int _videoIdx,  const AVRational timeBase);
+    void setMetaData(AVCodecContext *_pCodecCtx, const AVRational timeBase);
     // 获取pts
     double getPts(AVFrame *frame);
     // 同步
     double synVideo(const double pts);
 
     /*播放控制*/
+    void stop();
     // thread
     void start(Priority = InheritPriority);
     void pauseThread();
     void resumeThread();
-    //
-    void stop();
-
     void setSleepTime(int _sleepTime);
 
     // 暂停标志
@@ -47,6 +45,7 @@ public:
 private:
 
     void run() override;
+    void appendFrame(AVFrame *frame);
     void resetPara();
     // 校准pts
     void caliBratePts(AVFrame *frame, double &pts);
@@ -57,7 +56,7 @@ private:
     std::atomic_bool pauseReq = false;
 
     // 为使线程暂停所用的锁和条件变量
-    QMutex _pauseMutex;
+    QMutex pauseMutex;
     QWaitCondition pauseCond;
     // videoClock
     double videoClock = 0.0;
@@ -67,8 +66,6 @@ private:
     double lastFrameDelay = 0.0;
     // av_q2d后的时基
     double tb;
-    // stream_index
-    int videoIdx = -1;
 
     // 视频解码器上下文
     AVCodecContext *pCodecCtx = nullptr;
@@ -77,13 +74,11 @@ private:
     // 同步阈值上限
     double AV_SYNC_THRESHOLD_MAX = 0.0;
     // 非同步阈值
-    const double noSynUpperBound = 2.0;
+    const double AV_NOSYNC = 2.0;
     // 单帧最大显示时间
     const double AV_SYNC_FRAMEDUP_THRESHOLD = 0.07;
 
     QList<AVFrame*> *invertFrameList = nullptr;
-
-    void appendFrame(AVFrame *frame);
 };
 
 #endif // ASONGVIDEO_H
