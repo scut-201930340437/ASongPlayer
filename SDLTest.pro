@@ -10,6 +10,8 @@ UI_DIR = obj/Gui
 MOC_DIR = obj/Moc
 OBJECTS_DIR = obj/Obj
 
+RC_ICONS = xingtong.ico
+
 #release版本可调试
 QMAKE_CXXFLAGS_RELEASE += $$QMAKE_CFLAGS_RELEASE_WITH_DEBUGINFO
 #release版也将生成“.pdb”后缀的调试信息文件
