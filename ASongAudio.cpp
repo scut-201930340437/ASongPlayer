@@ -66,10 +66,11 @@ void ASongAudio::stop()
     // 结束音频解码线程
     if(QThread::isRunning())
     {
+        QMutexLocker locker(&pauseMutex);
         stopReq = true;
+        locker.unlock();
         // 可能暂停中，先唤醒
         pauseCond.wakeAll();
-        QThread::quit();
         QThread::wait();
     }
     // 关闭解码器上下文
@@ -100,10 +101,6 @@ void ASongAudio::resumeThread()
         pauseCond.wakeAll();
         pauseCond.wait(&pauseMutex);
     }
-    else if(QThread::isFinished())
-    {
-        start();
-    }
 }
 
 void ASongAudio::setSleepTime(int _sleepTime)
@@ -119,7 +116,6 @@ void ASongAudio::run()
     {
         if(stopReq)
         {
-            stopReq = false;
             AVFrame *frame = nullptr;
             while(!invertFrameList->isEmpty())
             {
@@ -129,11 +125,16 @@ void ASongAudio::run()
             invertFrameList->clear();
             delete invertFrameList;
             invertFrameList = nullptr;
+            stopReq = false;
             break;
         }
         if(pauseReq)
         {
             QMutexLocker locker(&pauseMutex);
+            if(stopReq)
+            {
+                continue;
+            }
             pauseFlag = true;
             // 唤醒主线程，此时主线程知道音频解码线程阻塞
             pauseCond.wakeAll();
@@ -175,6 +176,11 @@ void ASongAudio::run()
                             {
                                 // 复位解码器
                                 avcodec_flush_buffers(pCodecCtx);
+                                // 放入结束帧
+                                AVFrame *endFrame = av_frame_alloc();
+                                endFrame->pts = -1;
+                                DataSink::getInstance()->appendFrame(0, endFrame);
+                                pauseReq = true;
                             }
                             av_frame_free(&frame);
                             break;
@@ -195,6 +201,11 @@ void ASongAudio::run()
                                 av_frame_free(&frame);
                                 // 复位解码器
                                 avcodec_flush_buffers(pCodecCtx);
+                                // 放入结束帧
+                                AVFrame *endFrame = av_frame_alloc();
+                                endFrame->pts = -1;
+                                DataSink::getInstance()->appendFrame(0, endFrame);
+                                pauseReq = true;
                                 break;
                             }
                             appendFrame(frame);
@@ -217,6 +228,11 @@ void ASongAudio::run()
                                     {
                                         // 复位解码器
                                         avcodec_flush_buffers(pCodecCtx);
+                                        // 放入结束帧
+                                        AVFrame *endFrame = av_frame_alloc();
+                                        endFrame->pts = -1;
+                                        DataSink::getInstance()->appendFrame(0, endFrame);
+                                        pauseReq = true;
                                     }
                                     av_frame_free(&frame);
                                     break;
@@ -230,14 +246,7 @@ void ASongAudio::run()
             }
             else
             {
-                if(ASongFFmpeg::getInstance()->isFinished())
-                {
-                    stopReq = true;
-                }
-                else
-                {
-                    msleep(5);
-                }
+                msleep(5);
             }
         }
         else
@@ -267,13 +276,23 @@ void ASongAudio::appendFrame(AVFrame *frame)
     }
     else
     {
-        DataSink::getInstance()->appendFrame(0, frame);
-        // 逐帧时只解码到所需帧
-        if(ASongFFmpeg::getInstance()->stepSeek
-                && frame->pts * tb >= ASongFFmpeg::getInstance()->targetPts - 0.5 * ASongAudioOutput::getInstance()->basePts
-                && frame->pts * tb <= ASongFFmpeg::getInstance()->targetPts + 0.6 * ASongAudioOutput::getInstance()->basePts)
+        // 逐帧时只加入所需帧
+        if(ASongFFmpeg::getInstance()->stepSeek)
         {
-            pauseReq = true;
+            if(frame->pts * tb >= ASongFFmpeg::getInstance()->targetPts - 0.5 * ASongAudioOutput::getInstance()->basePts
+                    && frame->pts * tb <= ASongFFmpeg::getInstance()->targetPts + 0.6 * ASongAudioOutput::getInstance()->basePts)
+            {
+                DataSink::getInstance()->appendFrame(0, frame);
+                pauseReq = true;
+            }
+            else
+            {
+                av_frame_free(&frame);
+            }
+        }
+        else
+        {
+            DataSink::getInstance()->appendFrame(0, frame);
         }
     }
 }

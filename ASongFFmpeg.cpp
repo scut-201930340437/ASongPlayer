@@ -372,9 +372,10 @@ int ASongFFmpeg::stop()
     // 结束解复用线程
     if(QThread::isRunning())
     {
+        QMutexLocker locker(&pauseMutex);
         stopReq = true;
+        locker.unlock();
         pauseCond.wakeAll();
-        QThread::quit();
         QThread::wait();
     }
     // 结束音频解码
@@ -456,10 +457,6 @@ void ASongFFmpeg::resumeThread()
         pauseCond.wakeAll();
         pauseCond.wait(&pauseMutex);
     }
-    else if(QThread::isFinished())
-    {
-        start();
-    }
 }
 
 void ASongFFmpeg::run()
@@ -484,6 +481,10 @@ void ASongFFmpeg::run()
         if(pauseReq)
         {
             QMutexLocker locker(&pauseMutex);
+            if(stopReq)
+            {
+                continue;
+            }
             pauseFlag = true;
             // 唤醒主线程，此时主线程知道音频解码线程阻塞
             pauseCond.wakeAll();
@@ -520,7 +521,16 @@ void ASongFFmpeg::run()
             AVPacket *packet = readFrame();
             if(nullptr == packet)
             {
-                stopReq = true;
+                pauseReq = true;
+                // 放入结束packet
+                AVPacket *nullPkt1 = av_packet_alloc();
+                nullPkt1->data = nullptr;
+                nullPkt1->size = 0;
+                DataSink::getInstance()->appendPacket(0, nullPkt1);
+                AVPacket *nullPkt2 = av_packet_alloc();
+                nullPkt2->data = nullptr;
+                nullPkt2->size = 0;
+                DataSink::getInstance()->appendPacket(1, nullPkt2);
                 continue;
             }
             // 如果是音频
@@ -542,19 +552,17 @@ void ASongFFmpeg::run()
 
 void ASongFFmpeg::handleSeek()
 {
-    // 停止音频播放和视频渲染
+    // 普通的seek操作需要暂停音频播放和视频渲染，逐帧和倒放不需要
     if(!stepSeek && !invertFlag)
     {
         pause();
     }
-    else
+    // 普通的seek操作和倒放需要暂停解码
+    if(!stepSeek)
     {
-        if(invertFlag)
-        {
-            // 阻塞解码线程
-            ASongAudio::getInstance()->pauseThread();
-            ASongVideo::getInstance()->pauseThread();
-        }
+        // 阻塞解码线程
+        ASongAudio::getInstance()->pauseThread();
+        ASongVideo::getInstance()->pauseThread();
     }
     // 清理正常播放的队列
     DataSink::getInstance()->clearList();
@@ -633,7 +641,7 @@ void ASongFFmpeg::step_to_dst_frame(int _step)
     SDLPaint::getInstance()->resume();
     // 计算目标帧pts
     targetPts = SDLPaint::getInstance()->curPts + _step * SDLPaint::getInstance()->basePts;
-    // 没有存在上一帧/下一帧
+    // 没有上一帧/下一帧
     if(targetPts * AV_TIME_BASE > pFormatCtx->duration || targetPts < -0.0001)
     {
         SDLPaint::getInstance()->restartTimer();

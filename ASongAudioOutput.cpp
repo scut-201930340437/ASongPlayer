@@ -129,6 +129,7 @@ void ASongAudioOutput::resetPara()
     pauseReq = false;
     pauseFlag = false;
     basePts = 0.0;
+    curPts = 0.0;
 }
 
 void ASongAudioOutput::start(Priority pri)
@@ -146,9 +147,10 @@ void ASongAudioOutput::stop()
 {
     if(QThread::isRunning())
     {
+        QMutexLocker locker(&pauseMutex);
         stopReq = true;
+        locker.unlock();
         pauseCond.wakeAll();
-        QThread::quit();
         QThread::wait();
     }
     // 关闭重采样上下文
@@ -198,11 +200,16 @@ void ASongAudioOutput::run()
     {
         if(stopReq)
         {
+            stopReq = false;
             break;
         }
         if(pauseReq)
         {
             QMutexLocker locker(&pauseMutex);
+            if(stopReq)
+            {
+                continue;
+            }
             pauseFlag = true;
             // 唤醒主线程，此时主线程知道音频解码线程阻塞
             pauseCond.wakeAll();
@@ -231,24 +238,23 @@ void ASongAudioOutput::process()
     }
     if(nullptr != frame)
     {
+        // 播放结束
+        if(frame->pts == -1)
+        {
+            av_frame_free(&frame);
+            emit playFinish();
+            return;
+        }
         // 扔掉小于stepSeek的目标帧号的帧
         if(ASongFFmpeg::getInstance()->seekAudio)
         {
-            if(frame->pts * tb < ASongFFmpeg::getInstance()->targetPts - 0.5 * basePts
-                    || frame->pts * tb > ASongFFmpeg::getInstance()->targetPts + 0.6 * basePts)
-            {
-                av_frame_free(&frame);
-                return;
-            }
-            else
-            {
-                ASongFFmpeg::getInstance()->seekAudio = false;
-            }
+            ASongFFmpeg::getInstance()->seekAudio = false;
         }
         if(basePts >= -DBL_EPSILON && basePts <= DBL_EPSILON)
         {
             basePts = frame->pts * tb;
         }
+        curPts = frame->pts * tb;
         // 如果是planar（每个声道数据单独存放），一定要重采样，因为PCM是packed（每个声道数据交错存放）
         if(av_sample_fmt_is_planar(in_sample_fmt) == 1)
         {
@@ -344,16 +350,7 @@ void ASongAudioOutput::process()
             av_frame_free(&frame);
         }
         // 倒放时如果音频时钟几乎为零说明播放结束
-        if(ASongFFmpeg::getInstance()->invertFlag && ASongAudio::getInstance()->getAudioClock() <= 0.005)
-        {
-            stopReq = true;
-            emit playFinish();
-        }
-    }
-    else
-    {
-        // 解码线程结束且拿不到frame，说明此时音频播放结束
-        if(ASongAudio::getInstance()->isFinished())
+        if(ASongFFmpeg::getInstance()->invertFlag && curPts <= basePts)
         {
             stopReq = true;
             emit playFinish();

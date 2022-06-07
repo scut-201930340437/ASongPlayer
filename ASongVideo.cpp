@@ -138,10 +138,11 @@ void ASongVideo::stop()
     // 先结束视频解码线程
     if(QThread::isRunning())
     {
+        QMutexLocker locker(&pauseMutex);
         stopReq = true;
+        locker.unlock();
         // 可能处于暂停中，先唤醒
         pauseCond.wakeAll();
-        QThread::quit();
         QThread::wait();
     }
     // 关闭视频解码器上下文
@@ -172,10 +173,6 @@ void ASongVideo::resumeThread()
         pauseCond.wakeAll();
         pauseCond.wait(&pauseMutex);
     }
-    else if(QThread::isFinished())
-    {
-        start();
-    }
 }
 
 void ASongVideo::setSleepTime(int _sleepTime)
@@ -192,7 +189,6 @@ void ASongVideo::run()
     {
         if(stopReq)
         {
-            stopReq = false;
             AVFrame *frame = nullptr;
             while(!invertFrameList->isEmpty())
             {
@@ -202,11 +198,16 @@ void ASongVideo::run()
             invertFrameList->clear();
             delete invertFrameList;
             invertFrameList = nullptr;
+            stopReq = false;
             break;
         }
         if(pauseReq)
         {
             QMutexLocker locker(&pauseMutex);
+            if(stopReq)
+            {
+                continue;
+            }
             pauseFlag = true;
             // 唤醒主线程，此时主线程知道音频解码线程阻塞
             pauseCond.wakeAll();
@@ -252,6 +253,11 @@ void ASongVideo::run()
                         {
                             // 复位解码器
                             avcodec_flush_buffers(pCodecCtx);
+                            // 放入结束帧
+                            AVFrame *endFrame = av_frame_alloc();
+                            endFrame->pts = -1;
+                            DataSink::getInstance()->appendFrame(1, endFrame);
+                            pauseReq = true;
                         }
                         av_frame_free(&frame);
                     }
@@ -270,6 +276,11 @@ void ASongVideo::run()
                                 av_frame_free(&frame);
                                 // 复位解码器
                                 avcodec_flush_buffers(pCodecCtx);
+                                // 放入结束帧
+                                AVFrame *endFrame = av_frame_alloc();
+                                endFrame->pts = -1;
+                                DataSink::getInstance()->appendFrame(1, endFrame);
+                                pauseReq = true;
                                 break;
                             }
                             appendFrame(frame);
@@ -290,6 +301,11 @@ void ASongVideo::run()
                                 {
                                     // 复位解码器
                                     avcodec_flush_buffers(pCodecCtx);
+                                    // 放入结束帧
+                                    AVFrame *endFrame = av_frame_alloc();
+                                    endFrame->pts = -1;
+                                    DataSink::getInstance()->appendFrame(1, endFrame);
+                                    pauseReq = true;
                                 }
                                 av_frame_free(&frame);
                             }
@@ -305,14 +321,7 @@ void ASongVideo::run()
             }
             else
             {
-                if(ASongFFmpeg::getInstance()->isFinished())
-                {
-                    stopReq = true;
-                }
-                else
-                {
-                    msleep(5);
-                }
+                msleep(5);
             }
         }
         else
@@ -353,13 +362,23 @@ void ASongVideo::appendFrame(AVFrame *frame)
     else
     {
         frame->opaque = (double*)new double(getPts(frame));
-        DataSink::getInstance()->appendFrame(1, frame);
-        // 逐帧时只解码到所需帧
-        if(ASongFFmpeg::getInstance()->stepSeek &&
-                (*(double*)frame->opaque) >= ASongFFmpeg::getInstance()->targetPts - 0.5 * SDLPaint::getInstance()->basePts
-                && (*(double*)frame->opaque) <= ASongFFmpeg::getInstance()->targetPts + 0.6 * SDLPaint::getInstance()->basePts)
+        // 逐帧时只加入所需帧
+        if(ASongFFmpeg::getInstance()->stepSeek)
         {
-            pauseReq = true;
+            if((*(double*)frame->opaque) >= ASongFFmpeg::getInstance()->targetPts - 0.5 * SDLPaint::getInstance()->basePts
+                    && (*(double*)frame->opaque) <= ASongFFmpeg::getInstance()->targetPts + 0.6 * SDLPaint::getInstance()->basePts)
+            {
+                DataSink::getInstance()->appendFrame(1, frame);
+                pauseReq = true;
+            }
+            else
+            {
+                av_frame_free(&frame);
+            }
+        }
+        else
+        {
+            DataSink::getInstance()->appendFrame(1, frame);
         }
     }
 }

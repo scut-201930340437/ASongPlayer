@@ -52,6 +52,7 @@ public:
     // 暂停标志
     std::atomic_bool pauseFlag = false;
     double basePts = 0.0;
+
 private:
     // thread 音频解码
     void run() override;
@@ -82,7 +83,7 @@ private:
     enum AVSampleFormat in_sample_fmt;
     const enum AVSampleFormat out_sample_fmt = AV_SAMPLE_FMT_S16;
     double tb = 0.0;
-
+    double curPts = 0.0;
     // 重采样上下文
     SwrContext *pSwrCtx = nullptr;
     /*倍速*/

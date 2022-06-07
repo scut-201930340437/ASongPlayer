@@ -41,7 +41,6 @@ struct VideoMetaData
     AVCodecID codec_id; //编码格式id, 用avcodec_get_name获取对应名字
 
     int idx; //流下标
-
 };
 
 struct MediaMetaData

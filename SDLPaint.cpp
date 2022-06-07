@@ -150,19 +150,17 @@ void SDLPaint::getFrameYUV()
         }
         if(nullptr != frame)
         {
-            // 扔掉小于stepSeek的目标帧号的帧
+            // 播放结束
+            if(frame->pts == -1)
+            {
+                av_frame_free(&frame);
+                stop();
+                return;
+            }
+            // 处理逐帧
             if(ASongFFmpeg::getInstance()->seekVideo)
             {
-                if((*(double*)frame->opaque) < ASongFFmpeg::getInstance()->targetPts - 0.5 * basePts
-                        || (*(double*)frame->opaque) > ASongFFmpeg::getInstance()->targetPts + 0.6 * basePts)
-                {
-                    av_frame_free(&frame);
-                    return;
-                }
-                else
-                {
-                    ASongFFmpeg::getInstance()->seekVideo = false;
-                }
+                ASongFFmpeg::getInstance()->seekVideo = false;
             }
             // 更新最近一帧的pts
             curPts = (*(double*)frame->opaque);
@@ -229,28 +227,19 @@ void SDLPaint::getFrameYUV()
         }
         else
         {
-            // 音频播放线程结束且拿不到frame，此时说明播放结束
-            if(ASongAudioOutput::getInstance()->isFinished())
+            if(nullptr != preFrame)
             {
-                stop();
-            }
-            // 播放未结束但是拿不到frame，渲染上一帧
-            else
-            {
-                if(nullptr != preFrame)
+                // 适应窗口--begin
+                // 计算rect参数
+                sdlSurface = SDL_GetWindowSurface(screen);
+                if(sdlSurface->w != lastScreenWidth || sdlSurface->h != lastScreenHeight)
                 {
-                    // 适应窗口--begin
-                    // 计算rect参数
-                    sdlSurface = SDL_GetWindowSurface(screen);
-                    if(sdlSurface->w != lastScreenWidth || sdlSurface->h != lastScreenHeight)
-                    {
-                        calDisplayRect(&sdlRect, 0, 0, sdlSurface->w, sdlSurface->h, srcWidth, srcHeight);
-                        lastScreenWidth = sdlSurface->w;
-                        lastScreenHeight = sdlSurface->h;
-                    }
-                    // 适应窗口--end
-                    paint(preFrame);
+                    calDisplayRect(&sdlRect, 0, 0, sdlSurface->w, sdlSurface->h, srcWidth, srcHeight);
+                    lastScreenWidth = sdlSurface->w;
+                    lastScreenHeight = sdlSurface->h;
                 }
+                // 适应窗口--end
+                paint(preFrame);
             }
         }
     }
