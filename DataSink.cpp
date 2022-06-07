@@ -8,19 +8,13 @@
 
 Q_GLOBAL_STATIC(DataSink, dataSink) // 采用qt实现的线程安全的单例模式
 
-qsizetype DataSink::maxAPacketListLength = 250;
-qsizetype DataSink::maxVPacketListLength = 200;
+qsizetype DataSink::maxAPacketListLength = 120;
+qsizetype DataSink::maxVPacketListLength = 100;
 // 帧list最大长度
-qsizetype DataSink::maxAFrameListLength = 250;
-qsizetype DataSink::maxVFrameListLength = 200;
-qsizetype DataSink::maxAInvertFrameListLength = 100;
-qsizetype DataSink::maxVInvertFrameListLength = 70;
-
-//DataSink::DataSink()
-//{
-//    audioFraCond = new QWaitCondition;
-//    videoFraCond = new QWaitCondition;
-//}
+qsizetype DataSink::maxAFrameListLength = 120;
+qsizetype DataSink::maxVFrameListLength = 100;
+qsizetype DataSink::maxAInvertFrameListLength = 120;
+qsizetype DataSink::maxVInvertFrameListLength = 100;
 
 DataSink* DataSink::getInstance()
 {
@@ -213,13 +207,11 @@ void DataSink::appendFrame(int type, AVFrame *frame)
     {
         QMutexLocker locker(&aFrameListMutex);
         aFrameList.append(frame);
-        //        audioFraCond->wakeAll();
     }
     else
     {
         QMutexLocker locker(&vFrameListMutex);
         vFrameList.append(frame);
-        //        videoFraCond->wakeAll();
     }
 }
 
@@ -253,59 +245,9 @@ qsizetype DataSink::packetListSize(int type)
     }
 }
 
-//void DataSink::clearAPacketList()
-//{
-//    AVPacket *packet = nullptr;
-//    //    QMutexLocker locker(&aPacketListMutex);
-//    while(!aPacketList.isEmpty())
-//    {
-//        packet = aPacketList.takeFirst();
-//        av_packet_free(&packet);
-//    }
-//    aPacketList.clear();
-//}
-
-//void DataSink::clearVPacketList()
-//{
-//    AVPacket *packet = nullptr;
-//    //    QMutexLocker locker(&vPacketListMutex);
-//    while(!vPacketList.isEmpty())
-//    {
-//        packet = vPacketList.takeFirst();
-//        av_packet_free(&packet);
-//    }
-//    vPacketList.clear();
-//}
-
-//void DataSink::clearAFrameList()
-//{
-//    AVFrame *frame = nullptr;
-//    // 清理队列
-//    //    QMutexLocker locker(&aFrameListMutex);
-//    while(!aFrameList.isEmpty())
-//    {
-//        frame = aFrameList.takeFirst();
-//        av_frame_free(&frame);
-//    }
-//    aFrameList.clear();
-//}
-
-//void DataSink::clearVFrameList()
-//{
-//    AVFrame *frame = nullptr;
-//    //    QMutexLocker locker(&vFrameListMutex);
-//    while(!vFrameList.isEmpty())
-//    {
-//        frame = vFrameList.takeFirst();
-//        av_frame_free(&frame);
-//    }
-//    vFrameList.clear();
-//}
-
 void DataSink::clearList()
 {
     AVPacket *packet = nullptr;
-    //    QMutexLocker locker(&aPacketListMutex);
     while(!aPacketList.isEmpty())
     {
         packet = aPacketList.takeFirst();
@@ -320,14 +262,12 @@ void DataSink::clearList()
     }
     vPacketList.clear();
     AVFrame *frame = nullptr;
-    //    QMutexLocker locker(&aFrameListMutex);
     while(!aFrameList.isEmpty())
     {
         frame = aFrameList.takeFirst();
         av_frame_free(&frame);
     }
     aFrameList.clear();
-    //    QMutexLocker locker(&vFrameListMutex);
     while(!vFrameList.isEmpty())
     {
         frame = vFrameList.takeFirst();
@@ -363,23 +303,3 @@ void DataSink::clearInvertList()
     vInvertFrameList.clear();
     aInvertFrameSum = vInvertFrameSum = 0;
 }
-
-//void DataSink::frameListIsEmpty(int type)
-//{
-//    if(type == 0)
-//    {
-//        QMutexLocker locker(&aFrameListMutex);
-//        if(aFrameList.isEmpty())
-//        {
-//            audioFraCond->wait(&aFrameListMutex);
-//        }
-//    }
-//    else
-//    {
-//        QMutexLocker locker(&vFrameListMutex);
-//        if(vFrameList.isEmpty())
-//        {
-//            videoFraCond->wait(&vFrameListMutex);
-//        }
-//    }
-//}

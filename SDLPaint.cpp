@@ -71,17 +71,10 @@ int SDLPaint::init(QWidget *_playWidget)
         qDebug() << "sdl 208:swsGetCtx failed";
         return -1;
     }
-    // sar
-    AVFormatContext *pFormatCtx = ASongFFmpeg::getInstance()->pFormatCtx;
-    int idx = ASongFFmpeg::getInstance()->mediaMetaData->vMetaDatas[ASongFFmpeg::getInstance()->videoIdx].idx;
-    // 获取采样纵横比
-    sar = av_guess_sample_aspect_ratio(pFormatCtx, pFormatCtx->streams[idx], nullptr);
     calDisplayRect(&sdlRect, 0, 0, lastScreenWidth, lastScreenHeight, srcWidth, srcHeight);
     // 初始化各变量
     pauseFlag = false;
-    basePts = 0.0;
     curPts = 0.0;
-    curFrameNum = -1;
     // 开启定时器
     sdlTimer = new QTimer;
     connect(sdlTimer, &QTimer::timeout, this, &SDLPaint::getFrameYUV);
@@ -97,14 +90,18 @@ int SDLPaint::init(QWidget *_playWidget)
     return 0;
 }
 
-void SDLPaint::setMetaData(const int width, const int height, const int _frameRate, const enum AVPixelFormat _pix_fmt, const AVRational time_base)
+void SDLPaint::setMetaData(const int width, const int height, const int _frameRate, const enum AVPixelFormat _pix_fmt, const AVRational _sar)
 {
     // 设置参数
     srcWidth = width;
     srcHeight = height;
     frameRate = _frameRate;
+    if(frameRate != -1)
+    {
+        basePts = 1.0 / frameRate;
+    }
     pix_fmt = _pix_fmt;
-    tb = av_q2d(time_base);
+    sar = _sar;
 }
 
 void SDLPaint::calDisplayRect(SDL_Rect *rect,
@@ -156,40 +153,19 @@ void SDLPaint::getFrameYUV()
             // 扔掉小于stepSeek的目标帧号的帧
             if(ASongFFmpeg::getInstance()->seekVideo)
             {
-                if(ASongFFmpeg::getInstance()->step > 1)
+                if((*(double*)frame->opaque) < ASongFFmpeg::getInstance()->targetPts - 0.5 * basePts
+                        || (*(double*)frame->opaque) > ASongFFmpeg::getInstance()->targetPts + 0.6 * basePts)
                 {
                     av_frame_free(&frame);
-                    --ASongFFmpeg::getInstance()->step;
                     return;
                 }
                 else
                 {
-                    if(ASongFFmpeg::getInstance()->step == 1)
-                    {
-                        ASongFFmpeg::getInstance()->seekVideo = false;
-                    }
-                    else
-                    {
-                        if((*(double*)frame->opaque) < ASongFFmpeg::getInstance()->targetPts - 0.9 * basePts)
-                        {
-                            av_frame_free(&frame);
-                            return;
-                        }
-                        else
-                        {
-                            ASongFFmpeg::getInstance()->seekVideo = false;
-                            //                            qDebug() << "sdl 181:correct";
-                        }
-                    }
+                    ASongFFmpeg::getInstance()->seekVideo = false;
                 }
             }
             // 更新最近一帧的pts
-            if(basePts >= -DBL_EPSILON && basePts <= DBL_EPSILON)
-            {
-                basePts = (*(double*)frame->opaque);
-            }
             curPts = (*(double*)frame->opaque);
-            curFrameNum = curPts / basePts;
             // 适应窗口--begin
             // 计算rect参数
             sdlSurface = SDL_GetWindowSurface(screen);
@@ -225,7 +201,7 @@ void SDLPaint::getFrameYUV()
                 {
                     // 绘制
                     paint(frameYUV);
-                    // 对于视频，需要重设延时
+                    //重设延时
                     frameDelay = int(actualDelay * 1000.0 + 0.5);
                     sdlTimer->setInterval(frameDelay);
                 }

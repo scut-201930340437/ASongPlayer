@@ -29,7 +29,6 @@ double ASongVideo::getPts(AVFrame *frame)
     }
     pts *= tb;
     caliBratePts(frame, pts);
-    //    qDebug() << pts;
     return pts;
 }
 // 修正pts
@@ -94,7 +93,7 @@ double ASongVideo::synVideo(const double pts)
         }
         else
         {
-            // 视频快于音频的时间超过最小刷新时间，增加延迟
+            // 视频快于音频的时间超过同步阈值，增加延迟
             if(diff >= syn_threshold)
             {
                 if(delay > AV_SYNC_FRAMEDUP_THRESHOLD)
@@ -151,7 +150,6 @@ void ASongVideo::stop()
         avcodec_close(pCodecCtx);
         pCodecCtx = nullptr;
     }
-    //    resetPara();
 }
 
 void ASongVideo::pauseThread()
@@ -212,7 +210,7 @@ void ASongVideo::run()
             pauseFlag = true;
             // 唤醒主线程，此时主线程知道音频解码线程阻塞
             pauseCond.wakeAll();
-            // 音频解码线程阻塞
+            // 解码线程阻塞
             pauseCond.wait(&pauseMutex);
             locker.relock();
             pauseFlag = false;
@@ -356,6 +354,13 @@ void ASongVideo::appendFrame(AVFrame *frame)
     {
         frame->opaque = (double*)new double(getPts(frame));
         DataSink::getInstance()->appendFrame(1, frame);
+        // 逐帧时只解码到所需帧
+        if(ASongFFmpeg::getInstance()->stepSeek &&
+                (*(double*)frame->opaque) >= ASongFFmpeg::getInstance()->targetPts - 0.5 * SDLPaint::getInstance()->basePts
+                && (*(double*)frame->opaque) <= ASongFFmpeg::getInstance()->targetPts + 0.6 * SDLPaint::getInstance()->basePts)
+        {
+            pauseReq = true;
+        }
     }
 }
 

@@ -157,7 +157,6 @@ void ASongAudioOutput::stop()
         swr_free(&pSwrCtx);
         pSwrCtx = nullptr;
     }
-    //    resetPara();
 }
 
 void ASongAudioOutput::pause()
@@ -235,21 +234,8 @@ void ASongAudioOutput::process()
         // 扔掉小于stepSeek的目标帧号的帧
         if(ASongFFmpeg::getInstance()->seekAudio)
         {
-            //            if(ASongFFmpeg::getInstance()->step > 0)
-            //            {
-            //                av_frame_free(&frame);
-            //                --ASongFFmpeg::getInstance()->step;
-            //                return;
-            //            }
-            //            else
-            //            {
-            //                if(ASongFFmpeg::getInstance()->step == 0)
-            //                {
-            //                    ASongFFmpeg::getInstance()->seekAudio = false;
-            //                }
-            //                else
-            //                {
-            if(frame->pts * tb < ASongFFmpeg::getInstance()->targetPts - 0.5 * basePts)
+            if(frame->pts * tb < ASongFFmpeg::getInstance()->targetPts - 0.5 * basePts
+                    || frame->pts * tb > ASongFFmpeg::getInstance()->targetPts + 0.6 * basePts)
             {
                 av_frame_free(&frame);
                 return;
@@ -258,8 +244,6 @@ void ASongAudioOutput::process()
             {
                 ASongFFmpeg::getInstance()->seekAudio = false;
             }
-            //                }
-            //            }
         }
         if(basePts >= -DBL_EPSILON && basePts <= DBL_EPSILON)
         {
@@ -281,7 +265,7 @@ void ASongAudioOutput::process()
                 return;
             }
             //做倍速处理
-            if(speed > 1.00001 || speed < 0.99999)
+            if(speed > 1.0001 || speed < 0.9999)
             {
                 out_size = changeSpeed(outBuffer, frame);
             }

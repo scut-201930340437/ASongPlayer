@@ -41,7 +41,6 @@ public:
 
     // 暂停标志
     std::atomic_bool pauseFlag = false;
-
 private:
 
     void run() override;

@@ -26,9 +26,6 @@ public:
     static qsizetype maxAInvertFrameListLength;
     static qsizetype maxVInvertFrameListLength;
 
-    // 倒放一维list的最大长度
-    //    static const qsizetype maxInvertPerFrameListLength = 20;
-
     AVPacket* takeNextPacket(int type);
     AVFrame* takeNextFrame(int type);
     AVFrame* takeInvertFrame(int type);
@@ -45,8 +42,6 @@ public:
 
     void clearList();
     void clearInvertList();
-
-    //    void frameListIsEmpty(int type);
 private:
     // packetList
     QList<AVPacket*>aPacketList;
@@ -64,8 +59,6 @@ private:
     QMutex vFrameListMutex;
     QMutex aInvertFrameListMutex;
     QMutex vInvertFrameListMutex;
-    // 条件变量
-    //    QWaitCondition *audioFraCond = nullptr, *videoFraCond = nullptr;
 
     // 当前倒放帧总数
     qsizetype aInvertFrameSum = 0;

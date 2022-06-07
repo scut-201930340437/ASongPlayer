@@ -99,30 +99,18 @@ public:
 
     // 播放状态: -1-没有文件 0-停止 1-播放 2-暂停
     std::atomic_int curMediaStatus = -1;
-
-    // metaData
-    MediaMetaData *mediaMetaData = nullptr;
-    int videoIdx = -1, audioIdx = -1;
+    // 音频是否有封面
     bool hasCover = false;
-
-    //ffmpeg
-    AVFormatContext *pFormatCtx = nullptr;
-
     // 线程暂停
     std::atomic_bool pauseFlag = false;
-
     // 有逐帧seek请求
     bool stepSeek = false;
     // 进度微调时的丢帧标志位
     bool seekAudio = false;
     bool seekVideo = false;
-    // 进度微调的目标帧号
-    int targetFrameNum = -1;
     // 进度微调的目标pts
     double targetPts = 0.0;
-    int step = 0;
-    // invert
-    bool invertReq = false;
+    // 倒放
     std::atomic_bool invertFlag = false;
     std::atomic_bool needInvertSeek = false;
     double invertPts = 0.0;
@@ -133,32 +121,41 @@ private:
     void resumeThread();
     // 处理跳转
     void handleSeek();
+    // 处理逐帧
+    void handleStepSeek();
     // 处理倒放
     void initInvert();
     void handleInvertSeek();
 
+    /*thread*/
     int sleepTime = 25;
     // 需要停止
     std::atomic_bool stopReq = false;
     // 需要暂停
     std::atomic_bool pauseReq = false;
-
     // 为使线程暂停所用的锁和条件变量
     QMutex pauseMutex;
     QWaitCondition pauseCond;
-    // seek
+    /*ffmpeg*/
+    // metaData
+    MediaMetaData *mediaMetaData = nullptr;
+    int audioIdx = -1, videoIdx = -1;
+    AVFormatContext *pFormatCtx = nullptr;
+    /*seek*/
     bool seekReq = false;
     int64_t seekPos = 0;
     int64_t seekRel = 0;
     int64_t seekMin = INT64_MIN;
     int64_t seekMax = INT64_MAX;
-
     int seekFlag = -1;
+    /*逐帧*/
+    bool stepSeekReq = false;
     // 逐帧所用的条件变量
     QWaitCondition clearListCond;
     QMutex clearListMutex;
     bool cleared = false;
-
+    // 倒放
+    bool invertReq = false;
 };
 
 

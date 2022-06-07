@@ -24,7 +24,7 @@ public:
     // 初始化sdl
     int init(QWidget *_playWidget);
     // 设置参数
-    void setMetaData(const int width, const int height, const int _frameRate, const enum AVPixelFormat _pix_fmt, const AVRational time_base);
+    void setMetaData(const int width, const int height, const int _frameRate, const enum AVPixelFormat _pix_fmt, const AVRational _sar);
     // 将一帧图像转为YUVFrame
     void getFrameYUV();
     // 绘制
@@ -38,7 +38,6 @@ public:
 
     double basePts = 0.0;
     double curPts = 0.0;
-    int curFrameNum = -1;
 private:
     void calDisplayRect(SDL_Rect *rect,
                         int scr_xleft, int scr_ytop, int scr_width, int scr_height,
@@ -56,8 +55,7 @@ private:
     SDL_Texture *sdlTexture = nullptr;
     SDL_Surface *sdlSurface = nullptr;
     SDL_Rect sdlRect;
-    // ffmpeg
-    double tb;
+    /*ffmpeg*/
     SwsContext *pSwsCtx = nullptr;
     // 上一帧，用于暂停时不停渲染上一帧
     AVFrame *preFrame = nullptr;

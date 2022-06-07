@@ -44,10 +44,6 @@ void ASongAudio::setAudioClock(AVFrame * frame, const double duration)
 //获取时钟
 double ASongAudio::getAudioClock()
 {
-    //    double neededAudioClock = audioClock;
-    //    int bufferDataSize = ASongAudioOutput::getInstance()->getUsedSize();
-    //    int bytesPerSec = pCodecCtx->sample_rate * pCodecCtx->channels * 2;
-    //    return neededAudioClock - (double)bufferDataSize / bytesPerSec;
     return audioClock;
 }
 
@@ -82,7 +78,6 @@ void ASongAudio::stop()
         avcodec_close(pCodecCtx);
         pCodecCtx = nullptr;
     }
-    //    resetPara();
 }
 
 void ASongAudio::pauseThread()
@@ -235,15 +230,12 @@ void ASongAudio::run()
             }
             else
             {
-                //                QMutexLocker locker(&ASongFFmpeg::getInstance()->stopMutex);
                 if(ASongFFmpeg::getInstance()->isFinished())
                 {
-                    //                    locker.unlock();
                     stopReq = true;
                 }
                 else
                 {
-                    //                    locker.unlock();
                     msleep(5);
                 }
             }
@@ -253,7 +245,6 @@ void ASongAudio::run()
             msleep(sleepTime);
         }
     }
-    //    stopFlag = true;
 }
 
 void ASongAudio::appendFrame(AVFrame *frame)
@@ -277,6 +268,13 @@ void ASongAudio::appendFrame(AVFrame *frame)
     else
     {
         DataSink::getInstance()->appendFrame(0, frame);
+        // 逐帧时只解码到所需帧
+        if(ASongFFmpeg::getInstance()->stepSeek
+                && frame->pts * tb >= ASongFFmpeg::getInstance()->targetPts - 0.5 * ASongAudioOutput::getInstance()->basePts
+                && frame->pts * tb <= ASongFFmpeg::getInstance()->targetPts + 0.6 * ASongAudioOutput::getInstance()->basePts)
+        {
+            pauseReq = true;
+        }
     }
 }
 
