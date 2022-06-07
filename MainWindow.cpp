@@ -139,7 +139,18 @@ void MainWindow::on_play_button_clicked()
         }
         case 0://停止
         {
-            if(!checkIfExist(filePath))
+            if(ui->play_table->orderList.empty())
+            {
+                openFile();
+                ui->play_button->setStyleSheet("#play_button{\
+   image: url(:/img/pause.png);\
+   }\
+   #play_button::hover{\
+   image: url(:/img/pause2.png);\
+   }");
+                break;
+            }
+            else if(!checkIfExist(filePath))
             {
                 break;
             }
@@ -320,7 +331,7 @@ void MainWindow::setListFromFilePath()
             {
                 if(file.absoluteFilePath() == filePath)
                 {
-                    ui->play_table->playPos = count_row;
+                    ui->play_table->orderPos = count_row;
                 }
                 neededList.append(file.absoluteFilePath());
                 count_row++;
@@ -332,7 +343,7 @@ void MainWindow::setListFromFilePath()
 
 void MainWindow::onPlayTableCellDoubleClicked(int row, int column)
 {
-    ui->play_table->showHighLight(ui->play_table->playPos, row);
+    ui->play_table->showHighLight(ui->play_table->orderPos, row);
     QString path = this->ui->play_table->getPath(row);
     if(path == "")
     {
@@ -344,7 +355,7 @@ void MainWindow::onPlayTableCellDoubleClicked(int row, int column)
         filePath = path;
         ASongFFmpeg::getInstance()->stop();
         ASongFFmpeg::getInstance()->play(this, filePath, ui->play_widget);
-        this->ui->play_table->playPos = row; //确认可以播放，记录播放位置
+        this->ui->play_table->orderPos = row; //确认可以播放，记录播放位置
     }
 }
 
@@ -382,7 +393,7 @@ void MainWindow::saveFilePath()
     if(iniWriter)
     {
         iniWriter->setValue(curPathKey, filePath);
-        iniWriter->setValue(pathListKey, ui->play_table->orderInfoList);
+        iniWriter->setValue(pathListKey, ui->play_table->orderList);
     }
     delete iniWriter;
 }
@@ -587,7 +598,7 @@ void MainWindow::on_fullScreen_button_clicked()
 //上一首
 void MainWindow::on_last_button_clicked()
 {
-    qint16 n = ui->play_table->orderInfoList.size();
+    qint16 n = ui->play_table->orderList.size();
     if(n == 0)
     {
         on_play_button_clicked();
@@ -605,7 +616,7 @@ void MainWindow::on_last_button_clicked()
 //下一首
 void MainWindow::on_next_button_clicked()
 {
-    qint16 n = ui->play_table->orderInfoList.size();
+    qint16 n = ui->play_table->orderList.size();
     if(n == 0)
     {
         on_play_button_clicked();
@@ -938,7 +949,7 @@ void MainWindow::setPlayMode(qint16 mode_index)
     //    ui->play_button->setIconSize(*mySize);
     ui->play_table->playMode = mode_index;
     qint16 &randPos = ui->play_table->randomPos;
-    qint16 &orderPos = ui->play_table->playPos;
+    qint16 &orderPos = ui->play_table->orderPos;
     ui->playmode_button->setText("");
     switch (mode_index)
     {
@@ -1061,7 +1072,7 @@ void MainWindow::setMutipleSpeed(QAbstractButton *button)
 
 void MainWindow::deleteFile()
 {
-    qint16 n = ui->play_table->orderInfoList.size();
+    qint16 n = ui->play_table->orderList.size();
     if(n == 0)
     {
         return;
@@ -1072,7 +1083,7 @@ void MainWindow::deleteFile()
         return;
     }
     //如果是当前播放，切换filename,保证filename 正确
-    if(ui->play_table->currentRow() == ui->play_table->playPos)
+    if(ui->play_table->currentRow() == ui->play_table->orderPos)
     {
         QString path = ui->play_table->getNextFile();
         if(checkIfExist(path))
@@ -1388,19 +1399,19 @@ void MainWindow::on_reverse_button_clicked()
 void MainWindow::deleteAllNotExist()
 {
     //当读入缓存时，遍历列表，删除错误路径
-    for(int i=0;i<ui->play_table->orderInfoList.size();i++)
+    for(int i=0;i<ui->play_table->orderList.size();i++)
     {
         QDir dir;
-        if(!dir.exists(ui->play_table->orderInfoList[i]))
+        if(!dir.exists(ui->play_table->orderList[i]))
         {
-            if(ui->play_table->orderInfoList[i]==filePath)
+            if(ui->play_table->orderList[i]==filePath)
                 filePath="";
-            ui->play_table->orderInfoList.removeAt(i);
+            ui->play_table->orderList.removeAt(i);
             i--;
         }
     }
-    if(!ui->play_table->orderInfoList.empty())
-        ui->play_table->setTable(ui->play_table->orderInfoList, filePath);
+    if(!ui->play_table->orderList.empty())
+        ui->play_table->setTable(ui->play_table->orderList, filePath);
     else
         clearPlayList();
 }

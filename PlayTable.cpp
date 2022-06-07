@@ -3,6 +3,11 @@
 
 extern QTimer* myTimer;
 
+QVector<QString> PlayTable::neededFile={"mp3","mp4","flv","avi","mkv"};
+QColor PlayTable::backgroundColor=QColor(68, 65, 63);
+QColor PlayTable::selectColor=QColor(158, 158, 252);
+QColor PlayTable::onPlayingColor=QColor(224, 224, 226);
+
 PlayTable::PlayTable(QWidget *parent)
     : QTableWidget(parent)
 {
@@ -34,7 +39,7 @@ void PlayTable::setTable(QList<QString> infoList,QString &filePath)
     order_random.resize(infoList.size());
     random_order.resize(infoList.size());
     //顺序播放列表
-    orderInfoList=infoList;
+    orderList=infoList;
     this->clearContents();
     qint16 numFile=infoList.size();
     this->setRowCount(numFile);
@@ -45,25 +50,25 @@ void PlayTable::setTable(QList<QString> infoList,QString &filePath)
     }
     if(filePath=="")
     {
-        filePath=orderInfoList[0];
+        filePath=orderList[0];
     }
-    for(int i=0;i<orderInfoList.size();i++)
+    for(int i=0;i<orderList.size();i++)
     {
-        if(orderInfoList[i]==filePath)
+        if(orderList[i]==filePath)
         {
-            playPos=i;
-            showHighLight(0,playPos);
+            orderPos=i;
+            showHighLight(0,orderPos);
         }
     }
     //生成随机列表
     generateRandomList();
-    randomPos=order_random[playPos];
+    randomPos=order_random[orderPos];
 }
 
 void PlayTable::generateRandomList()
 {
     //根据orderInfoLst生成随机序列
-    qint16 numFile=orderInfoList.size();
+    qint16 numFile=orderList.size();
 
     if(numFile==0)
         return;
@@ -84,7 +89,7 @@ void PlayTable::generateRandomList()
     {
         order_random[random_order[i]]=i;
     }
-    randomPos=order_random[playPos];
+    randomPos=order_random[orderPos];
 }
 
 bool PlayTable::isNeededFile(QFileInfo file)
@@ -100,55 +105,55 @@ bool PlayTable::isNeededFile(QFileInfo file)
 
 QString PlayTable::getPath(qint16 row)
 {
-    if(row>=orderInfoList.size())
+    if(row>=orderList.size())
         return "";
-    return this->orderInfoList[row];
+    return this->orderList[row];
 }
 
 QString PlayTable::getPrevFile()
 {
-    qint16 n=orderInfoList.size();
+    qint16 n=orderList.size();
     qint16 pre=-1;
     if(playMode==2)
     {
         pre=random_order[randomPos];
         randomPos=(randomPos-1+n)%n;
-        playPos=random_order[randomPos];
+        orderPos=random_order[randomPos];
     }
     else
     {
-        pre=playPos;
-        playPos=(playPos-1+n)%n;
-        randomPos=order_random[playPos];
+        pre=orderPos;
+        orderPos=(orderPos-1+n)%n;
+        randomPos=order_random[orderPos];
     }
-    this->showHighLight(pre,playPos);
-    return orderInfoList[playPos];
+    this->showHighLight(pre,orderPos);
+    return orderList[orderPos];
 }
 
 QString PlayTable::getNextFile()
 {
-    qint16 n=orderInfoList.size();
+    qint16 n=orderList.size();
     qint16 pre=-1;
     if(playMode==2)
     {
         pre=random_order[randomPos];
         randomPos=(randomPos+1)%n;
-        playPos=random_order[randomPos];
+        orderPos=random_order[randomPos];
     }
     else
     {
-        pre=playPos;
-        playPos=(playPos+1)%n;
-        randomPos=order_random[playPos];
+        pre=orderPos;
+        orderPos=(orderPos+1)%n;
+        randomPos=order_random[orderPos];
 
     }
-    this->showHighLight(pre,playPos);
-    return orderInfoList[playPos];
+    this->showHighLight(pre,orderPos);
+    return orderList[orderPos];
 }
 
 qint16 PlayTable::getNumFiles()
 {
-    return orderInfoList.size();
+    return orderList.size();
 }
 
 void PlayTable::showHighLight(qint16 pre,qint16 cur)
@@ -166,7 +171,7 @@ void PlayTable::showMessage()
     int rowIndex = this->currentRow();
     if (rowIndex != -1)
     {
-        QString path=orderInfoList[rowIndex];
+        QString path=orderList[rowIndex];
         MediaMetaData * mediaMetaData=ASongFFmpeg::getInstance()->openMediaInfo(path);
         MyMessageWidget * myMessageWidget = new MyMessageWidget(mediaMetaData);
         myMessageWidget->show();
@@ -175,32 +180,32 @@ void PlayTable::showMessage()
 }
 void PlayTable::deleteFile()
 {
-    //保证playPos和randomPos，还有两种映射的正确
+    //保证orderPos和randomPos，还有两种映射的正确
     int orderDltRowIndex = this->currentRow();
     if (orderDltRowIndex != -1)
     {
         int randomDltRowIndex = order_random[orderDltRowIndex];
         //删除顺序列表，随机列表，两个哈希的相应映射对
         this->removeRow(orderDltRowIndex);
-        orderInfoList.removeAt(orderDltRowIndex);
+        orderList.removeAt(orderDltRowIndex);
         order_random.removeAt(orderDltRowIndex);
         random_order.removeAt(randomDltRowIndex);
         //修正哈希映射
-        for(int i=0;i<orderInfoList.size();i++)
+        for(int i=0;i<orderList.size();i++)
         {
             if(random_order[i]>=orderDltRowIndex)
                 random_order[i]--;
         }
-        for(int i=0;i<orderInfoList.size();i++)
+        for(int i=0;i<orderList.size();i++)
         {
             if(order_random[i]>=randomDltRowIndex)
                 order_random[i]--;
         }
-        if(playPos>orderDltRowIndex)
+        if(orderPos>orderDltRowIndex)
         {
-            playPos--;
+            orderPos--;
         }
-        randomPos=order_random[playPos];
+        randomPos=order_random[orderPos];
     }
 }
 
@@ -211,23 +216,23 @@ QString PlayTable::getFileNameFromPath(QString path)
 
 void PlayTable::doMouseTrackTip(QModelIndex index)
 {
-    QToolTip::showText(QCursor::pos(), orderInfoList[index.row()]);
+    QToolTip::showText(QCursor::pos(), orderList[index.row()]);
 }
 
 void PlayTable::addFilePath(QString filepath)
 {
-    for(QString str:orderInfoList)
+    for(QString str:orderList)
     {
         if(str==filepath)
             return;
     }
-    orderInfoList.append(filepath);
-    setTable(orderInfoList,filepath);
+    orderList.append(filepath);
+    setTable(orderList,filepath);
 }
 void PlayTable:: myClear()
 {
     this->clear();
-    orderInfoList.clear();
+    orderList.clear();
     random_order.clear();
     order_random.clear();
 }
