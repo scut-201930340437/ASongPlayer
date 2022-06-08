@@ -241,6 +241,21 @@ int ASongFFmpeg::load(QString path)
     // 找不到音频流和视频流
     if(videoIdx < 0 && audioIdx < 0)
     {
+        if(nullptr != pFormatCtx)
+        {
+            pFormatCtx = nullptr;
+        }
+        // 关闭解码器上下文
+        if(nullptr != pACodecCtx)
+        {
+            avcodec_close(pACodecCtx);
+            pACodecCtx = nullptr;
+        }
+        if(nullptr != pVCodecCtx)
+        {
+            avcodec_close(pVCodecCtx);
+            pVCodecCtx = nullptr;
+        }
         qDebug() << "file error";
         return -1;
     }
@@ -312,10 +327,15 @@ float ASongFFmpeg::getSpeed()
 // 开始播放
 int ASongFFmpeg::play(QObject *par, QString path, QWidget *_playWidget)
 {
+    // 加载媒体文件信息,打开解码器
+    int ret = load(path);
+    if(ret < 0)
+    {
+        qDebug() << "load failed";
+        return -1;
+    }
     // 切换为播放态
     curMediaStatus = 1;
-    // 加载媒体文件信息,打开解码器
-    load(path);
     ASongAudioOutput::getInstance()->createMediaDevice(par);
     // 读取packet线程启动
     start();

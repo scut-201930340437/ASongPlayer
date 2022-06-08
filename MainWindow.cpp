@@ -95,7 +95,10 @@ void MainWindow::on_play_button_clicked()
                 {
                     break;
                 }
-                ASongFFmpeg::getInstance()->play(this, filePath, ui->play_widget);
+                if(ASongFFmpeg::getInstance()->play(this, filePath, ui->play_widget) < 0)
+                {
+                    break;
+                }
                 ui->play_button->setStyleSheet("#play_button{\
    image: url(:/img/pause.png);\
    }\
@@ -120,11 +123,11 @@ void MainWindow::on_play_button_clicked()
         {
             ASongFFmpeg::getInstance()->pause();
             ui->play_button->setStyleSheet("#play_button{\
-                   image: url(:/img/play.png);\
-               }\
-               #play_button::hover{\
-                   image: url(:/img/play2.png);\
-               }");
+   image: url(:/img/play.png);\
+   }\
+   #play_button::hover{\
+   image: url(:/img/play2.png);\
+   }");
             break;
         }
         case 2://暂停
@@ -155,7 +158,10 @@ void MainWindow::on_play_button_clicked()
             {
                 break;
             }
-            ASongFFmpeg::getInstance()->play(this, filePath, ui->play_widget);
+            if(ASongFFmpeg::getInstance()->play(this, filePath, ui->play_widget) < 0)
+            {
+                break;
+            }
             ui->play_button->setStyleSheet("#play_button{\
    image: url(:/img/play.png);\
    }\
@@ -301,7 +307,10 @@ void MainWindow::openFile()
     {
         filePath = path;
         ASongFFmpeg::getInstance()->stop();
-        ASongFFmpeg::getInstance()->play(this, path, ui->play_widget);
+        if(ASongFFmpeg::getInstance()->play(this, path, ui->play_widget) < 0)
+        {
+            return;
+        }
         setListFromFilePath();
     }
     else
@@ -357,7 +366,10 @@ void MainWindow::onPlayTableCellDoubleClicked(int row, int column)
     {
         filePath = path;
         ASongFFmpeg::getInstance()->stop();
-        ASongFFmpeg::getInstance()->play(this, filePath, ui->play_widget);
+        if(ASongFFmpeg::getInstance()->play(this, filePath, ui->play_widget) < 0)
+        {
+            return;
+        }
         this->ui->play_table->orderPos = row; //确认可以播放，记录播放位置
     }
 }
