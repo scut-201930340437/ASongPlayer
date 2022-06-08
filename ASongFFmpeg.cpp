@@ -483,7 +483,8 @@ void ASongFFmpeg::run()
             QMutexLocker locker(&pauseMutex);
             if(stopReq)
             {
-                continue;
+                stopReq = false;
+                break;
             }
             pauseFlag = true;
             // 唤醒主线程，此时主线程知道音频解码线程阻塞
@@ -491,6 +492,11 @@ void ASongFFmpeg::run()
             // 线程阻塞
             pauseCond.wait(&pauseMutex);
             locker.relock();
+            if(stopReq)
+            {
+                stopReq = false;
+                break;
+            }
             pauseFlag = false;
             // 唤醒主线程
             pauseCond.wakeAll();
@@ -521,16 +527,20 @@ void ASongFFmpeg::run()
             AVPacket *packet = readFrame();
             if(nullptr == packet)
             {
+                // 放入音频流的结束packet
+                AVPacket *nullPacket1 = av_packet_alloc();
+                nullPacket1->data = nullptr;
+                nullPacket1->size = 0;
+                DataSink::getInstance()->appendPacket(0, nullPacket1);
+                // 仅对视频放入视频流的结束packet
+                if(videoIdx >= 0 && !hasCover)
+                {
+                    AVPacket *nullPacket2 = av_packet_alloc();
+                    nullPacket2->data = nullptr;
+                    nullPacket2->size = 0;
+                    DataSink::getInstance()->appendPacket(1, nullPacket2);
+                }
                 pauseReq = true;
-                // 放入结束packet
-                AVPacket *nullPkt1 = av_packet_alloc();
-                nullPkt1->data = nullptr;
-                nullPkt1->size = 0;
-                DataSink::getInstance()->appendPacket(0, nullPkt1);
-                AVPacket *nullPkt2 = av_packet_alloc();
-                nullPkt2->data = nullptr;
-                nullPkt2->size = 0;
-                DataSink::getInstance()->appendPacket(1, nullPkt2);
                 continue;
             }
             // 如果是音频
@@ -674,10 +684,14 @@ void ASongFFmpeg::step_to_dst_frame(int _step)
     {
         SDLPaint::getInstance()->getFrameYUV();
     }
-    // 设置sdl暂停态
-    SDLPaint::getInstance()->pause();
-    // 重启定时器使sdl不断渲染上一帧
-    SDLPaint::getInstance()->restartTimer();
+    // 逐帧可能播放完视频最后一帧，此时播放会下一个文件，这种情况下不能暂停
+    if(curMediaStatus == 2)
+    {
+        // 设置sdl暂停态
+        SDLPaint::getInstance()->pause();
+        // 重启定时器使sdl不断渲染上一帧
+        SDLPaint::getInstance()->restartTimer();
+    }
     stepSeek = false;
 }
 

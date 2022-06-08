@@ -39,6 +39,7 @@ MainWindow::MainWindow(QWidget *parent)
     //上一次进程关闭时保存的文件路径
     readFilePath();
     connect(ASongAudioOutput::getInstance(), SIGNAL(playFinish()), this, SLOT(playFinishSlot()));
+    connect(SDLPaint::getInstance(), SIGNAL(playFinish()), this, SLOT(playFinishSlot()));
     //缩放窗口
     m_stretchRectState = NO_SELECT;
     m_windowMinHeight = 50;
@@ -119,11 +120,11 @@ void MainWindow::on_play_button_clicked()
         {
             ASongFFmpeg::getInstance()->pause();
             ui->play_button->setStyleSheet("#play_button{\
-                                               image: url(:/img/play.png);\
-                                           }\
-                                           #play_button::hover{\
-                                               image: url(:/img/play2.png);\
-                                           }");
+                   image: url(:/img/play.png);\
+               }\
+               #play_button::hover{\
+                   image: url(:/img/play2.png);\
+               }");
             break;
         }
         case 2://暂停
@@ -313,8 +314,10 @@ void MainWindow::setListFromFilePath()
 {
     //设置播放列表
     QString path = filePath.section('/', 0, -2);
-    if(path=="")
-       return;
+    if(path == "")
+    {
+        return;
+    }
     QDir Dir(path);
     if(!Dir.exists())
     {
@@ -405,7 +408,7 @@ void MainWindow::readFilePath()
     {
         filePath = iniReader->value(curPathKey).toString();
         QDir dir;
-        if( filePath=="" || !dir.exists(filePath))
+        if( filePath == "" || !dir.exists(filePath))
         {
             filePath = "";
         }
@@ -417,10 +420,10 @@ void MainWindow::readFilePath()
         else
         {
             //当读入缓存时，遍历列表，删除错误路径
-            for(int i=0;i<filePathList.size();i++)
+            for(int i = 0; i < filePathList.size(); i++)
             {
                 QDir dir;
-                if( filePathList[i] =="" || !dir.exists(filePathList[i]))
+                if( filePathList[i] == "" || !dir.exists(filePathList[i]))
                 {
                     filePathList.removeAt(i);
                     i--;
@@ -927,12 +930,11 @@ void MainWindow::on_play_table_customContextMenuRequested(const QPoint &pos)
 bool MainWindow::checkIfExist(QString path)
 {
     QDir dir;
-    if(path=="" || !dir.exists(path))
+    if(path == "" || !dir.exists(path))
     {
         MyMessageWidget *infoWindow = new MyMessageWidget();
         infoWindow->show();
         ui->play_table->allCloseWidget.append(infoWindow);
-
         deleteAllNotExist();
         return false;
     }
@@ -1399,19 +1401,25 @@ void MainWindow::on_reverse_button_clicked()
 void MainWindow::deleteAllNotExist()
 {
     //当读入缓存时，遍历列表，删除错误路径
-    for(int i=0;i<ui->play_table->orderList.size();i++)
+    for(int i = 0; i < ui->play_table->orderList.size(); i++)
     {
         QDir dir;
         if(!dir.exists(ui->play_table->orderList[i]))
         {
-            if(ui->play_table->orderList[i]==filePath)
-                filePath="";
+            if(ui->play_table->orderList[i] == filePath)
+            {
+                filePath = "";
+            }
             ui->play_table->orderList.removeAt(i);
             i--;
         }
     }
     if(!ui->play_table->orderList.empty())
+    {
         ui->play_table->setTable(ui->play_table->orderList, filePath);
+    }
     else
+    {
         clearPlayList();
+    }
 }

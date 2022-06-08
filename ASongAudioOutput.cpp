@@ -238,17 +238,21 @@ void ASongAudioOutput::process()
     }
     if(nullptr != frame)
     {
+        // 处理逐帧
+        if(ASongFFmpeg::getInstance()->seekAudio)
+        {
+            ASongFFmpeg::getInstance()->seekAudio = false;
+        }
         // 播放结束
         if(frame->pts == -1)
         {
             av_frame_free(&frame);
+            if(ASongFFmpeg::getInstance()->seekVideo)
+            {
+                ASongFFmpeg::getInstance()->seekVideo = false;
+            }
             emit playFinish();
             return;
-        }
-        // 扔掉小于stepSeek的目标帧号的帧
-        if(ASongFFmpeg::getInstance()->seekAudio)
-        {
-            ASongFFmpeg::getInstance()->seekAudio = false;
         }
         if(basePts >= -DBL_EPSILON && basePts <= DBL_EPSILON)
         {

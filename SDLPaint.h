@@ -74,6 +74,8 @@ private:
     int frameRate = -1;
     // 帧之间的延时
     int frameDelay = 0;
+signals:
+    void playFinish();
 };
 
 #endif // SDLPAINT_H

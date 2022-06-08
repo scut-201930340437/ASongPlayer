@@ -74,6 +74,7 @@ int SDLPaint::init(QWidget *_playWidget)
     calDisplayRect(&sdlRect, 0, 0, lastScreenWidth, lastScreenHeight, srcWidth, srcHeight);
     // 初始化各变量
     pauseFlag = false;
+    //    stopFlag = false;
     curPts = 0.0;
     // 开启定时器
     sdlTimer = new QTimer;
@@ -150,17 +151,17 @@ void SDLPaint::getFrameYUV()
         }
         if(nullptr != frame)
         {
-            // 播放结束
-            if(frame->pts == -1)
-            {
-                av_frame_free(&frame);
-                stop();
-                return;
-            }
             // 处理逐帧
             if(ASongFFmpeg::getInstance()->seekVideo)
             {
                 ASongFFmpeg::getInstance()->seekVideo = false;
+            }
+            // 播放结束
+            if(frame->pts == -1)
+            {
+                av_frame_free(&frame);
+                emit playFinish();
+                return;
             }
             // 更新最近一帧的pts
             curPts = (*(double*)frame->opaque);
@@ -287,6 +288,8 @@ void SDLPaint::stop()
     if(nullptr != sdlTimer)
     {
         sdlTimer->stop();
+        delete sdlTimer;
+        sdlTimer = nullptr;
     }
     // 渲染黑色图像
     if(nullptr != sdlRenderer)
@@ -328,11 +331,6 @@ void SDLPaint::stop()
         av_frame_free(&preFrame);
         preFrame = nullptr;
     }
-    if(nullptr != sdlTimer)
-    {
-        delete sdlTimer;
-        sdlTimer = nullptr;
-    }
     if(nullptr != playWidget)
     {
         playWidget->setUpdatesEnabled(true);
@@ -341,6 +339,7 @@ void SDLPaint::stop()
     srcWidth = srcHeight = lastScreenWidth = lastScreenHeight = 0;
     frameRate = -1;
     frameDelay = 0;
+    //    stopFlag = true;
 }
 
 void SDLPaint::pause()

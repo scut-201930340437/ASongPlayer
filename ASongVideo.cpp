@@ -241,6 +241,14 @@ void ASongVideo::run()
                     if(ret == 0)
                     {
                         appendFrame(frame);
+                        if(nullptr == packet->data && packet->size == 0)
+                        {
+                            // 放入结束帧
+                            AVFrame *endFrame = av_frame_alloc();
+                            endFrame->pts = -1;
+                            DataSink::getInstance()->appendFrame(1, endFrame);
+                            pauseReq = true;
+                        }
                         // 如果是带音频的封面，该线程只做一次循环
                         if(ASongFFmpeg::getInstance()->hasCover)
                         {
@@ -253,11 +261,6 @@ void ASongVideo::run()
                         {
                             // 复位解码器
                             avcodec_flush_buffers(pCodecCtx);
-                            // 放入结束帧
-                            AVFrame *endFrame = av_frame_alloc();
-                            endFrame->pts = -1;
-                            DataSink::getInstance()->appendFrame(1, endFrame);
-                            pauseReq = true;
                         }
                         av_frame_free(&frame);
                     }
@@ -276,11 +279,6 @@ void ASongVideo::run()
                                 av_frame_free(&frame);
                                 // 复位解码器
                                 avcodec_flush_buffers(pCodecCtx);
-                                // 放入结束帧
-                                AVFrame *endFrame = av_frame_alloc();
-                                endFrame->pts = -1;
-                                DataSink::getInstance()->appendFrame(1, endFrame);
-                                pauseReq = true;
                                 break;
                             }
                             appendFrame(frame);
@@ -294,6 +292,14 @@ void ASongVideo::run()
                             if(ret == 0)
                             {
                                 appendFrame(frame);
+                                if(nullptr == packet->data && packet->size == 0)
+                                {
+                                    // 放入结束帧
+                                    AVFrame *endFrame = av_frame_alloc();
+                                    endFrame->pts = -1;
+                                    DataSink::getInstance()->appendFrame(1, endFrame);
+                                    pauseReq = true;
+                                }
                             }
                             else
                             {
@@ -301,11 +307,6 @@ void ASongVideo::run()
                                 {
                                     // 复位解码器
                                     avcodec_flush_buffers(pCodecCtx);
-                                    // 放入结束帧
-                                    AVFrame *endFrame = av_frame_alloc();
-                                    endFrame->pts = -1;
-                                    DataSink::getInstance()->appendFrame(1, endFrame);
-                                    pauseReq = true;
                                 }
                                 av_frame_free(&frame);
                             }
