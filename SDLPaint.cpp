@@ -339,7 +339,6 @@ void SDLPaint::stop()
     srcWidth = srcHeight = lastScreenWidth = lastScreenHeight = 0;
     frameRate = -1;
     frameDelay = 0;
-    //    stopFlag = true;
 }
 
 void SDLPaint::pause()

@@ -28,7 +28,6 @@ int main(int argc, char *argv[])
     qApp->setStyleSheet(styleSheet);
     MainWindow w;
     w.setWindowFlags(Qt::FramelessWindowHint);  // 去掉标题栏
-    //    w.setAttribute(Qt::WA_TranslucentBackground);  // 透明化mainwindow，方便显示钝化四个边角
     w.show();
     return a.exec();
 }
